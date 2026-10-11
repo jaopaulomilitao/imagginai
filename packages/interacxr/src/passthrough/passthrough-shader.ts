@@ -1,48 +1,50 @@
-// é exportada a estrutura do shader para o passthrough
-export const passthroughShader = {
-  uniforms: {
-    videoTexture: { value: null },
-    zoomLevel: { value: 1.0 },
-    k1: { value: 0.0 },
-  },
+export const MASK_MODE = {
+  FULL: 0,
+  BOTTOM_WINDOW: 1,
+} as const;
 
-  vertexShader: /* glsl */ `
-    varying vec2 vUv;
-    void main() {
-      vUv = uv;
-      // é calculada a posição do vértice
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+export type MaskMode = (typeof MASK_MODE)[keyof typeof MASK_MODE];
+
+export const passthroughVertexShader = /* glsl */ `
+  varying vec2 vUv;
+
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+// uniformes da seção 3.7: uVideo, uOpacity, uMaskMode (0 = inteiro, 1 = janela inferior),
+// uFeather (suavidade da borda da janela) e uK1 (distorção radial leve)
+export const passthroughFragmentShader = /* glsl */ `
+  uniform sampler2D uVideo;
+  uniform float uOpacity;
+  uniform float uMaskMode;
+  uniform float uFeather;
+  uniform float uK1;
+
+  varying vec2 vUv;
+
+  // topo da janela inferior, em coordenadas uv do plano
+  const float WINDOW_TOP = 0.45;
+
+  void main() {
+    vec2 centered = vUv - 0.5;
+    float radiusSquared = dot(centered, centered);
+    vec2 sampleUv = centered * (1.0 + uK1 * radiusSquared) + 0.5;
+
+    // são descartadas as bordas para evitar repetição da textura após a distorção
+    if (any(lessThan(sampleUv, vec2(0.0))) || any(greaterThan(sampleUv, vec2(1.0)))) discard;
+
+    float mask = 1.0;
+    if (uMaskMode > 0.5) {
+      mask = 1.0 - smoothstep(WINDOW_TOP - uFeather, WINDOW_TOP, vUv.y);
     }
-  `,
 
-  fragmentShader: /* glsl */ `
-    uniform sampler2D videoTexture;
-    uniform float zoomLevel;
-    uniform float k1;
+    float alpha = uOpacity * mask;
+    if (alpha <= 0.001) discard;
 
-    varying vec2 vUv;
-
-    void main() {
-      // é centralizado o uv
-      vec2 centerUv = vUv - 0.5;
-
-      // é calculado o raio para a distorção
-      float r2 = dot(centerUv, centerUv);
-
-      // é aplicada a distorção de barril
-      float distortion = 1.0 + k1 * r2;
-      vec2 distortedUv = centerUv * distortion;
-
-      // é aplicado o zoom
-      vec2 finalUv = (distortedUv / zoomLevel) + 0.5;
-
-      // são tratadas as bordas para evitar repetição de textura
-      if (finalUv.x < 0.0 || finalUv.x > 1.0 || finalUv.y < 0.0 || finalUv.y > 1.0) {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-      } else {
-        // é renderizada a cor do vídeo
-        gl_FragColor = texture2D(videoTexture, finalUv);
-      }
-    }
-  `,
-};
+    gl_FragColor = vec4(texture2D(uVideo, sampleUv).rgb, alpha);
+    #include <colorspace_fragment>
+  }
+`;

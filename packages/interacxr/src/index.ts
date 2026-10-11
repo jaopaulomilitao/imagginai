@@ -8,7 +8,7 @@ import './aframe/ixr-cursor';
 import './aframe/ixr-gaze-grabber';
 import './aframe/ixr-interactor';
 import './aframe/ixr-teleport';
-import './aframe/xr-passthrough';
+import './aframe/ixr-passthrough';
 // o componente orquestrador
 import './aframe/ixr-standard-setup';
 
@@ -25,3 +25,7 @@ export type {
   ProjectionPlane,
 } from './calibration/calibration-profile';
 export { CALIBRATION_CHANGE_EVENT } from './aframe/interacxr-system';
+export { DEFAULT_PASSTHROUGH_OPTIONS, PassthroughLayer } from './passthrough/passthrough-layer';
+export type { PassthroughLayerOptions } from './passthrough/passthrough-layer';
+export { MASK_MODE } from './passthrough/passthrough-shader';
+export type { MaskMode } from './passthrough/passthrough-shader';
