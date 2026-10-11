@@ -4,6 +4,7 @@ import '../core/globals';
 import HandWorker from '../core/hand-worker.ts?worker&inline';
 import type { HandDataDetail } from '../core/landmarks';
 import { logger } from '../core/logger';
+import { getInteracxrSystem } from './interacxr-system';
 import {
   DEFAULT_MODEL_PATH,
   DEFAULT_WASM_PATH,
@@ -26,7 +27,6 @@ const HAVE_CURRENT_DATA = 2;
 export class HandTrackingController {
   private isProcessing = false;
   private videoElement: HTMLVideoElement | null = null;
-  private stream: MediaStream | null = null;
   private readonly worker: Worker;
 
   constructor(
@@ -50,16 +50,10 @@ export class HandTrackingController {
 
   async startTracking(): Promise<void> {
     try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
-      const video = document.createElement('video');
-      video.srcObject = this.stream;
-      video.autoplay = true;
-      video.playsInline = true;
-      video.muted = true;
-      video.onloadedmetadata = () => void this.onVideoReady(video);
+      // o vídeo é o mesmo usado pelo passthrough (camera service compartilhado)
+      const video = await getInteracxrSystem(this.el).camera.start();
       this.videoElement = video;
+      await this.onVideoReady(video);
     } catch (error) {
       logger.error('camera init failed', error);
     }
@@ -81,10 +75,8 @@ export class HandTrackingController {
   }
 
   dispose(): void {
-    this.stream?.getTracks().forEach((track) => track.stop());
     this.worker.terminate();
     this.videoElement = null;
-    this.stream = null;
   }
 
   private async onVideoReady(video: HTMLVideoElement): Promise<void> {
@@ -97,7 +89,6 @@ export class HandTrackingController {
       window.ixrCalibration.planeHeight = 0.45;
       window.ixrCalibration.planeWidth = 0.45 * aspect;
     }
-    await video.play();
     await this.el.sceneEl.enterVR();
   }
 

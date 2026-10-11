@@ -3,6 +3,7 @@ import type { Mesh, ShaderMaterial } from 'three';
 
 import { logger } from '../core/logger';
 import { passthroughShader } from '../passthrough/passthrough-shader';
+import { getInteracxrSystem } from './interacxr-system';
 import { THREE } from './three';
 
 interface PassthroughData {
@@ -20,7 +21,6 @@ const PLANE_DISTANCE = 50;
 export class PassthroughController {
   private material: ShaderMaterial | null = null;
   private videoPlane: Mesh | null = null;
-  private stream: MediaStream | null = null;
 
   constructor(
     private readonly el: Entity,
@@ -29,19 +29,10 @@ export class PassthroughController {
 
   async startCamera(): Promise<void> {
     try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
-      const video = document.createElement('video');
-      video.srcObject = this.stream;
-      video.autoplay = true;
-      video.playsInline = true;
-      video.muted = true;
-      video.onloadedmetadata = async () => {
-        await video.play();
-        this.setupVideoPlane(video);
-        await this.el.sceneEl.enterVR();
-      };
+      // o vídeo é o mesmo usado pelo rastreamento de mãos (camera service compartilhado)
+      const video = await getInteracxrSystem(this.el).camera.start();
+      this.setupVideoPlane(video);
+      await this.el.sceneEl.enterVR();
     } catch (error) {
       logger.error('camera permission is required for xr mode', error);
     }
@@ -56,7 +47,6 @@ export class PassthroughController {
   }
 
   dispose(): void {
-    this.stream?.getTracks().forEach((track) => track.stop());
     if (this.videoPlane) this.el.object3D.remove(this.videoPlane);
   }
 
