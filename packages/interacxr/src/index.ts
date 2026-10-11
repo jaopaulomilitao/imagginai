@@ -18,3 +18,10 @@ export { CameraService, DEFAULT_CAMERA_OPTIONS } from './core/camera-service';
 export type { CameraServiceOptions } from './core/camera-service';
 export { getInteracxrSystem, INTERACXR_SYSTEM } from './aframe/interacxr-system';
 export type { InteracxrSystem } from './aframe/interacxr-system';
+export { CalibrationProfile, DEFAULT_CALIBRATION } from './calibration/calibration-profile';
+export type {
+  CalibrationSettings,
+  PlanePoint,
+  ProjectionPlane,
+} from './calibration/calibration-profile';
+export { CALIBRATION_CHANGE_EVENT } from './aframe/interacxr-system';

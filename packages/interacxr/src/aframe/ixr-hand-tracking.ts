@@ -1,6 +1,5 @@
 import AFRAME, { type Component, type Entity } from 'aframe';
 
-import '../core/globals';
 import HandWorker from '../core/hand-worker.ts?worker&inline';
 import type { HandDataDetail } from '../core/landmarks';
 import { logger } from '../core/logger';
@@ -33,9 +32,6 @@ export class HandTrackingController {
     private readonly el: Entity,
     data: HandTrackingData,
   ) {
-    // a calibração agora baseia-se num plano físico em metros, ignorando o fov virtual
-    window.ixrCalibration = { baseDepth: 0.5, planeWidth: 0.8, planeHeight: 0.45 };
-
     this.worker = new HandWorker();
     this.worker.onmessage = (event: MessageEvent<WorkerResponse>) =>
       this.onWorkerMessage(event.data);
@@ -51,9 +47,9 @@ export class HandTrackingController {
   async startTracking(): Promise<void> {
     try {
       // o vídeo é o mesmo usado pelo passthrough (camera service compartilhado)
-      const video = await getInteracxrSystem(this.el).camera.start();
-      this.videoElement = video;
-      await this.onVideoReady(video);
+      // o plano de projeção é recalculado pelo sistema com as dimensões reais do vídeo
+      this.videoElement = await getInteracxrSystem(this.el).startCamera();
+      await this.el.sceneEl.enterVR();
     } catch (error) {
       logger.error('camera init failed', error);
     }
@@ -77,19 +73,6 @@ export class HandTrackingController {
   dispose(): void {
     this.worker.terminate();
     this.videoElement = null;
-  }
-
-  private async onVideoReady(video: HTMLVideoElement): Promise<void> {
-    // o aspecto é forçado para paisagem para corresponder ao uso do óculos vr
-    const longSide = Math.max(video.videoWidth, video.videoHeight);
-    const shortSide = Math.min(video.videoWidth, video.videoHeight);
-    const aspect = longSide / shortSide;
-    // um quadro de 45 centímetros de altura é projetado a 0.5m de distância
-    if (window.ixrCalibration) {
-      window.ixrCalibration.planeHeight = 0.45;
-      window.ixrCalibration.planeWidth = 0.45 * aspect;
-    }
-    await this.el.sceneEl.enterVR();
   }
 
   private onWorkerMessage(message: WorkerResponse): void {

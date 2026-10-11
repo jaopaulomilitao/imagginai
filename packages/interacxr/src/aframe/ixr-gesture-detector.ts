@@ -1,12 +1,12 @@
 import AFRAME, { type Component, type Entity } from 'aframe';
 
-import '../core/globals';
 import {
   type HandDataDetail,
   type HandLandmarks,
   type Landmark,
   LANDMARK,
 } from '../core/landmarks';
+import { getInteracxrSystem } from './interacxr-system';
 
 interface GestureDetectorData {
   source: Entity | null;
@@ -25,7 +25,7 @@ interface Vector3Like {
 }
 
 interface PosePayload {
-  position: Vector3Like | null;
+  position: Vector3Like;
   handSize: number;
 }
 
@@ -88,15 +88,10 @@ export class GestureDetectorController {
     this.el.emit('ixr-hand-lost');
   }
 
-  // a lógica acompanha rigorosamente o modelo visual físico
-  private getWorldPosition(landmark: Landmark): Vector3Like | null {
-    const calibration = window.ixrCalibration;
-    if (!calibration) return null;
-    return {
-      x: (landmark.x - 0.5) * calibration.planeWidth,
-      y: -(landmark.y - 0.5) * calibration.planeHeight,
-      z: -calibration.baseDepth + landmark.z * calibration.planeWidth,
-    };
+  // é usado o mesmo plano de projeção do vídeo e do modelo da mão (calibração unificada)
+  private getWorldPosition(landmark: Landmark): Vector3Like {
+    const system = getInteracxrSystem(this.el);
+    return system.calibration.mapLandmark(landmark, system.projectionPlane);
   }
 
   private isExtended(hand: HandLandmarks, tip: number, pip: number): boolean {

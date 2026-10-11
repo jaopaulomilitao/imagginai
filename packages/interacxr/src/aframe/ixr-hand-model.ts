@@ -1,13 +1,13 @@
 import AFRAME, { type Component, type Entity } from 'aframe';
 import type { Mesh, Vector3 } from 'three';
 
-import '../core/globals';
 import {
   type HandDataDetail,
   type HandLandmarks,
   type Landmark,
   LANDMARK_COUNT,
 } from '../core/landmarks';
+import { getInteracxrSystem } from './interacxr-system';
 import { THREE } from './three';
 
 interface HandModelData {
@@ -116,13 +116,10 @@ export class HandModelController {
     bone.quaternion.setFromUnitVectors(this.up, this.tmpDir.normalize());
   }
 
-  // a função foi purificada para utilizar exclusivamente proporções físicas rígidas
+  // é usado o mesmo plano de projeção do vídeo (calibração unificada)
   private mapPoint(landmark: Landmark): Vector3 {
-    const calibration = window.ixrCalibration;
-    if (!calibration) return new THREE.Vector3();
-    const x = (landmark.x - 0.5) * calibration.planeWidth;
-    const y = -(landmark.y - 0.5) * calibration.planeHeight;
-    const z = -calibration.baseDepth + landmark.z * calibration.planeWidth;
+    const system = getInteracxrSystem(this.el);
+    const { x, y, z } = system.calibration.mapLandmark(landmark, system.projectionPlane);
     return new THREE.Vector3(x, y, z);
   }
 
