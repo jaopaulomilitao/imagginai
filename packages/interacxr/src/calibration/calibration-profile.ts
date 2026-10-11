@@ -56,15 +56,19 @@ export class CalibrationProfile {
     this.k1 = settings.k1;
   }
 
-  // h = 2·d·tan(fov/2) e w = h·(largura/altura do vídeo), conforme a seção 3.7
+  // em paisagem (uso no óculos): h = 2·d·tan(fov/2) e w = h·(largura/altura), conforme a seção 3.7;
+  // o fov calibrado pertence ao lado curto do sensor, por isso em retrato ele passa a valer para a largura
   projectionPlane(
     videoWidth: number,
     videoHeight: number,
     distanceM = this.planeDistanceM,
   ): ProjectionPlane {
     if (!(videoWidth > 0 && videoHeight > 0)) throw new RangeError('video size must be > 0');
-    const heightM = 2 * distanceM * Math.tan(degreesToRadians(this.camVFovDeg) / 2);
-    return { distanceM, widthM: heightM * (videoWidth / videoHeight), heightM };
+    const shortSideM = 2 * distanceM * Math.tan(degreesToRadians(this.camVFovDeg) / 2);
+    if (videoWidth >= videoHeight) {
+      return { distanceM, widthM: shortSideM * (videoWidth / videoHeight), heightM: shortSideM };
+    }
+    return { distanceM, widthM: shortSideM, heightM: shortSideM * (videoHeight / videoWidth) };
   }
 
   // a profundidade relativa do mediapipe usa a mesma escala de x, por isso é multiplicada pela largura

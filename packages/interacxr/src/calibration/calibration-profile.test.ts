@@ -15,6 +15,16 @@ describe('CalibrationProfile', () => {
     expect(plane.widthM).toBeCloseTo(plane.heightM * (1280 / 720), 10);
   });
 
+  it('applies the calibrated FOV to the short side when the video is portrait', () => {
+    const profile = new CalibrationProfile();
+    const landscape = profile.projectionPlane(1280, 720);
+    const portrait = profile.projectionPlane(720, 1280);
+
+    // o mesmo sensor girado: largura e altura apenas trocam de lugar
+    expect(portrait.widthM).toBeCloseTo(landscape.heightM, 10);
+    expect(portrait.heightM).toBeCloseTo(landscape.widthM, 10);
+  });
+
   it('keeps the same angular size at any distance', () => {
     const profile = new CalibrationProfile({ camVFovDeg: 60 });
     const near = profile.projectionPlane(1280, 720, 1);

@@ -51,6 +51,8 @@ AFRAME.registerSystem<InteracxrSystem>(INTERACXR_SYSTEM, {
 
     this.start = async () => {
       const video = await this.camera.start();
+      // o android gira o fluxo ao virar o aparelho (retrato ↔ paisagem); o plano acompanha
+      video.addEventListener('resize', this.refreshProjection);
       this.refreshProjection();
       const detail: CameraReadyDetail = { video };
       this.sceneEl.emit(CAMERA_READY_EVENT, detail);
@@ -58,6 +60,7 @@ AFRAME.registerSystem<InteracxrSystem>(INTERACXR_SYSTEM, {
     };
 
     this.stop = () => {
+      this.camera.video?.removeEventListener('resize', this.refreshProjection);
       this.camera.stop();
       this.sceneEl.emit(CAMERA_STOPPED_EVENT);
     };
