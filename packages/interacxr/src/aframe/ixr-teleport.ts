@@ -3,6 +3,7 @@ import type { BufferGeometry, Line, LineBasicMaterial, Object3D, Vector3 } from 
 
 import '../core/globals';
 import type { CursorComponent } from './ixr-cursor';
+import { HAND_LOST_EVENT } from './ixr-gesture-detector';
 import { THREE } from './three';
 
 interface TeleportData {
@@ -46,7 +47,7 @@ export class TeleportController {
     this.listeners = [
       [`ixr-${data.activationPose}-start`, () => this.onActivate()],
       [`ixr-${data.confirmPose}-start`, () => this.onConfirm()],
-      ['ixr-hand-lost', () => undefined],
+      [HAND_LOST_EVENT, () => undefined],
     ];
     this.listeners.forEach(([name, listener]) => el.addEventListener(name, listener));
   }

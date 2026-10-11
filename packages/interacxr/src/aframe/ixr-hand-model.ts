@@ -8,6 +8,7 @@ import {
   LANDMARK_COUNT,
 } from '../core/landmarks';
 import { getInteracxrSystem } from './interacxr-system';
+import { HAND_DATA_EVENT } from './ixr-hand-tracking';
 import { THREE } from './three';
 
 interface HandModelData {
@@ -64,11 +65,11 @@ export class HandModelController {
   ) {
     this.createJoints();
     this.createBones();
-    data.source?.addEventListener('ixr-hand-data', this.onHandData);
+    data.source?.addEventListener(HAND_DATA_EVENT, this.onHandData);
   }
 
   dispose(): void {
-    this.data.source?.removeEventListener('ixr-hand-data', this.onHandData);
+    this.data.source?.removeEventListener(HAND_DATA_EVENT, this.onHandData);
   }
 
   tick(): void {

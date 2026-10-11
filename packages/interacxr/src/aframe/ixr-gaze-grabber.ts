@@ -3,6 +3,7 @@ import type { Material, Mesh } from 'three';
 
 import '../core/globals';
 import type { CursorComponent } from './ixr-cursor';
+import { HAND_LOST_EVENT } from './ixr-gesture-detector';
 import { THREE } from './three';
 
 interface GazeGrabberData {
@@ -60,7 +61,7 @@ export class GazeGrabberController {
       [`ixr-${data.grabPose}-start`, (event) => this.onGrabStart(event)],
       [`ixr-${data.grabPose}-move`, (event) => this.onGrabMove(event)],
       [`ixr-${data.grabPose}-end`, () => this.onGrabEnd()],
-      ['ixr-hand-lost', () => this.onHandLost()],
+      [HAND_LOST_EVENT, () => this.onHandLost()],
     ];
     this.listeners.forEach(([name, listener]) => el.addEventListener(name, listener));
   }

@@ -50,3 +50,23 @@ export {
 export type { InferenceRateConfig } from './core/inference-rate';
 export { DEFAULT_MODEL_PATH, DEFAULT_WASM_PATH } from './core/worker-protocol';
 export { HAND_DATA_EVENT } from './aframe/ixr-hand-tracking';
+export { DEFAULT_ONE_EURO, LandmarkSmoother, OneEuroFilter } from './core/filters';
+export type { OneEuroParams } from './core/filters';
+export {
+  classifyFrame,
+  DEFAULT_POSE_CLASSIFIER_CONFIG,
+  measureHand,
+  POSE_NAMES,
+  PoseClassifier,
+} from './core/pose-classifier';
+export type {
+  HandMetrics,
+  PoseClassifierConfig,
+  PoseEvent,
+  PoseFlags,
+  PoseName,
+  PosePhase,
+  PoseUpdate,
+} from './core/pose-classifier';
+export { HAND_LOST_EVENT } from './aframe/ixr-gesture-detector';
+export type { PosePayload } from './aframe/ixr-gesture-detector';
