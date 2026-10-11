@@ -5,10 +5,12 @@ import type {
   Mesh,
   MeshBasicMaterial,
   MeshBasicMaterialParameters,
+  Object3D,
   RingGeometry,
 } from 'three';
 
-import { findOwnerEntity } from './entity-utils';
+import type { TargetCache } from '../core/target-cache';
+import { createObject3DCache, findOwnerEntity } from './entity-utils';
 import { THREE } from './three';
 
 interface CursorData {
@@ -41,6 +43,7 @@ export class CursorController {
   private hoveredElement: Entity | null = null;
   private intersectionData: Intersection | null = null;
   private isActive = false;
+  private readonly targets: TargetCache<Object3D>;
 
   constructor(
     private readonly el: Entity,
@@ -49,6 +52,15 @@ export class CursorController {
     this.ringGeometry = new THREE.RingGeometry(data.cursorSize, data.cursorSize * 1.5, 32);
     this.solidGeometry = new THREE.CircleGeometry(data.cursorSize * 1.5, 32);
     this.cursorMesh = this.createCursor();
+    this.targets = createObject3DCache(el.sceneEl, data.targetClass);
+  }
+
+  dispose(): void {
+    this.targets.dispose();
+    this.cursorMesh.removeFromParent();
+    this.cursorMesh.material.dispose();
+    this.ringGeometry.dispose();
+    this.solidGeometry.dispose();
   }
 
   setCursorActive(active: boolean): void {
@@ -79,10 +91,7 @@ export class CursorController {
     camera.getWorldDirection(this.cameraDirection);
     this.raycaster.set(this.cameraPosition, this.cameraDirection);
 
-    const objects = Array.from(this.el.sceneEl.querySelectorAll<Entity>(this.data.targetClass))
-      .map((entity) => entity.object3D)
-      .filter(Boolean);
-    const hit = this.raycaster.intersectObjects(objects, true)[0];
+    const hit = this.raycaster.intersectObjects(this.targets.get(), true)[0];
 
     if (hit && hit.distance <= this.data.maxDistance) {
       this.onHit(hit);
@@ -158,5 +167,8 @@ AFRAME.registerComponent<CursorComponent>('ixr-cursor', {
   },
   tick() {
     this.controller?.tick();
+  },
+  remove() {
+    this.controller?.dispose();
   },
 });

@@ -2,6 +2,8 @@ import AFRAME, { type Component, type Entity } from 'aframe';
 import type { BufferGeometry, Line, LineBasicMaterial, Object3D, Vector3 } from 'three';
 
 import '../core/globals';
+import type { TargetCache } from '../core/target-cache';
+import { createObject3DCache } from './entity-utils';
 import type { CursorComponent } from './ixr-cursor';
 import { HAND_LOST_EVENT } from './ixr-gesture-detector';
 import { THREE } from './three';
@@ -37,6 +39,7 @@ export class TeleportController {
   private readonly arcLine: Line<BufferGeometry, LineBasicMaterial>;
   private readonly reticle: Entity;
   private readonly listeners: [string, () => void][];
+  private readonly obstacles: TargetCache<Object3D>;
 
   constructor(
     private readonly el: Entity,
@@ -44,6 +47,7 @@ export class TeleportController {
   ) {
     this.arcLine = this.createArc();
     this.reticle = this.createReticle();
+    this.obstacles = createObject3DCache(el.sceneEl, data.targetClass);
     this.listeners = [
       [`ixr-${data.activationPose}-start`, () => this.onActivate()],
       [`ixr-${data.confirmPose}-start`, () => this.onConfirm()],
@@ -54,7 +58,10 @@ export class TeleportController {
 
   dispose(): void {
     this.listeners.forEach(([name, listener]) => this.el.removeEventListener(name, listener));
+    this.obstacles.dispose();
     this.el.sceneEl.object3D.remove(this.arcLine);
+    this.arcLine.geometry.dispose();
+    this.arcLine.material.dispose();
     this.reticle.remove();
   }
 
@@ -141,10 +148,8 @@ export class TeleportController {
 
   private integrateArc(start: Vector3, velocity: Vector3): Vector3[] {
     const gravityStep = new THREE.Vector3(0, GRAVITY * ARC_TIME_STEP_S, 0);
-    // são mapeados os objetos físicos do cenário que bloqueiam o teleporte
-    const obstacles = Array.from(this.el.sceneEl.querySelectorAll<Entity>(this.data.targetClass))
-      .map((entity) => entity.object3D)
-      .filter(Boolean);
+    // objetos físicos do cenário que bloqueiam o teleporte, mantidos em cache
+    const obstacles = this.obstacles.get();
     let current = start.clone();
     const points = [current.clone()];
     this.isValidHit = false;
