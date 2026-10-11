@@ -1,7 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "paths": {
+      "interacxr": ["./src/index.ts"]
+    }
   },
   "include": ["src", "examples/basic/src"],
   "exclude": ["src/core/hand-worker.ts"]

@@ -4,31 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>InteracXR Toolkit - Scenario Test</title>
-
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script type="module" src="../../src/index.js"></script>
-
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background: #000;
-      }
-    </style>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="module" src="./src/main.ts"></script>
   </head>
   <body>
-    <a-scene xr-mode-ui="enabled:false" background="color:#111" renderer="colorManagement:true">
-      <a-assets>
-        <a-asset-item id="scenario" src="assets/scenario-interacxr.glb"></a-asset-item>
-      </a-assets>
+    <div id="start-screen">
+      <h1>InteracXR Toolkit</h1>
+      <p>allow camera access to start immersive webxr</p>
+      <button id="start-btn" type="button">start experience</button>
+      <p id="start-error" hidden></p>
+    </div>
 
-      <a-entity
-        gltf-model="#scenario"
-        position="-6 0 0"
-        scale="0.5 0.5 0.5"
-        class="navmesh"
-      ></a-entity>
+    <a-scene xr-mode-ui="enabled:false" background="color:#111" renderer="colorManagement:true">
+      <a-entity id="scenario" position="-6 0 0" scale="0.5 0.5 0.5" class="navmesh"></a-entity>
 
       <a-box class="grabbable" position="-12.5 4.8 -4" color="#FFD700" scale="0.5 0.5 0.5"></a-box>
 
@@ -50,7 +38,6 @@
       ></a-torus>
 
       <a-sky color="#87CEEB"></a-sky>
-      <!-- <a-plane position="0 0 0" rotation="-90 0 0" width="50" height="50" color="#808080" material="roughness:1;metalness:0"></a-plane> -->
       <a-grid position="0 0.01 0"></a-grid>
 
       <a-entity id="interaction-hub" position="0 1.5 -1">
@@ -72,42 +59,12 @@
       </a-entity>
 
       <a-entity id="camera-rig" position="0 1.6 0">
-        <a-camera position="0 0 0" ixr-standard-setup="rig: #camera-rig"></a-camera>
+        <a-camera
+          id="main-camera"
+          position="0 0 0"
+          ixr-standard-setup="rig: #camera-rig"
+        ></a-camera>
       </a-entity>
     </a-scene>
-
-    <script>
-      let hasInteracted = false;
-
-      document.querySelector('a-scene').addEventListener('loaded', () => {
-        initInteractionSystem();
-      });
-
-      function initInteractionSystem() {
-        const button = document.getElementById('door-button');
-        const door = document.getElementById('door');
-
-        button.addEventListener('click', () => {
-          if (hasInteracted) return;
-          hasInteracted = true;
-          handleButtonPress(button, door);
-        });
-      }
-
-      function handleButtonPress(buttonEl, doorEl) {
-        buttonEl.setAttribute('color', '#8B0000');
-        triggerDoorAnimation(doorEl);
-      }
-
-      function triggerDoorAnimation(doorEl) {
-        if (doorEl.getAttribute('animation__open')) return;
-        doorEl.setAttribute('animation__open', {
-          property: 'position',
-          to: '-2.3 -2.5 1',
-          dur: 2000,
-          easing: 'easeInOutQuad',
-        });
-      }
-    </script>
   </body>
 </html>

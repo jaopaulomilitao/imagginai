@@ -28,7 +28,9 @@
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.worker.json && vite build && tsc -p tsconfig.build.json",
     "test": "vitest run",
-    "lint": "tsc -p tsconfig.json && tsc -p tsconfig.worker.json"
+    "lint": "tsc -p tsconfig.json && tsc -p tsconfig.worker.json",
+    "example": "pnpm build && pnpm --dir ../../apps/web sync:mediapipe && vite --config examples/basic/vite.config.ts --host --mode https",
+    "example:build": "pnpm build && vite build --config examples/basic/vite.config.ts"
   },
   "peerDependencies": {
     "aframe": "1.7.1"
@@ -38,6 +40,7 @@
   },
   "devDependencies": {
     "@types/three": "0.173.0",
+    "@vitejs/plugin-basic-ssl": "2.3.0",
     "aframe": "1.7.1",
     "typescript": "6.0.3",
     "vite": "8.3.4",

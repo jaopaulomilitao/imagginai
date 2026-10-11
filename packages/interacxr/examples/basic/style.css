@@ -4,12 +4,10 @@ body {
   overflow: hidden;
   background: #000;
 }
+
 #start-screen {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: #222;
   color: white;
   display: flex;
@@ -18,7 +16,9 @@ body {
   justify-content: center;
   z-index: 10000;
   font-family: sans-serif;
+  transition: opacity 0.3s ease;
 }
+
 #start-btn {
   padding: 15px 30px;
   font-size: 18px;
@@ -29,22 +29,7 @@ body {
   color: #fff;
   font-weight: bold;
 }
-#debug-panel {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 15px;
-  border-radius: 8px;
-  z-index: 9999;
-  font-family: monospace;
-  pointer-events: auto;
-}
-.slider-group {
-  margin-bottom: 10px;
-}
-.slider-group label {
-  display: block;
-  margin-bottom: 5px;
+
+#start-error {
+  color: #ff8a8a;
 }
