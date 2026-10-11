@@ -88,3 +88,15 @@ export {
   PressFeedback,
 } from './core/press-feedback';
 export type { Scale3, ScaleTarget } from './core/press-feedback';
+export { TelemetryBus } from './telemetry/telemetry-bus';
+export type {
+  AnyTelemetryRecord,
+  TelemetryEventMap,
+  TelemetryPayload,
+  TelemetryRecord,
+} from './telemetry/telemetry-bus';
+export { ReplayRecorder } from './replay/replay-recorder';
+export { ReplayPlayer } from './replay/replay-player';
+export type { ReplayHandler, ReplayPlayback, ReplayScheduler } from './replay/replay-player';
+export { LANDMARK_SESSION_VERSION, parseLandmarkSession } from './replay/landmark-session';
+export type { LandmarkSession, LandmarkSessionFrame } from './replay/landmark-session';
