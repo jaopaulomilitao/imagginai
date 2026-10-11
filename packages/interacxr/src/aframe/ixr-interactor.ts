@@ -1,6 +1,7 @@
 import AFRAME, { type Component, type Entity } from 'aframe';
 
-import '../core/globals';
+import type { InteractionManager } from '../core/interaction-manager';
+import { getInteracxrSystem } from './interacxr-system';
 import type { CursorComponent } from './ixr-cursor';
 import type { Vector3Like } from './entity-utils';
 
@@ -17,12 +18,14 @@ const PRESS_SCALE = 0.9;
 const PRESS_DURATION_MS = 150;
 
 export class InteractorController {
+  private readonly interaction: InteractionManager;
   private readonly onInteract = (): void => this.interact();
 
   constructor(
     private readonly el: Entity,
     private readonly data: InteractorData,
   ) {
+    this.interaction = getInteracxrSystem(el).interaction;
     el.addEventListener(`ixr-${data.interactPose}-start`, this.onInteract);
   }
 
@@ -35,10 +38,10 @@ export class InteractorController {
   }
 
   private interact(): void {
-    if (!window.ixrInteractionManager.request('interact', this)) return;
+    if (!this.interaction.request('interact', this)) return;
     const hovered = this.cursor()?.controller?.getHoveredElement();
     if (hovered && hovered.matches(this.data.targetClass)) this.press(hovered);
-    window.ixrInteractionManager.release(this);
+    this.interaction.release(this);
   }
 
   private press(hovered: Entity): void {

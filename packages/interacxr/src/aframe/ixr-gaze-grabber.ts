@@ -1,7 +1,8 @@
 import AFRAME, { type Component, type Entity } from 'aframe';
 import type { Material, Mesh } from 'three';
 
-import '../core/globals';
+import type { InteractionManager } from '../core/interaction-manager';
+import { getInteracxrSystem } from './interacxr-system';
 import type { CursorComponent } from './ixr-cursor';
 import { HAND_LOST_EVENT } from './ixr-gesture-detector';
 import { THREE } from './three';
@@ -38,6 +39,7 @@ function singleMaterial(el: Entity): Material | null {
 }
 
 export class GazeGrabberController {
+  private readonly interaction: InteractionManager;
   private isAiming = false;
   private grabbedElement: Entity | null = null;
   private lockedDistance = 0;
@@ -54,6 +56,7 @@ export class GazeGrabberController {
     private readonly el: Entity,
     private readonly data: GazeGrabberData,
   ) {
+    this.interaction = getInteracxrSystem(el).interaction;
     if (data.showHUD) this.createHUD();
     this.listeners = [
       [`ixr-${data.activationPose}-start`, () => this.onAimStart()],
@@ -104,7 +107,7 @@ export class GazeGrabberController {
   }
 
   private onAimStart(): void {
-    if (!window.ixrInteractionManager.request('grab', this)) return;
+    if (!this.interaction.request('grab', this)) return;
     this.isAiming = true;
     this.setHUD('Aiming');
   }
@@ -112,7 +115,7 @@ export class GazeGrabberController {
   private onAimEnd(): void {
     if (this.grabbedElement) return;
     this.isAiming = false;
-    window.ixrInteractionManager.release(this);
+    this.interaction.release(this);
     this.setHUD('Idle');
   }
 
@@ -152,7 +155,7 @@ export class GazeGrabberController {
     this.restoreMaterial(this.grabbedElement);
     this.grabbedElement = null;
     this.isAiming = false;
-    window.ixrInteractionManager.release(this);
+    this.interaction.release(this);
     this.setHUD('Idle');
   }
 

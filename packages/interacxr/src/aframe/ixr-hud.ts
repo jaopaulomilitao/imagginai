@@ -1,6 +1,7 @@
 import AFRAME, { type Component, type Entity } from 'aframe';
 
-import '../core/globals';
+import type { InteractionListener, InteractionManager } from '../core/interaction-manager';
+import { getInteracxrSystem } from './interacxr-system';
 
 interface HudData {
   position: string;
@@ -12,10 +13,6 @@ interface HudData {
 
 export interface HudComponent extends Component<HudData> {
   controller?: HudController;
-}
-
-interface ModeChangeDetail {
-  mode: string;
 }
 
 const MODE_LABELS: Record<string, string> = {
@@ -34,8 +31,9 @@ function createText(attributes: Record<string, unknown>): Entity {
 export class HudController {
   private readonly text: Entity;
   private readonly debug: Entity;
-  private readonly onModeChange = (event: Event): void => {
-    const mode = (event as CustomEvent<ModeChangeDetail>).detail.mode;
+  private readonly interaction: InteractionManager;
+  // o hud acompanha o modo de interação da cena, sem expor a si mesmo em window
+  private readonly onModeChange: InteractionListener = ({ mode }) => {
     this.setText(MODE_LABELS[mode] ?? mode);
   };
 
@@ -57,8 +55,8 @@ export class HudController {
       visible: data.showDebug,
     });
     el.appendChild(this.debug);
-    window.ixrHUD = this;
-    window.addEventListener('ixr-mode-change', this.onModeChange);
+    this.interaction = getInteracxrSystem(el).interaction;
+    this.interaction.subscribe(this.onModeChange);
   }
 
   setText(value: string): void {
@@ -74,7 +72,9 @@ export class HudController {
   }
 
   dispose(): void {
-    window.removeEventListener('ixr-mode-change', this.onModeChange);
+    this.interaction.unsubscribe(this.onModeChange);
+    this.text.remove();
+    this.debug.remove();
   }
 }
 

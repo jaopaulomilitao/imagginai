@@ -1,4 +1,3 @@
-import './core/globals';
 import './aframe/interacxr-system';
 import './aframe/ixr-hud';
 import './aframe/ixr-hand-tracking';
@@ -13,6 +12,11 @@ import './aframe/ixr-passthrough';
 import './aframe/ixr-standard-setup';
 
 export { InteractionManager } from './core/interaction-manager';
+export type {
+  InteractionListener,
+  InteractionMode,
+  InteractionState,
+} from './core/interaction-manager';
 export type { HandDataDetail, HandLandmarks, Landmark } from './core/landmarks';
 export { CameraService, DEFAULT_CAMERA_OPTIONS } from './core/camera-service';
 export type { CameraServiceOptions } from './core/camera-service';

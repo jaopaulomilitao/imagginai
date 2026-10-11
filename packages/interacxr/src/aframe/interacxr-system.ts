@@ -6,6 +6,7 @@ import {
   type ProjectionPlane,
 } from '../calibration/calibration-profile';
 import { CameraService } from '../core/camera-service';
+import { InteractionManager } from '../core/interaction-manager';
 
 export const INTERACXR_SYSTEM = 'interacxr';
 export const CALIBRATION_CHANGE_EVENT = 'ixr-calibration-change';
@@ -16,6 +17,7 @@ const FALLBACK_VIDEO_SIZE = { width: 1280, height: 720 };
 // instâncias compartilhadas por cena, no lugar de estado global em window
 export interface InteracxrSystem extends System {
   camera: CameraService;
+  interaction: InteractionManager;
   calibration: CalibrationProfile;
   projectionPlane: ProjectionPlane;
   startCamera(): Promise<HTMLVideoElement>;
@@ -32,6 +34,7 @@ export function getInteracxrSystem(el: Entity): InteracxrSystem {
 AFRAME.registerSystem<InteracxrSystem>(INTERACXR_SYSTEM, {
   init() {
     this.camera = new CameraService();
+    this.interaction = new InteractionManager();
     this.calibration = new CalibrationProfile();
     this.projectionPlane = this.calibration.projectionPlane(
       FALLBACK_VIDEO_SIZE.width,

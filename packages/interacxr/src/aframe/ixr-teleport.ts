@@ -1,9 +1,10 @@
 import AFRAME, { type Component, type Entity } from 'aframe';
 import type { BufferGeometry, Line, LineBasicMaterial, Object3D, Vector3 } from 'three';
 
-import '../core/globals';
 import type { TargetCache } from '../core/target-cache';
 import { createObject3DCache } from './entity-utils';
+import type { InteractionManager } from '../core/interaction-manager';
+import { getInteracxrSystem } from './interacxr-system';
 import type { CursorComponent } from './ixr-cursor';
 import { HAND_LOST_EVENT } from './ixr-gesture-detector';
 import { THREE } from './three';
@@ -31,6 +32,7 @@ const ARC_UPWARD_BIAS = 0.2;
 const CONFIRM_FEEDBACK_MS = 150;
 
 export class TeleportController {
+  private readonly interaction: InteractionManager;
   private isAiming = false;
   private isValidHit = false;
   private readonly hitPoint = new THREE.Vector3();
@@ -45,6 +47,7 @@ export class TeleportController {
     private readonly el: Entity,
     private readonly data: TeleportData,
   ) {
+    this.interaction = getInteracxrSystem(el).interaction;
     this.arcLine = this.createArc();
     this.reticle = this.createReticle();
     this.obstacles = createObject3DCache(el.sceneEl, data.targetClass);
@@ -108,7 +111,7 @@ export class TeleportController {
       this.cancel();
       return;
     }
-    if (!window.ixrInteractionManager.request('teleport', this)) return;
+    if (!this.interaction.request('teleport', this)) return;
     this.isAiming = true;
     this.arcLine.visible = this.data.showArc;
   }
@@ -132,7 +135,7 @@ export class TeleportController {
     this.isValidHit = false;
     this.arcLine.visible = false;
     this.reticle.setAttribute('visible', false);
-    window.ixrInteractionManager.release(this);
+    this.interaction.release(this);
   }
 
   private traceArc(camera: Object3D): Vector3[] {
