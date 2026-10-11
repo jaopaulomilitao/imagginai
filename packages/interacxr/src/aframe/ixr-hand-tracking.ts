@@ -8,13 +8,12 @@ import {
   HandTracker,
 } from '../core/hand-tracker';
 import type { HandDataDetail } from '../core/landmarks';
-import { logger } from '../core/logger';
 import {
   DEFAULT_MODEL_PATH,
   DEFAULT_WASM_PATH,
   type InferenceDelegate,
 } from '../core/worker-protocol';
-import { getInteracxrSystem } from './interacxr-system';
+import { CAMERA_STOPPED_EVENT, onCameraReady } from './interacxr-system';
 
 interface HandTrackingData {
   maxHands: number;
@@ -30,6 +29,8 @@ export const HAND_DATA_EVENT = 'ixr-hand-data';
 
 export class HandTrackingController {
   readonly tracker: HandTracker;
+  private readonly stopListeningCamera: () => void;
+  private readonly onCameraStopped = (): void => this.tracker.stop();
 
   constructor(
     private readonly el: Entity,
@@ -52,18 +53,9 @@ export class HandTrackingController {
       },
     );
     this.tracker.onFrame((frame) => this.emitHandData(frame));
-  }
-
-  async startTracking(): Promise<void> {
-    try {
-      // o vídeo é o mesmo usado pelo passthrough (camera service compartilhado)
-      // o plano de projeção é recalculado pelo sistema com as dimensões reais do vídeo
-      const video = await getInteracxrSystem(this.el).startCamera();
-      this.tracker.start(video);
-      await this.el.sceneEl.enterVR();
-    } catch (error) {
-      logger.error('camera init failed', error);
-    }
+    // o rastreamento começa quando a aplicação liga a câmera compartilhada (system.start)
+    this.stopListeningCamera = onCameraReady(el, (video) => this.tracker.start(video));
+    el.sceneEl.addEventListener(CAMERA_STOPPED_EVENT, this.onCameraStopped);
   }
 
   // o tick do a-frame continua ativo em sessão imersiva e complementa o requestVideoFrameCallback
@@ -72,6 +64,8 @@ export class HandTrackingController {
   }
 
   dispose(): void {
+    this.stopListeningCamera();
+    this.el.sceneEl.removeEventListener(CAMERA_STOPPED_EVENT, this.onCameraStopped);
     this.tracker.dispose();
   }
 

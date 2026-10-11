@@ -1,9 +1,13 @@
 import AFRAME, { type Component, type Entity } from 'aframe';
 
-import { logger } from '../core/logger';
 import { PassthroughLayer } from '../passthrough/passthrough-layer';
 import { MASK_MODE, type MaskMode } from '../passthrough/passthrough-shader';
-import { CALIBRATION_CHANGE_EVENT, getInteracxrSystem } from './interacxr-system';
+import {
+  CALIBRATION_CHANGE_EVENT,
+  CAMERA_STOPPED_EVENT,
+  getInteracxrSystem,
+  onCameraReady,
+} from './interacxr-system';
 
 type MaskModeName = 'full' | 'bottom-window';
 
@@ -25,6 +29,11 @@ const MASK_MODES: Record<MaskModeName, MaskMode> = {
 // deve ser colocado na entidade da câmera, para que o plano fique preso à cabeça
 export class PassthroughController {
   private layer: PassthroughLayer | null = null;
+  private readonly stopListeningCamera: () => void;
+  private readonly onCameraStopped = (): void => {
+    this.layer?.dispose();
+    this.layer = null;
+  };
   private readonly onCalibrationChange = (): void => {
     const system = getInteracxrSystem(this.el);
     this.layer?.resize(system.projectionPlane);
@@ -36,25 +45,23 @@ export class PassthroughController {
     private data: PassthroughData,
   ) {
     el.sceneEl.addEventListener(CALIBRATION_CHANGE_EVENT, this.onCalibrationChange);
+    // o vídeo é o mesmo do rastreamento de mãos, ligado pela aplicação via system.start
+    this.stopListeningCamera = onCameraReady(el, (video) => this.createLayer(video));
+    el.sceneEl.addEventListener(CAMERA_STOPPED_EVENT, this.onCameraStopped);
   }
 
   get passthroughLayer(): PassthroughLayer | null {
     return this.layer;
   }
 
-  async startCamera(): Promise<void> {
-    try {
-      const system = getInteracxrSystem(this.el);
-      // o vídeo é o mesmo usado pelo rastreamento de mãos (camera service compartilhado)
-      const video = await system.startCamera();
-      this.layer ??= new PassthroughLayer(video, system.projectionPlane, {
-        k1: system.calibration.k1,
-      });
-      this.layer.attachTo(this.el.object3D);
-      this.update(this.data);
-    } catch (error) {
-      logger.error('camera permission is required for passthrough', error);
-    }
+  private createLayer(video: HTMLVideoElement): void {
+    if (this.layer) return;
+    const system = getInteracxrSystem(this.el);
+    this.layer = new PassthroughLayer(video, system.projectionPlane, {
+      k1: system.calibration.k1,
+    });
+    this.layer.attachTo(this.el.object3D);
+    this.update(this.data);
   }
 
   update(data: PassthroughData): void {
@@ -65,6 +72,8 @@ export class PassthroughController {
   }
 
   dispose(): void {
+    this.stopListeningCamera();
+    this.el.sceneEl.removeEventListener(CAMERA_STOPPED_EVENT, this.onCameraStopped);
     this.el.sceneEl.removeEventListener(CALIBRATION_CHANGE_EVENT, this.onCalibrationChange);
     this.layer?.dispose();
     this.layer = null;

@@ -10,6 +10,12 @@ import { InteractionManager } from '../core/interaction-manager';
 
 export const INTERACXR_SYSTEM = 'interacxr';
 export const CALIBRATION_CHANGE_EVENT = 'ixr-calibration-change';
+export const CAMERA_READY_EVENT = 'ixr-camera-ready';
+export const CAMERA_STOPPED_EVENT = 'ixr-camera-stopped';
+
+export interface CameraReadyDetail {
+  video: HTMLVideoElement;
+}
 
 // proporção usada até o vídeo real informar suas dimensões
 const FALLBACK_VIDEO_SIZE = { width: 1280, height: 720 };
@@ -20,7 +26,9 @@ export interface InteracxrSystem extends System {
   interaction: InteractionManager;
   calibration: CalibrationProfile;
   projectionPlane: ProjectionPlane;
-  startCamera(): Promise<HTMLVideoElement>;
+  // chamado pela aplicação (a partir de um gesto do usuário); a biblioteca não cria interface
+  start(): Promise<HTMLVideoElement>;
+  stop(): void;
   setCalibration(settings: Partial<CalibrationSettings>): void;
   refreshProjection(): void;
 }
@@ -41,10 +49,17 @@ AFRAME.registerSystem<InteracxrSystem>(INTERACXR_SYSTEM, {
       FALLBACK_VIDEO_SIZE.height,
     );
 
-    this.startCamera = async () => {
+    this.start = async () => {
       const video = await this.camera.start();
       this.refreshProjection();
+      const detail: CameraReadyDetail = { video };
+      this.sceneEl.emit(CAMERA_READY_EVENT, detail);
       return video;
+    };
+
+    this.stop = () => {
+      this.camera.stop();
+      this.sceneEl.emit(CAMERA_STOPPED_EVENT);
     };
 
     this.setCalibration = (settings) => {
@@ -61,3 +76,14 @@ AFRAME.registerSystem<InteracxrSystem>(INTERACXR_SYSTEM, {
     };
   },
 });
+
+// executa o callback quando o vídeo compartilhado estiver disponível (imediatamente, se já estiver)
+export function onCameraReady(el: Entity, callback: (video: HTMLVideoElement) => void): () => void {
+  const listener = (event: Event): void => {
+    callback((event as CustomEvent<CameraReadyDetail>).detail.video);
+  };
+  el.sceneEl.addEventListener(CAMERA_READY_EVENT, listener);
+  const current = getInteracxrSystem(el).camera.video;
+  if (current) callback(current);
+  return () => el.sceneEl.removeEventListener(CAMERA_READY_EVENT, listener);
+}

@@ -101,7 +101,10 @@ export class HandTracker {
     return () => this.listeners.delete(listener);
   }
 
+  // idempotente: iniciar de novo com o mesmo vídeo não cria um segundo laço de quadros
   start(video: HTMLVideoElement): void {
+    if (this.video === video) return;
+    this.stop();
     this.video = video;
     this.scheduleFrameCallback();
   }

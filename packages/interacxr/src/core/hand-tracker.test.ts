@@ -123,6 +123,16 @@ describe('HandTracker', () => {
     expect(tracker.stats.targetHz).toBe(5);
   });
 
+  it('ignores a second start with the same video', () => {
+    const { tracker } = setup();
+    const video = { readyState: 4, currentTime: 0, requestVideoFrameCallback: vi.fn(() => 1) };
+
+    tracker.start(video as unknown as HTMLVideoElement);
+    tracker.start(video as unknown as HTMLVideoElement);
+
+    expect(video.requestVideoFrameCallback).toHaveBeenCalledTimes(1);
+  });
+
   it('terminates the worker on dispose', () => {
     const { worker, tracker } = setup();
 

@@ -20,8 +20,14 @@ export type {
 export type { HandDataDetail, HandLandmarks, Landmark } from './core/landmarks';
 export { CameraService, DEFAULT_CAMERA_OPTIONS } from './core/camera-service';
 export type { CameraServiceOptions } from './core/camera-service';
-export { getInteracxrSystem, INTERACXR_SYSTEM } from './aframe/interacxr-system';
-export type { InteracxrSystem } from './aframe/interacxr-system';
+export {
+  CAMERA_READY_EVENT,
+  CAMERA_STOPPED_EVENT,
+  getInteracxrSystem,
+  INTERACXR_SYSTEM,
+  onCameraReady,
+} from './aframe/interacxr-system';
+export type { CameraReadyDetail, InteracxrSystem } from './aframe/interacxr-system';
 export { CalibrationProfile, DEFAULT_CALIBRATION } from './calibration/calibration-profile';
 export type {
   CalibrationSettings,
