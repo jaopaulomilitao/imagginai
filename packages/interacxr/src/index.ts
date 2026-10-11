@@ -60,6 +60,7 @@ export {
 export type { InferenceRateConfig } from './core/inference-rate';
 export { DEFAULT_MODEL_PATH, DEFAULT_WASM_PATH } from './core/worker-protocol';
 export { HAND_DATA_EVENT } from './aframe/ixr-hand-tracking';
+export type { HandTrackingComponent } from './aframe/ixr-hand-tracking';
 export { DEFAULT_ONE_EURO, LandmarkSmoother, OneEuroFilter } from './core/filters';
 export type { OneEuroParams } from './core/filters';
 export {

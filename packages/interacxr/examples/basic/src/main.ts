@@ -4,6 +4,7 @@ import type { Entity, Scene } from 'aframe';
 import { getInteracxrSystem } from 'interacxr';
 
 import scenarioUrl from '../assets/scenario-interacxr.glb?url';
+import { readRecordSeconds, recordHand, showRecording } from './recording';
 
 const START_FADE_MS = 300;
 
@@ -19,6 +20,11 @@ async function startExperience(scene: Scene, overlay: HTMLElement): Promise<void
   await scene.enterVR();
   overlay.style.opacity = '0';
   setTimeout(() => overlay.remove(), START_FADE_MS);
+  const recordSeconds = readRecordSeconds(location.search);
+  if (recordSeconds !== null) {
+    const result = await recordHand(requireElement<Entity>('#main-camera'), recordSeconds);
+    await showRecording(scene, result);
+  }
 }
 
 function openDoor(button: Entity, door: Entity): void {
