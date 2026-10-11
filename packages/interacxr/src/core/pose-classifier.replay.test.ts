@@ -36,3 +36,21 @@ describe('PoseClassifier replay', () => {
     },
   );
 });
+
+// gravações reais do aparelho: só as transições de pinça são verificadas
+const deviceFiles = import.meta.glob<unknown>(
+  '../../../../fixtures/landmark-sessions/device/*.json',
+  { eager: true, import: 'default' },
+);
+const deviceSessions = Object.values(deviceFiles).map(parseLandmarkSession);
+
+describe('PoseClassifier device recordings', () => {
+  it.each(deviceSessions.map((session) => [session.name, session] as const))(
+    'detects every recorded pinch in %s',
+    (_name, session) => {
+      const pinchTransitions = replayTransitions(session).filter((t) => t.startsWith('pinch:'));
+
+      expect(pinchTransitions).toEqual(session.expectedEvents);
+    },
+  );
+});

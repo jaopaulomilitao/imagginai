@@ -161,7 +161,9 @@ export class PoseClassifier {
       this.smoother?.reset();
       this.rawPinch = false;
     }
-    const flags = landmarks ? classifyFrame(landmarks, this.rawPinch, this.config) : NO_POSES;
+    // a classificação usa os pontos brutos: o atraso do filtro encobria pinças rápidas (~150 ms)
+    // em gravação real; o filtro serve às posições, e a confirmação em 3 quadros ao ruído
+    const flags = hand ? classifyFrame(hand, this.rawPinch, this.config) : NO_POSES;
     this.rawPinch = flags.pinch;
 
     const presence = this.handPresence.update(landmarks !== null);
@@ -169,7 +171,7 @@ export class PoseClassifier {
       events: this.collectEvents(flags),
       handLost: presence === 'end',
       landmarks,
-      metrics: landmarks ? measureHand(landmarks) : null,
+      metrics: hand ? measureHand(hand) : null,
     };
   }
 
