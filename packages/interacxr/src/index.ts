@@ -37,6 +37,8 @@ export type {
 export { CALIBRATION_CHANGE_EVENT } from './aframe/interacxr-system';
 export { DEFAULT_PASSTHROUGH_OPTIONS, PassthroughLayer } from './passthrough/passthrough-layer';
 export type { PassthroughLayerOptions } from './passthrough/passthrough-layer';
+export { PassthroughController } from './aframe/ixr-passthrough';
+export type { PassthroughComponent } from './aframe/ixr-passthrough';
 export { MASK_MODE } from './passthrough/passthrough-shader';
 export type { MaskMode } from './passthrough/passthrough-shader';
 export {

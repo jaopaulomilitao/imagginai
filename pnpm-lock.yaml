@@ -40,6 +40,9 @@ importers:
       aframe:
         specifier: 1.7.1
         version: 1.7.1
+      interacxr:
+        specifier: workspace:*
+        version: link:../../packages/interacxr
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -56,6 +59,9 @@ importers:
       '@types/react-dom':
         specifier: 18.3.7
         version: 18.3.7(@types/react@18.3.31)
+      '@types/three':
+        specifier: 0.173.0
+        version: 0.173.0
       '@vitejs/plugin-basic-ssl':
         specifier: 2.3.0
         version: 2.3.0(vite@8.3.4(@types/node@26.6.5))
