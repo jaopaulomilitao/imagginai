@@ -29,3 +29,24 @@ export { DEFAULT_PASSTHROUGH_OPTIONS, PassthroughLayer } from './passthrough/pas
 export type { PassthroughLayerOptions } from './passthrough/passthrough-layer';
 export { MASK_MODE } from './passthrough/passthrough-shader';
 export type { MaskMode } from './passthrough/passthrough-shader';
+export {
+  browserFrameCapture,
+  DEFAULT_HAND_TRACKER_OPTIONS,
+  DEFAULT_INPUT_WIDTH,
+  HandTracker,
+} from './core/hand-tracker';
+export type {
+  HandFrame,
+  HandFrameListener,
+  HandTrackerDependencies,
+  HandTrackerOptions,
+  HandTrackerStats,
+} from './core/hand-tracker';
+export {
+  DEFAULT_INFERENCE_RATE,
+  ECONOMY_INFERENCE_HZ,
+  InferenceRateController,
+} from './core/inference-rate';
+export type { InferenceRateConfig } from './core/inference-rate';
+export { DEFAULT_MODEL_PATH, DEFAULT_WASM_PATH } from './core/worker-protocol';
+export { HAND_DATA_EVENT } from './aframe/ixr-hand-tracking';

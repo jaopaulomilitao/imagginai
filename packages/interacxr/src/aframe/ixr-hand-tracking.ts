@@ -1,93 +1,83 @@
 import AFRAME, { type Component, type Entity } from 'aframe';
 
 import HandWorker from '../core/hand-worker.ts?worker&inline';
+import {
+  browserFrameCapture,
+  DEFAULT_HAND_TRACKER_OPTIONS,
+  type HandFrame,
+  HandTracker,
+} from '../core/hand-tracker';
 import type { HandDataDetail } from '../core/landmarks';
 import { logger } from '../core/logger';
-import { getInteracxrSystem } from './interacxr-system';
 import {
   DEFAULT_MODEL_PATH,
   DEFAULT_WASM_PATH,
   type InferenceDelegate,
-  type WorkerRequest,
-  type WorkerResponse,
 } from '../core/worker-protocol';
+import { getInteracxrSystem } from './interacxr-system';
 
 interface HandTrackingData {
   maxHands: number;
   delegate: InferenceDelegate;
+  inputWidth: number;
 }
 
 export interface HandTrackingComponent extends Component<HandTrackingData> {
   controller?: HandTrackingController;
 }
 
-const HAVE_CURRENT_DATA = 2;
+export const HAND_DATA_EVENT = 'ixr-hand-data';
 
 export class HandTrackingController {
-  private isProcessing = false;
-  private videoElement: HTMLVideoElement | null = null;
-  private readonly worker: Worker;
+  readonly tracker: HandTracker;
 
   constructor(
     private readonly el: Entity,
     data: HandTrackingData,
   ) {
-    this.worker = new HandWorker();
-    this.worker.onmessage = (event: MessageEvent<WorkerResponse>) =>
-      this.onWorkerMessage(event.data);
-    this.post({
-      type: 'INIT',
-      maxHands: data.maxHands,
-      delegate: data.delegate,
-      wasmBaseUrl: new URL(DEFAULT_WASM_PATH, location.origin).href,
-      modelUrl: new URL(DEFAULT_MODEL_PATH, location.origin).href,
-    });
+    this.tracker = new HandTracker(
+      {
+        ...DEFAULT_HAND_TRACKER_OPTIONS,
+        maxHands: data.maxHands,
+        delegate: data.delegate,
+        inputWidth: data.inputWidth,
+        // urls absolutas, pois o worker embutido não resolve caminhos relativos
+        wasmBaseUrl: new URL(DEFAULT_WASM_PATH, location.origin).href,
+        modelUrl: new URL(DEFAULT_MODEL_PATH, location.origin).href,
+      },
+      {
+        createWorker: () => new HandWorker(),
+        captureFrame: browserFrameCapture,
+        now: () => performance.now(),
+      },
+    );
+    this.tracker.onFrame((frame) => this.emitHandData(frame));
   }
 
   async startTracking(): Promise<void> {
     try {
       // o vídeo é o mesmo usado pelo passthrough (camera service compartilhado)
       // o plano de projeção é recalculado pelo sistema com as dimensões reais do vídeo
-      this.videoElement = await getInteracxrSystem(this.el).startCamera();
+      const video = await getInteracxrSystem(this.el).startCamera();
+      this.tracker.start(video);
       await this.el.sceneEl.enterVR();
     } catch (error) {
       logger.error('camera init failed', error);
     }
   }
 
-  async tick(time: number): Promise<void> {
-    const video = this.videoElement;
-    if (!video || this.isProcessing || video.readyState < HAVE_CURRENT_DATA) return;
-
-    this.isProcessing = true;
-    try {
-      const bitmap = await createImageBitmap(video);
-      const request: WorkerRequest = { type: 'PROCESS', image: bitmap, timestamp: time };
-      this.worker.postMessage(request, [bitmap]);
-    } catch (error) {
-      logger.warn('frame skipped', error);
-      this.isProcessing = false;
-    }
+  // o tick do a-frame continua ativo em sessão imersiva e complementa o requestVideoFrameCallback
+  tick(): void {
+    this.tracker.pump();
   }
 
   dispose(): void {
-    this.worker.terminate();
-    this.videoElement = null;
+    this.tracker.dispose();
   }
 
-  private onWorkerMessage(message: WorkerResponse): void {
-    if (message.type === 'ERROR') {
-      logger.error('hand worker failed', message.message);
-      return;
-    }
-    if (message.type !== 'RESULT') return;
-    const detail: HandDataDetail = { landmarks: message.landmarks[0] ?? null };
-    this.el.emit('ixr-hand-data', detail);
-    this.isProcessing = false;
-  }
-
-  private post(message: WorkerRequest): void {
-    this.worker.postMessage(message);
+  private emitHandData(frame: HandFrame): void {
+    const detail: HandDataDetail = { landmarks: frame.landmarks, timestampMs: frame.timestampMs };
+    this.el.emit(HAND_DATA_EVENT, detail);
   }
 }
 
@@ -95,12 +85,13 @@ AFRAME.registerComponent<HandTrackingComponent>('ixr-hand-tracking', {
   schema: {
     maxHands: { type: 'int', default: 1 },
     delegate: { type: 'string', default: 'GPU', oneOf: ['CPU', 'GPU'] },
+    inputWidth: { type: 'int', default: DEFAULT_HAND_TRACKER_OPTIONS.inputWidth },
   },
   init() {
     this.controller = new HandTrackingController(this.el, this.data);
   },
-  tick(time) {
-    void this.controller?.tick(time);
+  tick() {
+    this.controller?.tick();
   },
   remove() {
     this.controller?.dispose();

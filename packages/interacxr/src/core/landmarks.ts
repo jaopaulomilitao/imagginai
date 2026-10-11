@@ -25,4 +25,6 @@ export const LANDMARK = {
 
 export interface HandDataDetail {
   landmarks: HandLandmarks | null;
+  // instante de captura do quadro (performance.now), usado pelos filtros temporais
+  timestampMs: number;
 }
