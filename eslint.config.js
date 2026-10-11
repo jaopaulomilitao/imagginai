@@ -12,8 +12,7 @@ export default tseslint.config(
       '**/node_modules/**',
       'apps/api/**',
       'apps/web/public/**',
-      // é mantido fora do lint até a migração da fase 2
-      'packages/interacxr/**',
+      'packages/interacxr/project_review.md',
     ],
   },
   js.configs.recommended,

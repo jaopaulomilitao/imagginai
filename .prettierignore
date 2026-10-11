@@ -3,6 +3,7 @@ dist/
 coverage/
 node_modules/
 apps/api/
-packages/interacxr/
+packages/interacxr/project_review.md
+packages/interacxr/examples/basic/assets/
 docs/spec.md
 apps/web/public/mediapipe/

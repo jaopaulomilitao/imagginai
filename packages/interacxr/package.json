@@ -1,0 +1,46 @@
+{
+  "name": "interacxr",
+  "version": "0.2.0",
+  "description": "Low-cost WebXR hand tracking and interaction toolkit for A-Frame (MediaPipe in a Web Worker).",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "./src/aframe/**",
+    "./dist/interacxr.js"
+  ],
+  "main": "./dist/interacxr.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/interacxr.js"
+    },
+    "./aframe-types": {
+      "types": "./src/types/aframe.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src/types",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.worker.json && vite build && tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "lint": "tsc -p tsconfig.json && tsc -p tsconfig.worker.json"
+  },
+  "peerDependencies": {
+    "aframe": "1.7.1"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "1.1.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.173.0",
+    "aframe": "1.7.1",
+    "typescript": "6.0.3",
+    "vite": "8.3.4",
+    "vitest": "5.0.3"
+  }
+}
