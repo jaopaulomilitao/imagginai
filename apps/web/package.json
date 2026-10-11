@@ -4,8 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "sync:mediapipe": "node ../../packages/interacxr/scripts/sync-mediapipe.mjs public/mediapipe",
+    "predev": "pnpm run sync:mediapipe",
     "dev": "vite",
-    "dev:https": "vite --host --mode https",
+    "dev:https": "pnpm run sync:mediapipe && vite --host --mode https",
+    "prebuild": "pnpm run sync:mediapipe",
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview",
     "test": "vitest run",
