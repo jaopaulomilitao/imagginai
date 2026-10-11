@@ -1,0 +1,412 @@
+{
+  "schemaVersion": "1.0",
+  "packId": "pack-demo-cardio-v1",
+  "zoneId": "zone-demo",
+  "sources": [
+    {
+      "id": "src-cardio",
+      "title": "Sistema cardiovascular — material de demonstração",
+      "pageCount": 4
+    }
+  ],
+  "concepts": [
+    {
+      "id": "c-heart",
+      "label": "Coração",
+      "definition": "Órgão muscular oco que bombeia o sangue por contrações rítmicas, dividido em quatro câmaras: dois átrios e dois ventrículos.",
+      "anchors": [{ "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c1" }],
+      "position": [0.0, 0.1, 0.0]
+    },
+    {
+      "id": "c-right-atrium",
+      "label": "Átrio direito",
+      "definition": "Câmara que recebe o sangue pobre em oxigênio vindo do corpo pelas veias cavas superior e inferior.",
+      "anchors": [{ "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c1" }],
+      "position": [-0.45, 0.45, 0.2]
+    },
+    {
+      "id": "c-right-ventricle",
+      "label": "Ventrículo direito",
+      "definition": "Câmara que bombeia o sangue pobre em oxigênio para os pulmões através do tronco pulmonar.",
+      "anchors": [{ "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c2" }],
+      "position": [-0.45, -0.35, 0.25]
+    },
+    {
+      "id": "c-left-atrium",
+      "label": "Átrio esquerdo",
+      "definition": "Câmara que recebe o sangue rico em oxigênio vindo dos pulmões pelas veias pulmonares.",
+      "anchors": [{ "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c2" }],
+      "position": [0.45, 0.45, 0.2]
+    },
+    {
+      "id": "c-left-ventricle",
+      "label": "Ventrículo esquerdo",
+      "definition": "Câmara de parede mais espessa, que bombeia o sangue rico em oxigênio para todo o corpo através da aorta.",
+      "anchors": [{ "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c2" }],
+      "position": [0.45, -0.35, 0.25]
+    },
+    {
+      "id": "c-tricuspid-valve",
+      "label": "Valva tricúspide",
+      "definition": "Valva entre o átrio direito e o ventrículo direito que impede o refluxo de sangue para o átrio durante a contração ventricular.",
+      "anchors": [{ "sourceId": "src-cardio", "page": 2, "chunkId": "src-cardio-p2-c1" }],
+      "position": [-0.7, 0.05, 0.45]
+    },
+    {
+      "id": "c-mitral-valve",
+      "label": "Valva mitral",
+      "definition": "Valva entre o átrio esquerdo e o ventrículo esquerdo, também chamada bicúspide, que impede o refluxo de sangue para o átrio.",
+      "anchors": [{ "sourceId": "src-cardio", "page": 2, "chunkId": "src-cardio-p2-c1" }],
+      "position": [0.7, 0.05, 0.45]
+    },
+    {
+      "id": "c-pulmonary-trunk",
+      "label": "Tronco pulmonar",
+      "definition": "Vaso que leva o sangue pobre em oxigênio do ventrículo direito aos pulmões, dividindo-se nas artérias pulmonares direita e esquerda.",
+      "anchors": [{ "sourceId": "src-cardio", "page": 3, "chunkId": "src-cardio-p3-c1" }],
+      "position": [-0.3, 0.8, -0.4]
+    },
+    {
+      "id": "c-pulmonary-veins",
+      "label": "Veias pulmonares",
+      "definition": "Vasos que trazem o sangue rico em oxigênio dos pulmões de volta ao átrio esquerdo.",
+      "anchors": [{ "sourceId": "src-cardio", "page": 3, "chunkId": "src-cardio-p3-c1" }],
+      "position": [0.3, 0.8, -0.4]
+    },
+    {
+      "id": "c-aorta",
+      "label": "Aorta",
+      "definition": "Maior artéria do corpo; conduz o sangue rico em oxigênio do ventrículo esquerdo para a circulação sistêmica.",
+      "anchors": [{ "sourceId": "src-cardio", "page": 3, "chunkId": "src-cardio-p3-c1" }],
+      "position": [0.75, -0.75, -0.3]
+    },
+    {
+      "id": "c-pulmonary-circulation",
+      "label": "Circulação pulmonar",
+      "definition": "Trajeto do sangue entre o coração e os pulmões, onde o sangue libera gás carbônico e capta oxigênio.",
+      "anchors": [{ "sourceId": "src-cardio", "page": 4, "chunkId": "src-cardio-p4-c1" }],
+      "position": [0.0, 0.95, -0.8]
+    },
+    {
+      "id": "c-systemic-circulation",
+      "label": "Circulação sistêmica",
+      "definition": "Trajeto do sangue do coração para os tecidos do corpo e de volta ao coração, levando oxigênio e nutrientes e recolhendo gás carbônico.",
+      "anchors": [{ "sourceId": "src-cardio", "page": 4, "chunkId": "src-cardio-p4-c1" }],
+      "position": [0.0, -0.95, -0.8]
+    }
+  ],
+  "edges": [
+    {
+      "sourceId": "c-heart",
+      "targetId": "c-right-atrium",
+      "relation": "contém",
+      "anchors": [{ "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c1" }]
+    },
+    {
+      "sourceId": "c-heart",
+      "targetId": "c-right-ventricle",
+      "relation": "contém",
+      "anchors": [{ "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c1" }]
+    },
+    {
+      "sourceId": "c-heart",
+      "targetId": "c-left-atrium",
+      "relation": "contém",
+      "anchors": [{ "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c1" }]
+    },
+    {
+      "sourceId": "c-heart",
+      "targetId": "c-left-ventricle",
+      "relation": "contém",
+      "anchors": [{ "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c1" }]
+    },
+    {
+      "sourceId": "c-right-atrium",
+      "targetId": "c-tricuspid-valve",
+      "relation": "esvazia-se pela",
+      "anchors": [{ "sourceId": "src-cardio", "page": 2, "chunkId": "src-cardio-p2-c1" }]
+    },
+    {
+      "sourceId": "c-tricuspid-valve",
+      "targetId": "c-right-ventricle",
+      "relation": "abre-se para o",
+      "anchors": [{ "sourceId": "src-cardio", "page": 2, "chunkId": "src-cardio-p2-c1" }]
+    },
+    {
+      "sourceId": "c-right-ventricle",
+      "targetId": "c-pulmonary-trunk",
+      "relation": "bombeia para o",
+      "anchors": [{ "sourceId": "src-cardio", "page": 3, "chunkId": "src-cardio-p3-c1" }]
+    },
+    {
+      "sourceId": "c-pulmonary-trunk",
+      "targetId": "c-pulmonary-circulation",
+      "relation": "inicia a",
+      "anchors": [{ "sourceId": "src-cardio", "page": 4, "chunkId": "src-cardio-p4-c1" }]
+    },
+    {
+      "sourceId": "c-pulmonary-circulation",
+      "targetId": "c-pulmonary-veins",
+      "relation": "retorna pelas",
+      "anchors": [{ "sourceId": "src-cardio", "page": 4, "chunkId": "src-cardio-p4-c1" }]
+    },
+    {
+      "sourceId": "c-pulmonary-veins",
+      "targetId": "c-left-atrium",
+      "relation": "desembocam no",
+      "anchors": [{ "sourceId": "src-cardio", "page": 3, "chunkId": "src-cardio-p3-c1" }]
+    },
+    {
+      "sourceId": "c-left-atrium",
+      "targetId": "c-mitral-valve",
+      "relation": "esvazia-se pela",
+      "anchors": [{ "sourceId": "src-cardio", "page": 2, "chunkId": "src-cardio-p2-c1" }]
+    },
+    {
+      "sourceId": "c-mitral-valve",
+      "targetId": "c-left-ventricle",
+      "relation": "abre-se para o",
+      "anchors": [{ "sourceId": "src-cardio", "page": 2, "chunkId": "src-cardio-p2-c1" }]
+    },
+    {
+      "sourceId": "c-left-ventricle",
+      "targetId": "c-aorta",
+      "relation": "bombeia para a",
+      "anchors": [{ "sourceId": "src-cardio", "page": 3, "chunkId": "src-cardio-p3-c1" }]
+    },
+    {
+      "sourceId": "c-aorta",
+      "targetId": "c-systemic-circulation",
+      "relation": "inicia a",
+      "anchors": [{ "sourceId": "src-cardio", "page": 4, "chunkId": "src-cardio-p4-c1" }]
+    },
+    {
+      "sourceId": "c-systemic-circulation",
+      "targetId": "c-right-atrium",
+      "relation": "retorna ao",
+      "anchors": [{ "sourceId": "src-cardio", "page": 4, "chunkId": "src-cardio-p4-c1" }]
+    }
+  ],
+  "cards": [
+    {
+      "id": "card-chambers",
+      "title": "As quatro câmaras do coração",
+      "body": "O coração tem dois átrios, que recebem o sangue, e dois ventrículos, que o bombeiam. O lado direito trabalha com sangue pobre em oxigênio; o lado esquerdo, com sangue rico em oxigênio.",
+      "conceptIds": [
+        "c-heart",
+        "c-right-atrium",
+        "c-right-ventricle",
+        "c-left-atrium",
+        "c-left-ventricle"
+      ],
+      "anchors": [
+        { "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c1" },
+        { "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c2" }
+      ]
+    },
+    {
+      "id": "card-av-valves",
+      "title": "Valvas atrioventriculares",
+      "body": "A valva tricúspide separa o átrio e o ventrículo direitos; a valva mitral separa o átrio e o ventrículo esquerdos. Ambas garantem que o sangue siga em um único sentido.",
+      "conceptIds": ["c-tricuspid-valve", "c-mitral-valve"],
+      "anchors": [{ "sourceId": "src-cardio", "page": 2, "chunkId": "src-cardio-p2-c1" }]
+    },
+    {
+      "id": "card-valve-closure",
+      "title": "Fechamento das valvas",
+      "body": "Quando a pressão no ventrículo supera a do átrio, as valvas atrioventriculares se fecham. Esse fechamento está associado à primeira bulha cardíaca.",
+      "conceptIds": ["c-tricuspid-valve", "c-mitral-valve"],
+      "anchors": [{ "sourceId": "src-cardio", "page": 2, "chunkId": "src-cardio-p2-c2" }]
+    },
+    {
+      "id": "card-great-vessels",
+      "title": "Grandes vasos",
+      "body": "O tronco pulmonar sai do ventrículo direito rumo aos pulmões; as veias pulmonares trazem o sangue oxigenado ao átrio esquerdo; a aorta sai do ventrículo esquerdo rumo ao corpo.",
+      "conceptIds": ["c-pulmonary-trunk", "c-pulmonary-veins", "c-aorta"],
+      "anchors": [{ "sourceId": "src-cardio", "page": 3, "chunkId": "src-cardio-p3-c1" }]
+    },
+    {
+      "id": "card-two-circulations",
+      "title": "Duas circulações em série",
+      "body": "Na circulação pulmonar o sangue troca gases nos pulmões; na circulação sistêmica ele distribui oxigênio aos tecidos. Uma alimenta a outra, formando um circuito fechado.",
+      "conceptIds": ["c-pulmonary-circulation", "c-systemic-circulation"],
+      "anchors": [{ "sourceId": "src-cardio", "page": 4, "chunkId": "src-cardio-p4-c1" }]
+    },
+    {
+      "id": "card-left-wall",
+      "title": "Por que o ventrículo esquerdo é mais espesso",
+      "body": "O ventrículo esquerdo impulsiona o sangue por todo o corpo, contra uma resistência maior que a do circuito pulmonar. Por isso sua parede muscular é mais espessa.",
+      "conceptIds": ["c-left-ventricle", "c-systemic-circulation"],
+      "anchors": [
+        { "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c2" },
+        { "sourceId": "src-cardio", "page": 4, "chunkId": "src-cardio-p4-c1" }
+      ]
+    }
+  ],
+  "quiz": [
+    {
+      "id": "q-left-atrium-input",
+      "prompt": "Qual câmara recebe o sangue que vem dos pulmões?",
+      "options": ["Átrio direito", "Átrio esquerdo", "Ventrículo direito", "Ventrículo esquerdo"],
+      "correctIndex": 1,
+      "explanation": "As veias pulmonares desembocam no átrio esquerdo, trazendo sangue rico em oxigênio.",
+      "conceptIds": ["c-left-atrium", "c-pulmonary-veins"],
+      "anchors": [{ "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c2" }]
+    },
+    {
+      "id": "q-aorta-role",
+      "prompt": "Qual vaso conduz o sangue do ventrículo esquerdo para o corpo?",
+      "options": ["Tronco pulmonar", "Veia cava superior", "Aorta", "Veias pulmonares"],
+      "correctIndex": 2,
+      "explanation": "A aorta é a maior artéria do corpo e inicia a circulação sistêmica.",
+      "conceptIds": ["c-aorta", "c-left-ventricle"],
+      "anchors": [{ "sourceId": "src-cardio", "page": 3, "chunkId": "src-cardio-p3-c1" }]
+    },
+    {
+      "id": "q-tricuspid-location",
+      "prompt": "Qual valva separa o átrio direito do ventrículo direito?",
+      "options": ["Mitral", "Aórtica", "Pulmonar", "Tricúspide"],
+      "correctIndex": 3,
+      "explanation": "A valva tricúspide fica entre as câmaras do lado direito do coração.",
+      "conceptIds": ["c-tricuspid-valve"],
+      "anchors": [{ "sourceId": "src-cardio", "page": 2, "chunkId": "src-cardio-p2-c1" }]
+    },
+    {
+      "id": "q-oxygen-uptake",
+      "prompt": "Em que parte do trajeto o sangue capta oxigênio?",
+      "options": [
+        "Nos pulmões, durante a circulação pulmonar",
+        "No ventrículo esquerdo",
+        "Na aorta",
+        "No átrio direito"
+      ],
+      "correctIndex": 0,
+      "explanation": "Na circulação pulmonar o sangue libera gás carbônico e capta oxigênio nos pulmões.",
+      "conceptIds": ["c-pulmonary-circulation"],
+      "anchors": [{ "sourceId": "src-cardio", "page": 4, "chunkId": "src-cardio-p4-c1" }]
+    },
+    {
+      "id": "q-left-wall-thickness",
+      "prompt": "Por que a parede do ventrículo esquerdo é mais espessa?",
+      "options": [
+        "Porque recebe sangue de todo o corpo",
+        "Porque bombeia sangue para todo o corpo, contra maior resistência",
+        "Porque armazena oxigênio",
+        "Porque contém duas valvas"
+      ],
+      "correctIndex": 1,
+      "explanation": "Impulsionar o sangue por toda a circulação sistêmica exige mais força muscular.",
+      "conceptIds": ["c-left-ventricle", "c-systemic-circulation"],
+      "anchors": [{ "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c2" }]
+    },
+    {
+      "id": "q-backflow",
+      "prompt": "O que impede o refluxo de sangue para o átrio durante a contração ventricular?",
+      "options": [
+        "O fechamento das valvas atrioventriculares",
+        "A abertura da aorta",
+        "A contração dos átrios",
+        "As veias pulmonares"
+      ],
+      "correctIndex": 0,
+      "explanation": "As valvas tricúspide e mitral se fecham quando a pressão ventricular supera a atrial.",
+      "conceptIds": ["c-tricuspid-valve", "c-mitral-valve"],
+      "anchors": [
+        { "sourceId": "src-cardio", "page": 2, "chunkId": "src-cardio-p2-c1" },
+        { "sourceId": "src-cardio", "page": 2, "chunkId": "src-cardio-p2-c2" }
+      ]
+    },
+    {
+      "id": "q-pulmonary-trunk-blood",
+      "prompt": "Que tipo de sangue o tronco pulmonar transporta?",
+      "options": ["Rico em oxigênio", "Pobre em oxigênio", "Sem hemácias", "Apenas plasma"],
+      "correctIndex": 1,
+      "explanation": "O tronco pulmonar leva aos pulmões o sangue pobre em oxigênio vindo do ventrículo direito.",
+      "conceptIds": ["c-pulmonary-trunk", "c-right-ventricle"],
+      "anchors": [{ "sourceId": "src-cardio", "page": 3, "chunkId": "src-cardio-p3-c1" }]
+    },
+    {
+      "id": "q-systemic-return",
+      "prompt": "Para onde retorna o sangue ao final da circulação sistêmica?",
+      "options": ["Átrio esquerdo", "Ventrículo direito", "Átrio direito", "Aorta"],
+      "correctIndex": 2,
+      "explanation": "As veias cavas devolvem o sangue pobre em oxigênio ao átrio direito.",
+      "conceptIds": ["c-systemic-circulation", "c-right-atrium"],
+      "anchors": [
+        { "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c1" },
+        { "sourceId": "src-cardio", "page": 4, "chunkId": "src-cardio-p4-c1" }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "asset-cardio-graph",
+      "kind": "concept-graph",
+      "title": "Mapa do sistema cardiovascular",
+      "whySpatial": "Câmaras, valvas e vasos formam um circuito fechado que fica mais claro quando visto como uma rede tridimensional.",
+      "nodeIds": [
+        "c-heart",
+        "c-right-atrium",
+        "c-right-ventricle",
+        "c-left-atrium",
+        "c-left-ventricle",
+        "c-tricuspid-valve",
+        "c-mitral-valve",
+        "c-pulmonary-trunk",
+        "c-pulmonary-veins",
+        "c-aorta",
+        "c-pulmonary-circulation",
+        "c-systemic-circulation"
+      ]
+    },
+    {
+      "id": "asset-blood-path",
+      "kind": "sequence-order",
+      "title": "Trajeto do sangue pelo coração",
+      "whySpatial": "Ordenar as etapas no espaço reforça o fluxo sanguíneo como um percurso contínuo e unidirecional.",
+      "steps": [
+        {
+          "id": "step-1",
+          "text": "O sangue pobre em oxigênio chega ao átrio direito pelas veias cavas.",
+          "anchors": [{ "sourceId": "src-cardio", "page": 1, "chunkId": "src-cardio-p1-c1" }]
+        },
+        {
+          "id": "step-2",
+          "text": "Passa pela valva tricúspide para o ventrículo direito.",
+          "anchors": [{ "sourceId": "src-cardio", "page": 2, "chunkId": "src-cardio-p2-c1" }]
+        },
+        {
+          "id": "step-3",
+          "text": "O ventrículo direito o bombeia pelo tronco pulmonar até os pulmões.",
+          "anchors": [{ "sourceId": "src-cardio", "page": 3, "chunkId": "src-cardio-p3-c1" }]
+        },
+        {
+          "id": "step-4",
+          "text": "Nos pulmões, o sangue libera gás carbônico e capta oxigênio.",
+          "anchors": [{ "sourceId": "src-cardio", "page": 4, "chunkId": "src-cardio-p4-c1" }]
+        },
+        {
+          "id": "step-5",
+          "text": "O sangue oxigenado retorna ao átrio esquerdo pelas veias pulmonares.",
+          "anchors": [{ "sourceId": "src-cardio", "page": 3, "chunkId": "src-cardio-p3-c1" }]
+        },
+        {
+          "id": "step-6",
+          "text": "Passa pela valva mitral para o ventrículo esquerdo.",
+          "anchors": [{ "sourceId": "src-cardio", "page": 2, "chunkId": "src-cardio-p2-c1" }]
+        },
+        {
+          "id": "step-7",
+          "text": "O ventrículo esquerdo o bombeia pela aorta para todo o corpo.",
+          "anchors": [{ "sourceId": "src-cardio", "page": 3, "chunkId": "src-cardio-p3-c1" }]
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "generatedAt": "2026-10-11T00:00:00Z",
+    "promptVersion": "hand-written-demo",
+    "model": "none-hand-written",
+    "discarded": 0
+  }
+}

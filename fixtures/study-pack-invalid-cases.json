@@ -1,0 +1,137 @@
+[
+  {
+    "name": "unsupported schema version",
+    "path": ["schemaVersion"],
+    "value": "2.0"
+  },
+  {
+    "name": "quiz with three options",
+    "path": ["quiz", 0, "options"],
+    "value": ["a", "b", "c"]
+  },
+  {
+    "name": "blank quiz option",
+    "path": ["quiz", 0, "options", 0],
+    "value": " "
+  },
+  {
+    "name": "correctIndex out of range",
+    "path": ["quiz", 0, "correctIndex"],
+    "value": 4
+  },
+  {
+    "name": "correctIndex not an integer",
+    "path": ["quiz", 0, "correctIndex"],
+    "value": 1.5
+  },
+  {
+    "name": "label longer than 40 characters",
+    "path": ["concepts", 0, "label"],
+    "value": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  },
+  {
+    "name": "definition longer than 280 characters",
+    "path": ["concepts", 0, "definition"],
+    "value": "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy"
+  },
+  {
+    "name": "concept without anchors",
+    "path": ["concepts", 0, "anchors"],
+    "value": []
+  },
+  {
+    "name": "anchor to unknown source",
+    "path": ["concepts", 0, "anchors", 0, "sourceId"],
+    "value": "src-missing"
+  },
+  {
+    "name": "anchor page beyond pageCount",
+    "path": ["concepts", 0, "anchors", 0, "page"],
+    "value": 5
+  },
+  {
+    "name": "anchor page zero",
+    "path": ["concepts", 0, "anchors", 0, "page"],
+    "value": 0
+  },
+  {
+    "name": "anchor page as string",
+    "path": ["concepts", 0, "anchors", 0, "page"],
+    "value": "1"
+  },
+  {
+    "name": "edge to unknown concept",
+    "path": ["edges", 0, "targetId"],
+    "value": "c-missing"
+  },
+  {
+    "name": "card referencing unknown concept",
+    "path": ["cards", 0, "conceptIds", 0],
+    "value": "c-missing"
+  },
+  {
+    "name": "graph node referencing unknown concept",
+    "path": ["assets", 0, "nodeIds", 0],
+    "value": "c-missing"
+  },
+  {
+    "name": "duplicated concept id",
+    "path": ["concepts", 1, "id"],
+    "value": "c-heart"
+  },
+  {
+    "name": "duplicated sequence step id",
+    "path": ["assets", 1, "steps", 1, "id"],
+    "value": "step-1"
+  },
+  {
+    "name": "position coordinate out of range",
+    "path": ["concepts", 0, "position", 0],
+    "value": 1.5
+  },
+  {
+    "name": "position with two coordinates",
+    "path": ["concepts", 0, "position"],
+    "value": [0, 0]
+  },
+  {
+    "name": "blank whySpatial",
+    "path": ["assets", 0, "whySpatial"],
+    "value": "   "
+  },
+  {
+    "name": "unknown asset kind",
+    "path": ["assets", 0, "kind"],
+    "value": "simulation"
+  },
+  {
+    "name": "sequence with no steps",
+    "path": ["assets", 1, "steps"],
+    "value": []
+  },
+  {
+    "name": "no sources",
+    "path": ["sources"],
+    "value": []
+  },
+  {
+    "name": "unexpected extra field",
+    "path": ["meta", "extra"],
+    "value": true
+  },
+  {
+    "name": "generatedAt without timezone",
+    "path": ["meta", "generatedAt"],
+    "value": "2026-10-11T00:00:00"
+  },
+  {
+    "name": "negative discarded count",
+    "path": ["meta", "discarded"],
+    "value": -1
+  },
+  {
+    "name": "missing required field",
+    "path": ["meta", "discarded"],
+    "remove": true
+  }
+]
