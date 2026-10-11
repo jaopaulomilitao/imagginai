@@ -14,12 +14,6 @@ export function findOwnerEntity(object: Object3D): Entity | null {
   return null;
 }
 
-export interface Vector3Like {
-  x: number;
-  y: number;
-  z: number;
-}
-
 // object3d de todas as entidades que casam com o seletor, atualizado só quando a cena muda
 export function createObject3DCache(scene: Entity, selector: string): TargetCache<Object3D> {
   const query = () =>

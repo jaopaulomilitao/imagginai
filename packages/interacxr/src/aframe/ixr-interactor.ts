@@ -1,9 +1,9 @@
 import AFRAME, { type Component, type Entity } from 'aframe';
 
 import type { InteractionManager } from '../core/interaction-manager';
+import { PressFeedback, type ScaleTarget } from '../core/press-feedback';
 import { getInteracxrSystem } from './interacxr-system';
 import type { CursorComponent } from './ixr-cursor';
-import type { Vector3Like } from './entity-utils';
 
 interface InteractorData {
   targetClass: string;
@@ -14,11 +14,17 @@ export interface InteractorComponent extends Component<InteractorData> {
   controller?: InteractorController;
 }
 
-const PRESS_SCALE = 0.9;
-const PRESS_DURATION_MS = 150;
+function scaleTargetOf(el: Entity): ScaleTarget {
+  return {
+    getScale: () => el.object3D.scale,
+    // setAttribute mantém os dados do componente scale do a-frame sincronizados
+    setScale: (scale) => el.setAttribute('scale', { ...scale }),
+  };
+}
 
 export class InteractorController {
   private readonly interaction: InteractionManager;
+  private readonly feedback = new PressFeedback<Entity>();
   private readonly onInteract = (): void => this.interact();
 
   constructor(
@@ -31,6 +37,7 @@ export class InteractorController {
 
   dispose(): void {
     this.el.removeEventListener(`ixr-${this.data.interactPose}-start`, this.onInteract);
+    this.feedback.restoreAll();
   }
 
   private cursor(): CursorComponent | undefined {
@@ -49,19 +56,10 @@ export class InteractorController {
     this.cursor()?.controller?.setCursorActive(true);
     hovered.emit('click');
 
-    // referência viva à escala, como no original (defeito 9: a restauração reaplica o valor já reduzido)
-    const currentScale: Vector3Like = hovered.object3D.scale;
-    hovered.setAttribute('scale', {
-      x: currentScale.x * PRESS_SCALE,
-      y: currentScale.y * PRESS_SCALE,
-      z: currentScale.z * PRESS_SCALE,
-    });
-
-    setTimeout(() => {
-      hovered.setAttribute('scale', currentScale);
-      // a bolinha regressa ao anel assim que o pulso termina
-      this.cursor()?.controller?.setCursorActive(false);
-    }, PRESS_DURATION_MS);
+    // a bolinha regressa ao anel assim que o pulso termina
+    this.feedback.press(hovered, scaleTargetOf(hovered), () =>
+      this.cursor()?.controller?.setCursorActive(false),
+    );
   }
 }
 

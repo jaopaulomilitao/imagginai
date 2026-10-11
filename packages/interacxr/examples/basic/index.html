@@ -81,7 +81,6 @@
 
       document.querySelector('a-scene').addEventListener('loaded', () => {
         initInteractionSystem();
-        fixScaleReset(); // Função de segurança para o encolhimento
       });
 
       function initInteractionSystem() {
@@ -92,18 +91,6 @@
           if (hasInteracted) return;
           hasInteracted = true;
           handleButtonPress(button, door);
-        });
-      }
-
-      // Função de segurança: toda vez que um objeto interativo for clicado,
-      // forçamos o reset da escala após a animação do addon terminar
-      function fixScaleReset() {
-        document.querySelectorAll('.interactable').forEach((el) => {
-          el.addEventListener('click', () => {
-            setTimeout(() => {
-              el.setAttribute('scale', '0.2 0.1 0.2'); // Force o valor original do botão aqui
-            }, 200);
-          });
         });
       }
 
