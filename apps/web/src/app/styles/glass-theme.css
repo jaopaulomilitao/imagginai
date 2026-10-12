@@ -1,0 +1,169 @@
+/* sistema visual de glassmorphism alinhado aos painéis espaciais 3d da zona xr */
+
+:root,
+[data-imx-theme='light-glass'] {
+  --imx-bg-canvas: #05070b;
+  --imx-bg-horizon: #090d14;
+  --imx-glass-surface: rgba(241, 245, 249, 0.82);
+  --imx-glass-elevated: rgba(255, 255, 255, 0.9);
+  --imx-glass-border: rgba(255, 255, 255, 0.88);
+  --imx-glass-border-active: #ffffff;
+  --imx-text-title: #0f172a;
+  --imx-text-body: #1e293b;
+  --imx-text-muted: #475569;
+  --imx-btn-bg: rgba(226, 232, 240, 0.88);
+  --imx-btn-text: #0f172a;
+  --imx-shadow: 0 20px 50px rgba(0, 0, 0, 0.48);
+}
+
+[data-imx-theme='dark-glass'] {
+  --imx-bg-canvas: #05070b;
+  --imx-bg-horizon: #090d14;
+  --imx-glass-surface: rgba(10, 15, 29, 0.84);
+  --imx-glass-elevated: rgba(15, 23, 42, 0.9);
+  --imx-glass-border: rgba(255, 255, 255, 0.65);
+  --imx-glass-border-active: #ffffff;
+  --imx-text-title: #f8fafc;
+  --imx-text-body: #e2e8f0;
+  --imx-text-muted: #94a3b8;
+  --imx-btn-bg: rgba(30, 41, 59, 0.9);
+  --imx-btn-text: #f8fafc;
+  --imx-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: radial-gradient(
+    circle at 50% 25%,
+    var(--imx-bg-horizon) 0%,
+    var(--imx-bg-canvas) 75%
+  );
+  color: var(--imx-text-body);
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.imx-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.25rem;
+}
+
+.imx-glass-panel {
+  width: 100%;
+  max-width: 44rem;
+  padding: 2.25rem;
+  border-radius: 24px;
+  background: var(--imx-glass-surface);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 2px solid var(--imx-glass-border);
+  box-shadow: var(--imx-shadow);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 220ms ease;
+}
+
+.imx-glass-panel:hover {
+  border-color: var(--imx-glass-border-active);
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.45),
+    var(--imx-shadow);
+}
+
+.imx-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.imx-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--imx-btn-bg);
+  color: var(--imx-text-title);
+  border: 1.5px solid var(--imx-glass-border);
+}
+
+.imx-title {
+  margin: 0 0 0.65rem;
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--imx-text-title);
+  letter-spacing: -0.02em;
+}
+
+.imx-subtitle {
+  margin: 0 0 1.75rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--imx-text-muted);
+}
+
+.imx-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.imx-glass-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.8rem 1.4rem;
+  border-radius: 14px;
+  background: var(--imx-btn-bg);
+  color: var(--imx-btn-text);
+  border: 2px solid var(--imx-glass-border);
+  font-size: 0.98rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 180ms ease;
+}
+
+.imx-glass-button:hover,
+.imx-glass-button:focus-visible {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.75);
+  outline: none;
+}
+
+.imx-glass-button:active {
+  transform: scale(0.97);
+  box-shadow: 0 0 0 4px #ffffff;
+}

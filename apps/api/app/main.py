@@ -4,7 +4,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import FEATURE_REQUIREMENTS, Settings, get_settings, validate_startup
-from app.routers import health
+from app.core.db import DatabaseStore
+from app.routers import health, jobs, zones
+from app.services.embeddings import EmbeddingClient
 
 logger = logging.getLogger("imagginai.api")
 
@@ -17,12 +19,21 @@ def warn_missing_optional_settings(settings: Settings) -> None:
             logger.warning("feature '%s' disabled, missing: %s", feature, ", ".join(missing))
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    *,
+    db_store: DatabaseStore | None = None,
+    embedding_client: EmbeddingClient | None = None,
+) -> FastAPI:
     app_settings = settings or get_settings()
     validate_startup(app_settings)
     warn_missing_optional_settings(app_settings)
 
     app = FastAPI(title="IMAGGINAI API", version="0.0.0")
+    app.state.settings = app_settings
+    app.state.db_store = db_store
+    app.state.embedding_client = embedding_client
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=app_settings.cors_origins,
@@ -31,6 +42,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["Authorization", "Content-Type"],
     )
     app.include_router(health.router)
+    app.include_router(zones.router)
+    app.include_router(jobs.router)
     return app
 
 

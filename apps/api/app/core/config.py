@@ -19,11 +19,41 @@ QUIZ_OPTION_COUNT = 4
 POSITION_MIN = -1.0
 POSITION_MAX = 1.0
 
-Feature = Literal["supabase", "llm"]
+# constantes de zonas, upload de pdf, chunking e embeddings (seções 2.4, 3.1, 3.6.1, 3.10 e 3.11)
+ZONE_NAME_MIN_LENGTH = 1
+ZONE_NAME_MAX_LENGTH = 80
+ALLOWED_PANEL_RADII: tuple[float, ...] = (0.55, 0.75, 1.0, 1.5, 2.0)
+PANEL_YAW_MIN_DEG = -180.0
+PANEL_YAW_MAX_DEG = 180.0
+PANEL_PITCH_MIN_DEG = -80.0
+PANEL_PITCH_MAX_DEG = 80.0
+
+SOURCE_MAX_SIZE_BYTES = 20 * 1024 * 1024
+SOURCE_MAX_PAGES = 60
+STORAGE_SOURCES_BUCKET = "sources"
+STORAGE_PACKS_BUCKET = "packs"
+
+CHUNK_TARGET_TOKENS = 500
+CHUNK_OVERLAP_TOKENS = 50
+EMBEDDING_DIMENSION = 768
+EMBEDDING_BATCH_SIZE = 64
+
+SUPABASE_JWT_AUDIENCE = "authenticated"
+SUPABASE_JWT_ALGORITHMS: tuple[str, ...] = ("HS256",)
+
+JOB_PROGRESS_MIN = 0
+JOB_PROGRESS_MAX = 100
+JOB_PROGRESS_EXTRACTING = 20
+JOB_PROGRESS_EMBEDDING = 60
+JOB_PROGRESS_SAVING = 85
+JOB_PROGRESS_DONE = 100
+
+Feature = Literal["supabase", "embeddings", "llm"]
 
 # são agrupadas as variáveis por funcionalidade, pois cada fase passa a exigir um grupo diferente
 FEATURE_REQUIREMENTS: dict[Feature, tuple[str, ...]] = {
     "supabase": ("supabase_url", "supabase_service_role_key", "supabase_jwt_secret"),
+    "embeddings": ("gemini_api_key", "embedding_model"),
     "llm": (
         "gemini_api_key",
         "llm_model",
@@ -33,7 +63,7 @@ FEATURE_REQUIREMENTS: dict[Feature, tuple[str, ...]] = {
     ),
 }
 
-# funcionalidades obrigatórias na inicialização; a fase 1 roda sem credenciais (seção 0.1)
+# funcionalidades obrigatórias na inicialização; os testes rodam sem credenciais reais (seção 0.1)
 STARTUP_REQUIRED_FEATURES: tuple[Feature, ...] = ()
 
 

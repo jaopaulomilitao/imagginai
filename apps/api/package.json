@@ -3,9 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "uv run uvicorn app.main:app --reload --port 8000",
-    "test": "uv run pytest",
-    "lint": "uv run ruff check . && uv run ruff format --check .",
-    "build": "uv run python -m compileall -q app"
+    "dev": "node scripts/run-uv.mjs run uvicorn app.main:app --reload --port 8000",
+    "test": "node scripts/run-uv.mjs run pytest",
+    "lint": "node scripts/run-uv.mjs run ruff check . && node scripts/run-uv.mjs run ruff format --check .",
+    "build": "node scripts/run-uv.mjs run python -m compileall -q app"
   }
 }
