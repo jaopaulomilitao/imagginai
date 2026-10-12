@@ -20,11 +20,14 @@ import {
   BELT_SHORTCUT_MODE_KEY,
   BELT_SHORTCUT_POMODORO_KEY,
   BELT_SHORTCUT_RECENTER_KEY,
+  BELT_SHORTCUT_THEME_KEY,
   BELT_SHORTCUT_ZONES_KEY,
   DEFAULT_DEMO_ZONE_ID,
   DEFAULT_POMODORO_PRESET,
   type PomodoroPreset,
+  type ZoneTheme,
 } from '../config/constants';
+import '../systems/rounded-shape';
 import {
   BeltMenuController,
   computeBeltItemPlacements,
@@ -32,6 +35,13 @@ import {
   type BeltItemId,
   type BeltItemPlacement,
 } from '../systems/belt-controller';
+import {
+  getThemePalette,
+  resolveInitialTheme,
+  toggleTheme,
+  ZONE_THEME_CHANGE_EVENT,
+  ZONE_THEME_STORAGE_KEY,
+} from '../systems/theme-controller';
 import {
   formatPomodoroMmSs,
   PomodoroSystem,
@@ -120,6 +130,17 @@ export class BeltMenuBridge {
   private toastRemainingMs = 0;
   private zonesPickerOpen = false;
   private activeZoneId: string;
+  private currentTheme: ZoneTheme;
+  private statusBorderEl: Entity | null = null;
+  private statusBgEl: Entity | null = null;
+
+  private readonly onThemeChange = (event: Event): void => {
+    const detail = (event as CustomEvent<{ theme: ZoneTheme }>).detail;
+    if (detail?.theme && detail.theme !== this.currentTheme) {
+      this.currentTheme = detail.theme;
+      this.applyTheme(detail.theme);
+    }
+  };
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
@@ -132,6 +153,8 @@ export class BeltMenuBridge {
       this.executeAction('switch-zone');
     } else if (key === BELT_SHORTCUT_MODE_KEY) {
       this.executeAction('toggle-mode');
+    } else if (key === BELT_SHORTCUT_THEME_KEY) {
+      this.executeAction('toggle-theme');
     } else if (key === BELT_SHORTCUT_POMODORO_KEY) {
       this.executeAction('toggle-pomodoro');
     } else if (key === BELT_SHORTCUT_RECENTER_KEY) {
@@ -145,6 +168,14 @@ export class BeltMenuBridge {
   ) {
     this.activeZoneId = data.zoneId || DEFAULT_DEMO_ZONE_ID;
     this.pomodoro = new PomodoroSystem(data.pomodoroPreset);
+
+    let storedPref: string | null = null;
+    try {
+      storedPref = localStorage.getItem(ZONE_THEME_STORAGE_KEY);
+    } catch {
+      // ignora
+    }
+    this.currentTheme = resolveInitialTheme(storedPref);
 
     this.rootEl = document.createElement('a-entity') as Entity;
     this.beltGroupEl = document.createElement('a-entity') as Entity;
@@ -162,6 +193,7 @@ export class BeltMenuBridge {
       this.handlePomodoroEvents(events),
     );
     window.addEventListener('keydown', this.onKeyDown);
+    window.addEventListener(ZONE_THEME_CHANGE_EVENT, this.onThemeChange);
     this.syncBeltVisuals();
   }
 
@@ -230,6 +262,21 @@ export class BeltMenuBridge {
         }
         break;
       }
+      case 'toggle-theme': {
+        this.currentTheme = toggleTheme(this.currentTheme);
+        try {
+          localStorage.setItem(ZONE_THEME_STORAGE_KEY, this.currentTheme);
+        } catch {
+          // ignora
+        }
+        const palette = getThemePalette(this.currentTheme);
+        const detail = { theme: this.currentTheme };
+        window.dispatchEvent(new CustomEvent(ZONE_THEME_CHANGE_EVENT, { detail }));
+        this.el.sceneEl?.emit(ZONE_THEME_CHANGE_EVENT, detail);
+        this.applyTheme(this.currentTheme);
+        this.showToast(PT_BR.zone.belt.feedback.themeChanged(palette.name), 2000);
+        break;
+      }
       case 'toggle-pomodoro': {
         const snap = this.pomodoro.toggle();
         const mmss = formatPomodoroMmSs(snap.remainingMs);
@@ -256,6 +303,7 @@ export class BeltMenuBridge {
 
   dispose(): void {
     window.removeEventListener('keydown', this.onKeyDown);
+    window.removeEventListener(ZONE_THEME_CHANGE_EVENT, this.onThemeChange);
     this.unsubscribePomodoro();
     this.rootEl.remove();
   }
@@ -271,20 +319,36 @@ export class BeltMenuBridge {
       this.beltGroupEl.appendChild(btn.containerEl);
     }
 
-    // pílula de status acima do arco do cinto (exibe contador pomodoro e avisos rápidos)
-    const statusBg = document.createElement('a-plane') as Entity;
-    statusBg.setAttribute('width', '0.52');
-    statusBg.setAttribute('height', '0.064');
-    statusBg.setAttribute(
-      'material',
-      'shader: flat; color: #0F172A; opacity: 0.94; transparent: true',
+    // pílula de status acima do arco do cinto com cantos arredondados
+    const statusPalette = getThemePalette(this.currentTheme);
+    this.statusBorderEl = document.createElement('a-entity') as Entity;
+    this.statusBorderEl.setAttribute(
+      'geometry',
+      'primitive: rounded-rect; width: 0.53; height: 0.074; radius: 0.037',
     );
-    this.statusPillEl.appendChild(statusBg);
+    this.statusBorderEl.setAttribute('position', '0 0 -0.001');
+    this.statusBorderEl.setAttribute(
+      'material',
+      'shader: flat; color: #FFFFFF; opacity: 0.85; transparent: true',
+    );
+    this.statusPillEl.appendChild(this.statusBorderEl);
+
+    this.statusBgEl = document.createElement('a-entity') as Entity;
+    this.statusBgEl.setAttribute(
+      'geometry',
+      'primitive: rounded-rect; width: 0.52; height: 0.064; radius: 0.032',
+    );
+    this.statusBgEl.setAttribute('position', '0 0 0');
+    this.statusBgEl.setAttribute(
+      'material',
+      `shader: flat; color: ${statusPalette.statusPillBgColor}; opacity: 0.85; transparent: true`,
+    );
+    this.statusPillEl.appendChild(this.statusBgEl);
 
     this.statusTextEl = createTroikaText({
       position: '0 0 0.004',
       value: PT_BR.zone.pomodoro.idle,
-      color: '#38BDF8',
+      color: statusPalette.statusPillTextColor,
       fontSize: 0.02,
       maxWidth: 0.48,
     });
@@ -301,25 +365,35 @@ export class BeltMenuBridge {
   private createBeltButton(placement: BeltItemPlacement): BeltButtonRefs {
     const containerEl = document.createElement('a-entity') as Entity;
     const isDisabled = placement.disabled;
+    const palette = getThemePalette(this.currentTheme);
+    const stroke = 0.005;
 
-    const borderEl = document.createElement('a-plane') as Entity;
-    borderEl.setAttribute('width', String(BELT_ITEM_WIDTH_M + 0.01));
-    borderEl.setAttribute('height', String(BELT_ITEM_HEIGHT_M + 0.01));
+    const borderEl = document.createElement('a-entity') as Entity;
+    borderEl.setAttribute('geometry', {
+      primitive: 'rounded-rect',
+      width: BELT_ITEM_WIDTH_M + 2 * stroke,
+      height: BELT_ITEM_HEIGHT_M + 2 * stroke,
+      radius: 0.022 + stroke,
+    });
     borderEl.setAttribute('position', '0 0 -0.002');
     borderEl.setAttribute(
       'material',
-      `shader: flat; color: ${isDisabled ? '#475569' : '#38BDF8'}; opacity: 0.7; transparent: true`,
+      `shader: flat; color: ${isDisabled ? '#475569' : palette.beltButtonBorderColor}; opacity: ${isDisabled ? 0.5 : palette.beltButtonBorderOpacity}; transparent: true`,
     );
     containerEl.appendChild(borderEl);
 
-    const bgEl = document.createElement('a-plane') as Entity;
+    const bgEl = document.createElement('a-entity') as Entity;
     bgEl.classList.add('interactable');
-    bgEl.setAttribute('width', String(BELT_ITEM_WIDTH_M));
-    bgEl.setAttribute('height', String(BELT_ITEM_HEIGHT_M));
+    bgEl.setAttribute('geometry', {
+      primitive: 'rounded-rect',
+      width: BELT_ITEM_WIDTH_M,
+      height: BELT_ITEM_HEIGHT_M,
+      radius: 0.02,
+    });
     bgEl.setAttribute('position', '0 0 0.002');
     bgEl.setAttribute(
       'material',
-      `shader: flat; color: ${isDisabled ? '#1E293B' : '#0F172A'}; opacity: ${isDisabled ? '0.7' : '0.95'}; transparent: true`,
+      `shader: flat; color: ${isDisabled ? '#334155' : palette.beltButtonBgColor}; opacity: ${isDisabled ? 0.6 : palette.beltButtonBgOpacity}; transparent: true`,
     );
     bgEl.addEventListener('click', (event: Event) => {
       event.stopPropagation();
@@ -328,25 +402,27 @@ export class BeltMenuBridge {
     containerEl.appendChild(bgEl);
 
     const copy = PT_BR.zone.belt.items[placement.id];
+    const iconColor = isDisabled ? '#94A3B8' : palette.beltIconColor;
     const iconEl = createTroikaText({
       position: '0 0.022 0.006',
       value: copy.icon,
-      color: isDisabled ? '#94A3B8' : '#38BDF8',
+      color: iconColor,
       fontSize: 0.042,
       maxWidth: BELT_ITEM_WIDTH_M - 0.015,
     });
     containerEl.appendChild(iconEl);
 
+    const labelColor = isDisabled ? '#94A3B8' : palette.beltLabelColor;
     const labelEl = createTroikaText({
       position: '0 -0.032 0.006',
       value: copy.label,
-      color: isDisabled ? '#94A3B8' : '#F8FAFC',
+      color: labelColor,
       fontSize: 0.02,
       maxWidth: BELT_ITEM_WIDTH_M - 0.012,
     });
     containerEl.appendChild(labelEl);
 
-    return {
+    const refs: BeltButtonRefs = {
       id: placement.id,
       placement,
       containerEl,
@@ -355,26 +431,84 @@ export class BeltMenuBridge {
       iconEl,
       labelEl,
     };
+
+    bgEl.addEventListener('mouseenter', () => this.setButtonHighlight(refs, true));
+    bgEl.addEventListener('mouseleave', () => this.setButtonHighlight(refs, false));
+
+    return refs;
+  }
+
+  private setButtonHighlight(btn: BeltButtonRefs, active: boolean): void {
+    if (btn.placement.disabled) return;
+    const palette = getThemePalette(this.currentTheme);
+    const stroke = active ? 0.01 : 0.005;
+    const opacity = active ? 1.0 : palette.beltButtonBorderOpacity;
+    btn.borderEl.setAttribute('geometry', {
+      primitive: 'rounded-rect',
+      width: BELT_ITEM_WIDTH_M + 2 * stroke,
+      height: BELT_ITEM_HEIGHT_M + 2 * stroke,
+      radius: 0.022 + stroke,
+    });
+    btn.borderEl.setAttribute(
+      'material',
+      `shader: flat; color: #FFFFFF; opacity: ${opacity}; transparent: true`,
+    );
+  }
+
+  applyTheme(theme: ZoneTheme): void {
+    this.currentTheme = theme;
+    const palette = getThemePalette(theme);
+
+    for (const btn of this.itemButtons) {
+      const isDis = btn.placement.disabled;
+      btn.borderEl.setAttribute(
+        'material',
+        `shader: flat; color: ${isDis ? '#475569' : palette.beltButtonBorderColor}; opacity: ${isDis ? 0.5 : palette.beltButtonBorderOpacity}; transparent: true`,
+      );
+      btn.bgEl.setAttribute(
+        'material',
+        `shader: flat; color: ${isDis ? '#334155' : palette.beltButtonBgColor}; opacity: ${isDis ? 0.6 : palette.beltButtonBgOpacity}; transparent: true`,
+      );
+      btn.iconEl.setAttribute('color', isDis ? '#94A3B8' : palette.beltIconColor);
+      btn.iconEl.setAttribute('troika-text', 'color', isDis ? '#94A3B8' : palette.beltIconColor);
+      btn.labelEl.setAttribute('color', isDis ? '#94A3B8' : palette.beltLabelColor);
+      btn.labelEl.setAttribute('troika-text', 'color', isDis ? '#94A3B8' : palette.beltLabelColor);
+    }
+
+    this.statusBorderEl?.setAttribute(
+      'material',
+      'shader: flat; color: #FFFFFF; opacity: 0.85; transparent: true',
+    );
+    this.statusBgEl?.setAttribute(
+      'material',
+      `shader: flat; color: ${palette.statusPillBgColor}; opacity: 0.85; transparent: true`,
+    );
+    this.statusTextEl.setAttribute('color', palette.statusPillTextColor);
+    this.statusTextEl.setAttribute('troika-text', 'color', palette.statusPillTextColor);
   }
 
   private buildBreakScreenDom(): void {
     this.breakCardEl.setAttribute('visible', 'false');
     this.breakCardEl.object3D.visible = false;
 
-    const borderEl = document.createElement('a-plane') as Entity;
-    borderEl.setAttribute('width', '0.58');
-    borderEl.setAttribute('height', '0.34');
+    const borderEl = document.createElement('a-entity') as Entity;
+    borderEl.setAttribute(
+      'geometry',
+      'primitive: rounded-rect; width: 0.59; height: 0.35; radius: 0.032',
+    );
     borderEl.setAttribute('position', '0 0 -0.002');
     borderEl.setAttribute(
       'material',
-      'shader: flat; color: #34D399; opacity: 0.8; transparent: true',
+      'shader: flat; color: #FFFFFF; opacity: 0.85; transparent: true',
     );
     this.breakCardEl.appendChild(borderEl);
 
-    const bgEl = document.createElement('a-plane') as Entity;
-    bgEl.setAttribute('width', '0.56');
-    bgEl.setAttribute('height', '0.32');
-    bgEl.setAttribute('material', 'shader: flat; color: #0F172A; opacity: 0.96; transparent: true');
+    const bgEl = document.createElement('a-entity') as Entity;
+    bgEl.setAttribute(
+      'geometry',
+      'primitive: rounded-rect; width: 0.58; height: 0.34; radius: 0.028',
+    );
+    bgEl.setAttribute('material', 'shader: flat; color: #0F172A; opacity: 0.95; transparent: true');
     this.breakCardEl.appendChild(bgEl);
 
     const titleEl = createTroikaText({

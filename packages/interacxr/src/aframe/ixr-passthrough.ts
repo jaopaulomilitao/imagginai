@@ -15,6 +15,7 @@ interface PassthroughData {
   opacity: number;
   maskMode: MaskModeName;
   feather: number;
+  blur: number;
 }
 
 export interface PassthroughComponent extends Component<PassthroughData> {
@@ -71,6 +72,7 @@ export class PassthroughController {
     this.layer?.setOpacity(data.opacity);
     this.layer?.setMaskMode(MASK_MODES[data.maskMode]);
     this.layer?.setFeather(data.feather);
+    this.layer?.setBlur(data.blur);
   }
 
   dispose(): void {
@@ -87,6 +89,7 @@ AFRAME.registerComponent<PassthroughComponent>('ixr-passthrough', {
     opacity: { type: 'number', default: 1 },
     maskMode: { type: 'string', default: 'full', oneOf: ['full', 'bottom-window'] },
     feather: { type: 'number', default: 0.08 },
+    blur: { type: 'number', default: 1.0 },
   },
   init() {
     this.controller = new PassthroughController(this.el, this.data);

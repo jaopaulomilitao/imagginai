@@ -48,6 +48,10 @@ export const PT_BR = {
           icon: '◐',
           label: 'Modo',
         },
+        'toggle-theme': {
+          icon: '🌓',
+          label: 'Tema',
+        },
         'toggle-pomodoro': {
           icon: '◷',
           label: 'Pomodoro',
@@ -65,6 +69,7 @@ export const PT_BR = {
         exitConfirmPrompt: 'Confirme em até 3 s para sair da Zona',
         recentered: 'Painéis recentralizados à sua frente',
         aiDisabled: 'Assistente de IA: em breve (desativado no MVP)',
+        themeChanged: (name: string) => `Tema: ${name}`,
         zonesPickerTitle: 'Zonas baixadas (offline)',
         demoZoneName: 'Sistema Cardiovascular (Demo)',
         zoneSwitched: (name: string) => `Zona ativa: ${name}`,

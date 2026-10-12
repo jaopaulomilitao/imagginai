@@ -10,6 +10,7 @@ import './components/imx-card-panel';
 import './components/imx-pdf-panel';
 import './components/imx-drag-handle';
 import './components/imx-belt-menu';
+import './systems/rounded-shape';
 
 import { PT_BR } from '../shared/i18n/pt-br';
 import { logger } from '../shared/logger';

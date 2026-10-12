@@ -28,6 +28,7 @@ export const PANEL_MIN_EDGE_GAP_DEG = 5;
 // dimensões padrão dos painéis espaciais e limites de escala da alça/botões
 export const PANEL_DEFAULT_WIDTH_M = 0.72;
 export const PANEL_DEFAULT_HEIGHT_M = 0.52;
+export const PANEL_CORNER_RADIUS_M = 0.024;
 export const PANEL_HANDLE_WIDTH_M = 0.11;
 export const PANEL_HANDLE_HEIGHT_M = 0.075;
 export const PANEL_BUTTON_SIZE_M = 0.075;
@@ -41,6 +42,11 @@ export const PDF_PAGE_CACHE_RADIUS = 1;
 export const DEFAULT_CAMERA_VFOV_DEG = 82;
 export const PASSTHROUGH_PLANE_DISTANCE_M = 1.0;
 export const DEFAULT_STEREO_EYE_OFFSET_M = 0.028;
+
+// temas visuais da zona (modo claro vidro / modo escuro obsidiana)
+export const ZONE_THEMES = ['light-glass', 'dark-glass'] as const;
+export type ZoneTheme = (typeof ZONE_THEMES)[number];
+export const DEFAULT_ZONE_THEME: ZoneTheme = 'light-glass';
 
 // presets de ambiente (seção 3.3 e fase 3)
 export const ENVIRONMENT_PRESETS = ['focus-dark', 'focus-nature'] as const;
@@ -57,10 +63,10 @@ export interface EnvironmentPalette {
 
 export const ENVIRONMENT_PALETTES: Readonly<Record<EnvironmentPreset, EnvironmentPalette>> = {
   'focus-dark': {
-    skyColor: '#0B0F17',
-    groundColor: '#121824',
-    horizonRingColor: '#1E293B',
-    ambientLightColor: '#CBD5E1',
+    skyColor: '#05070B',
+    groundColor: '#090D14',
+    horizonRingColor: '#121824',
+    ambientLightColor: '#E2E8F0',
     ambientLightIntensity: 0.85,
   },
   'focus-nature': {
@@ -86,7 +92,7 @@ export const BELT_SHOW_DWELL_MS = 400;
 export const BELT_YAW_LERP_ALPHA = 0.1;
 export const BELT_CENTER_PITCH_DEG = -38;
 export const BELT_ARC_MAX_HALF_WIDTH_DEG = 40;
-export const BELT_MAX_ITEMS = 6;
+export const BELT_MAX_ITEMS = 7;
 export const BELT_RADIUS_M = 1.0;
 export const BELT_ITEM_WIDTH_M = 0.155;
 export const BELT_ITEM_HEIGHT_M = 0.125;
@@ -95,6 +101,7 @@ export const BELT_EXIT_CONFIRM_TIMEOUT_MS = 3000;
 export const BELT_SHORTCUT_EXIT_KEY = 'escape';
 export const BELT_SHORTCUT_ZONES_KEY = 'z';
 export const BELT_SHORTCUT_MODE_KEY = 'm';
+export const BELT_SHORTCUT_THEME_KEY = 't';
 export const BELT_SHORTCUT_POMODORO_KEY = 'p';
 export const BELT_SHORTCUT_RECENTER_KEY = 'c';
 

@@ -14,6 +14,7 @@ export const BELT_ITEM_IDS = [
   'exit-zone',
   'switch-zone',
   'toggle-mode',
+  'toggle-theme',
   'toggle-pomodoro',
   'recenter',
   'ai-assistant',

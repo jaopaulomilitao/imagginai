@@ -4,9 +4,16 @@ import type { CanvasTexture, Mesh, MeshBasicMaterial, PlaneGeometry } from 'thre
 
 import { PT_BR } from '../../shared/i18n/pt-br';
 import { logger } from '../../shared/logger';
-import { PANEL_DEFAULT_HEIGHT_M, PANEL_DEFAULT_WIDTH_M } from '../config/constants';
+import { PANEL_DEFAULT_HEIGHT_M, PANEL_DEFAULT_WIDTH_M, type ZoneTheme } from '../config/constants';
 import type { SyntheticPdfPageContent } from '../systems/initial-panels';
 import { clampPdfPage, computePdfPageWindow } from '../systems/pdf-page-window';
+import '../systems/rounded-shape';
+import {
+  getThemePalette,
+  resolveInitialTheme,
+  ZONE_THEME_CHANGE_EVENT,
+  ZONE_THEME_STORAGE_KEY,
+} from '../systems/theme-controller';
 
 export interface PdfPanelData {
   pdfUrl: string;
@@ -104,18 +111,33 @@ function drawSyntheticPageToCanvas(
   );
 }
 
+interface NavButtonRefs {
+  readonly containerEl: Entity;
+  readonly borderEl: Entity;
+  readonly btnEl: Entity;
+  readonly textEl: Entity;
+}
+
 // painel de pdf que renderiza com pdf.js em CanvasTexture mantendo em memória apenas a página atual +- 1 (seção 2.2)
 export class PdfPanelController {
   private readonly pageCache = new Map<number, CanvasTexture>();
   private readonly canvasMesh: Mesh<PlaneGeometry, MeshBasicMaterial>;
-  private readonly prevBtnEl: Entity;
-  private readonly nextBtnEl: Entity;
+  private readonly prevNav: NavButtonRefs;
+  private readonly nextNav: NavButtonRefs;
   private readonly pageLabelEl: Entity;
   private pdfDoc: PDFDocumentProxy | null = null;
   private loadedUrl = '';
   private currentPage: number;
   private totalPages: number;
   private syntheticProvider: SyntheticPageProvider | null = null;
+  private currentTheme: ZoneTheme;
+
+  private readonly onThemeChange = (event: Event): void => {
+    const detail = (event as CustomEvent<{ theme: ZoneTheme }>).detail;
+    if (detail?.theme) {
+      this.applyTheme(detail.theme);
+    }
+  };
 
   private readonly onPrevClick = (): void => {
     this.goToPage(this.currentPage - 1);
@@ -131,6 +153,15 @@ export class PdfPanelController {
   ) {
     this.totalPages = Math.max(1, data.pageCount);
     this.currentPage = clampPdfPage(data.page, this.totalPages);
+
+    let storedPref: string | null = null;
+    try {
+      storedPref = localStorage.getItem(ZONE_THEME_STORAGE_KEY);
+    } catch {
+      // ignora caso localStorage não esteja acessível
+    }
+    this.currentTheme = resolveInitialTheme(storedPref);
+    const palette = getThemePalette(this.currentTheme);
 
     this.el.setAttribute('imx-panel', {
       panelId: this.el.id || 'panel-pdf',
@@ -158,12 +189,12 @@ export class PdfPanelController {
     this.el.object3D.add(this.canvasMesh);
 
     const footerY = -data.height / 2 + 0.055;
-    this.prevBtnEl = this.createNavButton(
+    this.prevNav = this.createNavButton(
       PT_BR.zone.panels.pdfPrevPage,
       -data.width / 2 + 0.11,
       footerY,
     );
-    this.nextBtnEl = this.createNavButton(
+    this.nextNav = this.createNavButton(
       PT_BR.zone.panels.pdfNextPage,
       data.width / 2 - 0.11,
       footerY,
@@ -174,18 +205,20 @@ export class PdfPanelController {
       align: 'center',
       anchor: 'center',
       baseline: 'center',
-      color: '#E2E8F0',
+      color: palette.textFooterColor,
       'font-size': 0.016,
       fontSize: 0.016,
       value: indicatorText,
-      'troika-text': `value: ${indicatorText}; fontSize: 0.016; color: #E2E8F0; align: center; anchor: center; baseline: center`,
+      'troika-text': `value: ${indicatorText}; fontSize: 0.016; color: ${palette.textFooterColor}; align: center; anchor: center; baseline: center`,
     });
 
-    this.prevBtnEl.addEventListener('click', this.onPrevClick);
-    this.nextBtnEl.addEventListener('click', this.onNextClick);
-    this.el.appendChild(this.prevBtnEl);
-    this.el.appendChild(this.nextBtnEl);
+    this.prevNav.btnEl.addEventListener('click', this.onPrevClick);
+    this.nextNav.btnEl.addEventListener('click', this.onNextClick);
+    this.el.appendChild(this.prevNav.containerEl);
+    this.el.appendChild(this.nextNav.containerEl);
     this.el.appendChild(this.pageLabelEl);
+
+    window.addEventListener(ZONE_THEME_CHANGE_EVENT, this.onThemeChange);
 
     void this.syncDocumentAndWindow();
   }
@@ -225,11 +258,42 @@ export class PdfPanelController {
     void this.refreshWindow();
   }
 
+  applyTheme(theme: ZoneTheme): void {
+    this.currentTheme = theme;
+    const palette = getThemePalette(theme);
+
+    this.prevNav.borderEl.setAttribute(
+      'material',
+      `color: ${palette.buttonBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
+    );
+    this.prevNav.btnEl.setAttribute(
+      'material',
+      `color: ${palette.buttonBgColor}; shader: flat; opacity: ${palette.buttonBgOpacity}; transparent: true`,
+    );
+    this.prevNav.textEl.setAttribute('color', palette.buttonTextColor);
+    this.prevNav.textEl.setAttribute('troika-text', 'color', palette.buttonTextColor);
+
+    this.nextNav.borderEl.setAttribute(
+      'material',
+      `color: ${palette.buttonBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
+    );
+    this.nextNav.btnEl.setAttribute(
+      'material',
+      `color: ${palette.buttonBgColor}; shader: flat; opacity: ${palette.buttonBgOpacity}; transparent: true`,
+    );
+    this.nextNav.textEl.setAttribute('color', palette.buttonTextColor);
+    this.nextNav.textEl.setAttribute('troika-text', 'color', palette.buttonTextColor);
+
+    this.pageLabelEl.setAttribute('color', palette.textFooterColor);
+    this.pageLabelEl.setAttribute('troika-text', 'color', palette.textFooterColor);
+  }
+
   dispose(): void {
-    this.prevBtnEl.removeEventListener('click', this.onPrevClick);
-    this.nextBtnEl.removeEventListener('click', this.onNextClick);
-    this.prevBtnEl.remove();
-    this.nextBtnEl.remove();
+    window.removeEventListener(ZONE_THEME_CHANGE_EVENT, this.onThemeChange);
+    this.prevNav.btnEl.removeEventListener('click', this.onPrevClick);
+    this.nextNav.btnEl.removeEventListener('click', this.onNextClick);
+    this.prevNav.containerEl.remove();
+    this.nextNav.containerEl.remove();
     this.pageLabelEl.remove();
     this.canvasMesh.removeFromParent();
     this.canvasMesh.geometry.dispose();
@@ -241,27 +305,40 @@ export class PdfPanelController {
     }
   }
 
-  private createNavButton(label: string, x: number, y: number): Entity {
-    const btn = createSubEntity('a-plane', {
-      class: 'interactable',
-      width: 0.16,
-      height: 0.07,
+  private createNavButton(label: string, x: number, y: number): NavButtonRefs {
+    const containerEl = createSubEntity('a-entity', {
       position: `${x} ${y} 0.015`,
-      material: 'color: #1E293B; shader: flat; opacity: 0.95; transparent: true',
     });
-    const text = createSubEntity('a-troika-text', {
+    const palette = getThemePalette(this.currentTheme);
+    const stroke = 0.004;
+
+    const borderEl = createSubEntity('a-entity', {
+      geometry: `primitive: rounded-rect; width: ${0.16 + 2 * stroke}; height: ${0.07 + 2 * stroke}; radius: ${0.014 + stroke}`,
+      position: '0 0 -0.001',
+      material: `color: ${palette.buttonBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
+    });
+    const btnEl = createSubEntity('a-entity', {
+      class: 'interactable',
+      geometry: 'primitive: rounded-rect; width: 0.16; height: 0.07; radius: 0.014',
+      position: '0 0 0',
+      material: `color: ${palette.buttonBgColor}; shader: flat; opacity: ${palette.buttonBgOpacity}; transparent: true`,
+    });
+    const textEl = createSubEntity('a-troika-text', {
       position: '0 0 0.003',
       align: 'center',
       anchor: 'center',
       baseline: 'center',
-      color: '#38BDF8',
+      color: palette.buttonTextColor,
       'font-size': 0.018,
       fontSize: 0.018,
       value: label,
-      'troika-text': `value: ${label}; fontSize: 0.018; color: #38BDF8; align: center; anchor: center; baseline: center`,
+      'troika-text': `value: ${label}; fontSize: 0.018; color: ${palette.buttonTextColor}; align: center; anchor: center; baseline: center`,
     });
-    btn.appendChild(text);
-    return btn;
+    btnEl.appendChild(textEl);
+    containerEl.appendChild(borderEl);
+    containerEl.appendChild(btnEl);
+
+    return { containerEl, borderEl, btnEl, textEl };
   }
 
   private async syncDocumentAndWindow(): Promise<void> {

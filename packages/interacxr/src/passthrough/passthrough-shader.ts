@@ -15,13 +15,14 @@ export const passthroughVertexShader = /* glsl */ `
 `;
 
 // uniformes da seção 3.7: uVideo, uOpacity, uMaskMode (0 = inteiro, 1 = janela inferior),
-// uFeather (suavidade da borda da janela) e uK1 (distorção radial leve)
+// uFeather (suavidade da borda da janela), uK1 (distorção radial leve) e uBlur (desfoque suave de fundo)
 export const passthroughFragmentShader = /* glsl */ `
   uniform sampler2D uVideo;
   uniform float uOpacity;
   uniform float uMaskMode;
   uniform float uFeather;
   uniform float uK1;
+  uniform float uBlur;
 
   varying vec2 vUv;
 
@@ -44,7 +45,20 @@ export const passthroughFragmentShader = /* glsl */ `
     float alpha = uOpacity * mask;
     if (alpha <= 0.001) discard;
 
-    gl_FragColor = vec4(texture2D(uVideo, sampleUv).rgb, alpha);
+    vec4 color;
+    if (uBlur > 0.001) {
+      vec2 off = vec2(0.0022, 0.0022) * uBlur;
+      vec3 blurred = texture2D(uVideo, sampleUv).rgb * 0.36;
+      blurred += texture2D(uVideo, sampleUv + vec2( off.x,  off.y)).rgb * 0.16;
+      blurred += texture2D(uVideo, sampleUv + vec2(-off.x,  off.y)).rgb * 0.16;
+      blurred += texture2D(uVideo, sampleUv + vec2( off.x, -off.y)).rgb * 0.16;
+      blurred += texture2D(uVideo, sampleUv + vec2(-off.x, -off.y)).rgb * 0.16;
+      color = vec4(blurred, alpha);
+    } else {
+      color = vec4(texture2D(uVideo, sampleUv).rgb, alpha);
+    }
+
+    gl_FragColor = color;
     #include <colorspace_fragment>
   }
 `;

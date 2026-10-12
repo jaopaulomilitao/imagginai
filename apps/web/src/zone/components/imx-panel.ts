@@ -3,10 +3,13 @@ import 'aframe-troika-text';
 
 import {
   DEFAULT_PANEL_RADIUS_M,
+  PANEL_CORNER_RADIUS_M,
   PANEL_DEFAULT_HEIGHT_M,
   PANEL_DEFAULT_WIDTH_M,
   type PanelRadiusM,
+  type ZoneTheme,
 } from '../config/constants';
+import '../systems/rounded-shape';
 import {
   clampSpherical,
   panelFacingPitchDeg,
@@ -14,6 +17,12 @@ import {
   sphericalToCartesian,
   type SphericalCoords,
 } from '../systems/spherical';
+import {
+  getThemePalette,
+  resolveInitialTheme,
+  ZONE_THEME_CHANGE_EVENT,
+  ZONE_THEME_STORAGE_KEY,
+} from '../systems/theme-controller';
 
 export interface PanelData {
   panelId: string;
@@ -75,7 +84,7 @@ function createTroikaTextEntity(attributes: {
   }
   const config = [
     `value: ${attributes.value ?? ''}`,
-    `color: ${attributes.color ?? '#FFFFFF'}`,
+    `color: ${attributes.color ?? '#0F172A'}`,
     `fontSize: ${attributes.fontSize ?? 0.02}`,
     `maxWidth: ${attributes.maxWidth ?? 0.6}`,
     `lineHeight: ${attributes.lineHeight ?? 1.35}`,
@@ -88,7 +97,7 @@ function createTroikaTextEntity(attributes: {
   return el;
 }
 
-// painel espacial base com fundo, borda, título e conteúdo renderizado com troika-text (seção 2.2 e 3.6.4)
+// painel espacial com estética glassmorphism, cantos arredondados e borda branca de destaque
 export class PanelController {
   private readonly borderEl: Entity;
   private readonly surfaceEl: Entity;
@@ -97,6 +106,15 @@ export class PanelController {
   private readonly bodyEl: Entity;
   private readonly footerEl: Entity;
   private coords: SphericalCoords;
+  private currentTheme: ZoneTheme;
+  private isHighlighted = false;
+
+  private readonly onThemeChange = (event: Event): void => {
+    const detail = (event as CustomEvent<{ theme: ZoneTheme }>).detail;
+    if (detail?.theme) {
+      this.applyTheme(detail.theme);
+    }
+  };
 
   constructor(
     private readonly el: Entity,
@@ -109,27 +127,35 @@ export class PanelController {
     });
     this.el.classList.add('imx-panel-root');
 
-    this.borderEl = createSubEntity('a-plane', {
-      width: data.width + 0.016,
-      height: data.height + 0.016,
+    let storedPref: string | null = null;
+    try {
+      storedPref = localStorage.getItem(ZONE_THEME_STORAGE_KEY);
+    } catch {
+      // ignora caso localStorage não esteja acessível
+    }
+    this.currentTheme = resolveInitialTheme(storedPref);
+    const palette = getThemePalette(this.currentTheme);
+    const stroke = palette.panelBorderNormalStroke;
+
+    this.borderEl = createSubEntity('a-entity', {
+      geometry: `primitive: rounded-rect; width: ${data.width + 2 * stroke}; height: ${data.height + 2 * stroke}; radius: ${PANEL_CORNER_RADIUS_M + stroke}`,
       position: '0 0 -0.002',
-      material: 'color: #38BDF8; shader: flat; opacity: 0.45; transparent: true',
+      material: `color: ${palette.panelBorderColor}; shader: flat; opacity: ${palette.panelBorderNormalOpacity}; transparent: true`,
     });
 
-    this.surfaceEl = createSubEntity('a-plane', {
+    this.surfaceEl = createSubEntity('a-entity', {
       class: 'interactable',
       'data-no-dwell': 'true',
-      width: data.width,
-      height: data.height,
+      geometry: `primitive: rounded-rect; width: ${data.width}; height: ${data.height}; radius: ${PANEL_CORNER_RADIUS_M}`,
       position: '0 0 0',
-      material: 'color: #0F172A; shader: flat; opacity: 0.94; transparent: true',
+      material: `color: ${palette.panelBgColor}; shader: flat; opacity: ${palette.panelBgOpacity}; transparent: true`,
     });
 
     this.headerLineEl = createSubEntity('a-plane', {
-      width: data.width - 0.06,
-      height: 0.003,
+      width: data.width - 0.08,
+      height: 0.002,
       position: `0 ${data.height / 2 - 0.095} 0.002`,
-      material: 'color: #334155; shader: flat; opacity: 1; transparent: true',
+      material: `color: ${palette.panelHeaderLineColor}; shader: flat; opacity: 0.65; transparent: true`,
     });
 
     const bodyHalfW = (data.width - 0.08) / 2;
@@ -138,7 +164,7 @@ export class PanelController {
       align: 'center',
       anchor: 'center',
       baseline: 'center',
-      color: '#F8FAFC',
+      color: palette.textTitleColor,
       fontSize: 0.024,
       maxWidth: data.width - 0.08,
       value: data.title,
@@ -149,7 +175,7 @@ export class PanelController {
       align: 'left',
       anchor: 'center',
       baseline: 'center',
-      color: '#E2E8F0',
+      color: palette.textBodyColor,
       fontSize: 0.021,
       lineHeight: 1.35,
       maxWidth: data.width - 0.08,
@@ -162,7 +188,7 @@ export class PanelController {
       align: 'right',
       anchor: 'center',
       baseline: 'center',
-      color: '#94A3B8',
+      color: palette.textFooterColor,
       fontSize: 0.016,
       maxWidth: data.width - 0.08,
       value: data.footer,
@@ -176,6 +202,8 @@ export class PanelController {
     this.el.appendChild(this.footerEl);
 
     this.applyTransform();
+
+    window.addEventListener(ZONE_THEME_CHANGE_EVENT, this.onThemeChange);
   }
 
   get spherical(): SphericalCoords {
@@ -186,6 +214,10 @@ export class PanelController {
     return this.data.panelId || this.el.id;
   }
 
+  get theme(): ZoneTheme {
+    return this.currentTheme;
+  }
+
   update(data: PanelData): void {
     this.data = data;
     this.coords = clampSpherical({
@@ -193,11 +225,24 @@ export class PanelController {
       pitchDeg: data.pitchDeg,
       radiusM: data.radiusM,
     });
-    this.borderEl.setAttribute('width', data.width + 0.016);
-    this.borderEl.setAttribute('height', data.height + 0.016);
-    this.surfaceEl.setAttribute('width', data.width);
-    this.surfaceEl.setAttribute('height', data.height);
-    this.headerLineEl.setAttribute('width', data.width - 0.06);
+    const palette = getThemePalette(this.currentTheme);
+    const stroke = this.isHighlighted
+      ? palette.panelBorderActiveStroke
+      : palette.panelBorderNormalStroke;
+
+    this.borderEl.setAttribute('geometry', {
+      primitive: 'rounded-rect',
+      width: data.width + 2 * stroke,
+      height: data.height + 2 * stroke,
+      radius: PANEL_CORNER_RADIUS_M + stroke,
+    });
+    this.surfaceEl.setAttribute('geometry', {
+      primitive: 'rounded-rect',
+      width: data.width,
+      height: data.height,
+      radius: PANEL_CORNER_RADIUS_M,
+    });
+    this.headerLineEl.setAttribute('width', data.width - 0.08);
     this.headerLineEl.setAttribute('position', `0 ${data.height / 2 - 0.095} 0.002`);
     this.titleEl.setAttribute('position', `0 ${data.height / 2 - 0.052} 0.004`);
     this.titleEl.setAttribute('max-width', String(data.width - 0.08));
@@ -221,16 +266,50 @@ export class PanelController {
     this.applyTransform();
   }
 
+  // espessa a borda branca (14 mm) e eleva a opacidade para 100% ao clicar ou arrastar
   setHighlight(active: boolean): void {
-    const color = active ? '#7DD3FC' : '#38BDF8';
-    const opacity = active ? 0.9 : 0.45;
+    this.isHighlighted = active;
+    const palette = getThemePalette(this.currentTheme);
+    const stroke = active ? palette.panelBorderActiveStroke : palette.panelBorderNormalStroke;
+    const opacity = active ? palette.panelBorderActiveOpacity : palette.panelBorderNormalOpacity;
+
+    this.borderEl.setAttribute('geometry', {
+      primitive: 'rounded-rect',
+      width: this.data.width + 2 * stroke,
+      height: this.data.height + 2 * stroke,
+      radius: PANEL_CORNER_RADIUS_M + stroke,
+    });
     this.borderEl.setAttribute(
       'material',
-      `color: ${color}; shader: flat; opacity: ${opacity}; transparent: true`,
+      `color: ${palette.panelBorderColor}; shader: flat; opacity: ${opacity}; transparent: true`,
     );
   }
 
+  // aplica a paleta do tema nos componentes visuais do painel
+  applyTheme(theme: ZoneTheme): void {
+    this.currentTheme = theme;
+    const palette = getThemePalette(theme);
+
+    this.surfaceEl.setAttribute(
+      'material',
+      `color: ${palette.panelBgColor}; shader: flat; opacity: ${palette.panelBgOpacity}; transparent: true`,
+    );
+    this.headerLineEl.setAttribute(
+      'material',
+      `color: ${palette.panelHeaderLineColor}; shader: flat; opacity: 0.65; transparent: true`,
+    );
+    this.titleEl.setAttribute('color', palette.textTitleColor);
+    this.titleEl.setAttribute('troika-text', 'color', palette.textTitleColor);
+    this.bodyEl.setAttribute('color', palette.textBodyColor);
+    this.bodyEl.setAttribute('troika-text', 'color', palette.textBodyColor);
+    this.footerEl.setAttribute('color', palette.textFooterColor);
+    this.footerEl.setAttribute('troika-text', 'color', palette.textFooterColor);
+
+    this.setHighlight(this.isHighlighted);
+  }
+
   dispose(): void {
+    window.removeEventListener(ZONE_THEME_CHANGE_EVENT, this.onThemeChange);
     this.borderEl.remove();
     this.surfaceEl.remove();
     this.headerLineEl.remove();

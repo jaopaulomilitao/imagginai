@@ -22,6 +22,7 @@ export interface PassthroughLayerOptions {
   feather: number;
   k1: number;
   stereoOffsetM: number;
+  blur: number;
 }
 
 export const DEFAULT_PASSTHROUGH_OPTIONS: PassthroughLayerOptions = {
@@ -30,6 +31,7 @@ export const DEFAULT_PASSTHROUGH_OPTIONS: PassthroughLayerOptions = {
   feather: 0.08,
   k1: 0,
   stereoOffsetM: DEFAULT_STEREO_OFFSET_M,
+  blur: 1.0,
 };
 
 // desenhado antes de tudo e sem teste de profundidade: o vídeo funciona como fundo da cena
@@ -122,6 +124,10 @@ export class PassthroughLayer {
     this.setUniform('uK1', k1);
   }
 
+  setBlur(blur: number): void {
+    this.setUniform('uBlur', Math.max(0, blur));
+  }
+
   dispose(): void {
     this.mesh.removeFromParent();
     this.mesh.geometry.dispose();
@@ -137,6 +143,7 @@ export class PassthroughLayer {
         uMaskMode: { value: settings.maskMode },
         uFeather: { value: clampUnit(settings.feather) },
         uK1: { value: settings.k1 },
+        uBlur: { value: Math.max(0, settings.blur) },
       },
       vertexShader: passthroughVertexShader,
       fragmentShader: passthroughFragmentShader,

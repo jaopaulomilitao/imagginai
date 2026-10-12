@@ -10,8 +10,10 @@ import {
   PANEL_DEFAULT_WIDTH_M,
   PANEL_HANDLE_HEIGHT_M,
   PANEL_HANDLE_WIDTH_M,
+  type ZoneTheme,
 } from '../config/constants';
 import { DragHandleStateMachine } from '../systems/dwell-controller';
+import '../systems/rounded-shape';
 import {
   calcHandleBarScale,
   clampSpherical,
@@ -19,6 +21,12 @@ import {
   directionToSphericalAngles,
   resolvePanelPlacement,
 } from '../systems/spherical';
+import {
+  getThemePalette,
+  resolveInitialTheme,
+  ZONE_THEME_CHANGE_EVENT,
+  ZONE_THEME_STORAGE_KEY,
+} from '../systems/theme-controller';
 import type { PanelComponent } from './imx-panel';
 
 export const PANEL_DROP_EVENT = 'imx-panel-drop';
@@ -42,31 +50,30 @@ function createSubEntity(tag: string, attributes: Record<string, unknown>): Enti
   return el;
 }
 
-function createSixDotsIcon(parent: Entity): void {
-  const cols = [-0.013, 0.013];
-  const rows = [0.015, 0, -0.015];
-  for (const x of cols) {
-    for (const y of rows) {
-      const dot = createSubEntity('a-circle', {
-        radius: 0.0045,
-        position: `${x} ${y} 0.003`,
-        material: 'color: #E2E8F0; shader: flat',
-      });
-      parent.appendChild(dot);
-    }
-  }
-}
-
-// alça de arraste de 6 pontos (2x3) com gesto de mão fechada (grab) e botões de zoom -/+ (seção 3.6.4)
+// alça de arraste de 6 pontos (2x3) com cantos arredondados, feedback de borda branca e botões -/+
 export class DragHandleController {
   readonly state: DragHandleStateMachine;
   private readonly barRootEl: Entity;
+  private readonly handleBorderEl: Entity;
   private readonly handleEl: Entity;
+  private readonly dotEls: Entity[] = [];
+  private readonly minusBorderEl: Entity;
   private readonly minusBtnEl: Entity;
+  private readonly minusTextEl: Entity;
+  private readonly plusBorderEl: Entity;
   private readonly plusBtnEl: Entity;
+  private readonly plusTextEl: Entity;
   private readonly cameraDirection = new AFRAME.THREE.Vector3();
   private lastVisibleState: boolean | null = null;
   private lastBarScale = -1;
+  private currentTheme: ZoneTheme;
+
+  private readonly onThemeChange = (event: Event): void => {
+    const detail = (event as CustomEvent<{ theme: ZoneTheme }>).detail;
+    if (detail?.theme) {
+      this.applyTheme(detail.theme);
+    }
+  };
 
   private readonly onHoverStart = (event: Event): void => {
     const hovered = (event as CustomEvent<CursorHoverDetail>).detail.el;
@@ -87,12 +94,14 @@ export class DragHandleController {
     const hovered = this.currentHoveredElement();
     if (hovered === this.handleEl && this.state.isHandleVisible && this.state.startGrabDrag()) {
       this.panelController()?.setHighlight(true);
+      this.setHandleHighlight(true);
       this.syncHandleVisibility();
     }
   };
 
   private readonly onGrabEnd = (): void => {
     if (this.state.endGrabDrag()) {
+      this.setHandleHighlight(false);
       this.finishDrop();
     }
   };
@@ -113,27 +122,105 @@ export class DragHandleController {
   ) {
     this.state = new DragHandleStateMachine(data.hoverRevealMs);
 
+    let storedPref: string | null = null;
+    try {
+      storedPref = localStorage.getItem(ZONE_THEME_STORAGE_KEY);
+    } catch {
+      // ignora caso localStorage não esteja acessível
+    }
+    this.currentTheme = resolveInitialTheme(storedPref);
+    const palette = getThemePalette(this.currentTheme);
+
     const topY = data.height / 2 + PANEL_HANDLE_HEIGHT_M / 2 + 0.012;
     this.barRootEl = createSubEntity('a-entity', {
       position: `0 ${topY} 0.012`,
       visible: false,
     });
 
-    this.handleEl = createSubEntity('a-plane', {
-      class: 'interactable',
-      width: PANEL_HANDLE_WIDTH_M,
-      height: PANEL_HANDLE_HEIGHT_M,
-      position: '0 0 0',
-      material: 'color: #1E293B; shader: flat; opacity: 0.96; transparent: true',
+    const hBorderStroke = 0.004;
+    this.handleBorderEl = createSubEntity('a-entity', {
+      geometry: `primitive: rounded-rect; width: ${PANEL_HANDLE_WIDTH_M + 2 * hBorderStroke}; height: ${PANEL_HANDLE_HEIGHT_M + 2 * hBorderStroke}; radius: ${0.016 + hBorderStroke}`,
+      position: '0 0 -0.001',
+      material: `color: ${palette.handleBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
     });
-    createSixDotsIcon(this.handleEl);
+
+    this.handleEl = createSubEntity('a-entity', {
+      class: 'interactable',
+      geometry: `primitive: rounded-rect; width: ${PANEL_HANDLE_WIDTH_M}; height: ${PANEL_HANDLE_HEIGHT_M}; radius: 0.016`,
+      position: '0 0 0',
+      material: `color: ${palette.handleBgColor}; shader: flat; opacity: ${palette.handleBgOpacity}; transparent: true`,
+    });
+
+    const cols = [-0.013, 0.013];
+    const rows = [0.015, 0, -0.015];
+    for (const x of cols) {
+      for (const y of rows) {
+        const dot = createSubEntity('a-circle', {
+          radius: 0.0045,
+          position: `${x} ${y} 0.003`,
+          material: `color: ${palette.handleDotsColor}; shader: flat`,
+        });
+        this.dotEls.push(dot);
+        this.handleEl.appendChild(dot);
+      }
+    }
 
     const sideOffset = PANEL_HANDLE_WIDTH_M / 2 + PANEL_BUTTON_SIZE_M / 2 + 0.016;
-    this.minusBtnEl = this.createRadiusButton(PT_BR.zone.panels.radiusNearer, -sideOffset);
-    this.plusBtnEl = this.createRadiusButton(PT_BR.zone.panels.radiusFarther, sideOffset);
 
+    const bStroke = 0.004;
+    this.minusBorderEl = createSubEntity('a-entity', {
+      geometry: `primitive: rounded-rect; width: ${PANEL_BUTTON_SIZE_M + 2 * bStroke}; height: ${PANEL_HANDLE_HEIGHT_M + 2 * bStroke}; radius: ${0.014 + bStroke}`,
+      position: `${-sideOffset} 0 -0.001`,
+      material: `color: ${palette.buttonBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
+    });
+    this.minusBtnEl = createSubEntity('a-entity', {
+      class: 'interactable',
+      geometry: `primitive: rounded-rect; width: ${PANEL_BUTTON_SIZE_M}; height: ${PANEL_HANDLE_HEIGHT_M}; radius: 0.014`,
+      position: `${-sideOffset} 0 0`,
+      material: `color: ${palette.buttonBgColor}; shader: flat; opacity: ${palette.buttonBgOpacity}; transparent: true`,
+    });
+    this.minusTextEl = createSubEntity('a-troika-text', {
+      position: '0 0 0.003',
+      align: 'center',
+      anchor: 'center',
+      baseline: 'center',
+      color: palette.buttonTextColor,
+      'font-size': 0.024,
+      fontSize: 0.024,
+      value: PT_BR.zone.panels.radiusNearer,
+      'troika-text': `value: ${PT_BR.zone.panels.radiusNearer}; fontSize: 0.024; color: ${palette.buttonTextColor}; align: center; anchor: center; baseline: center`,
+    });
+    this.minusBtnEl.appendChild(this.minusTextEl);
+
+    this.plusBorderEl = createSubEntity('a-entity', {
+      geometry: `primitive: rounded-rect; width: ${PANEL_BUTTON_SIZE_M + 2 * bStroke}; height: ${PANEL_HANDLE_HEIGHT_M + 2 * bStroke}; radius: ${0.014 + bStroke}`,
+      position: `${sideOffset} 0 -0.001`,
+      material: `color: ${palette.buttonBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
+    });
+    this.plusBtnEl = createSubEntity('a-entity', {
+      class: 'interactable',
+      geometry: `primitive: rounded-rect; width: ${PANEL_BUTTON_SIZE_M}; height: ${PANEL_HANDLE_HEIGHT_M}; radius: 0.014`,
+      position: `${sideOffset} 0 0`,
+      material: `color: ${palette.buttonBgColor}; shader: flat; opacity: ${palette.buttonBgOpacity}; transparent: true`,
+    });
+    this.plusTextEl = createSubEntity('a-troika-text', {
+      position: '0 0 0.003',
+      align: 'center',
+      anchor: 'center',
+      baseline: 'center',
+      color: palette.buttonTextColor,
+      'font-size': 0.024,
+      fontSize: 0.024,
+      value: PT_BR.zone.panels.radiusFarther,
+      'troika-text': `value: ${PT_BR.zone.panels.radiusFarther}; fontSize: 0.024; color: ${palette.buttonTextColor}; align: center; anchor: center; baseline: center`,
+    });
+    this.plusBtnEl.appendChild(this.plusTextEl);
+
+    this.barRootEl.appendChild(this.minusBorderEl);
     this.barRootEl.appendChild(this.minusBtnEl);
+    this.barRootEl.appendChild(this.handleBorderEl);
     this.barRootEl.appendChild(this.handleEl);
+    this.barRootEl.appendChild(this.plusBorderEl);
     this.barRootEl.appendChild(this.plusBtnEl);
     this.el.appendChild(this.barRootEl);
 
@@ -146,6 +233,8 @@ export class DragHandleController {
     cameraEl?.addEventListener('ixr-grab-start', this.onGrabStart);
     cameraEl?.addEventListener('ixr-grab-end', this.onGrabEnd);
     cameraEl?.addEventListener('ixr-hand-lost', this.onGrabEnd);
+
+    window.addEventListener(ZONE_THEME_CHANGE_EVENT, this.onThemeChange);
 
     this.syncHandleBarScale();
   }
@@ -160,6 +249,7 @@ export class DragHandleController {
   }
 
   dispose(): void {
+    window.removeEventListener(ZONE_THEME_CHANGE_EVENT, this.onThemeChange);
     const cameraEl = this.cameraEntity();
     cameraEl?.removeEventListener('ixr-cursor-hover-start', this.onHoverStart);
     cameraEl?.removeEventListener('ixr-cursor-hover-end', this.onHoverEnd);
@@ -171,27 +261,58 @@ export class DragHandleController {
     this.barRootEl.remove();
   }
 
-  private createRadiusButton(symbol: string, x: number): Entity {
-    const btn = createSubEntity('a-plane', {
-      class: 'interactable',
-      width: PANEL_BUTTON_SIZE_M,
-      height: PANEL_HANDLE_HEIGHT_M,
-      position: `${x} 0 0`,
-      material: 'color: #1E293B; shader: flat; opacity: 0.96; transparent: true',
+  setHandleHighlight(active: boolean): void {
+    const stroke = active ? 0.008 : 0.004;
+    const opacity = active ? 1.0 : 0.85;
+    this.handleBorderEl.setAttribute('geometry', {
+      primitive: 'rounded-rect',
+      width: PANEL_HANDLE_WIDTH_M + 2 * stroke,
+      height: PANEL_HANDLE_HEIGHT_M + 2 * stroke,
+      radius: 0.016 + stroke,
     });
-    const text = createSubEntity('a-troika-text', {
-      position: '0 0 0.003',
-      align: 'center',
-      anchor: 'center',
-      baseline: 'center',
-      color: '#38BDF8',
-      'font-size': 0.024,
-      fontSize: 0.024,
-      value: symbol,
-      'troika-text': `value: ${symbol}; fontSize: 0.024; color: #38BDF8; align: center; anchor: center; baseline: center`,
-    });
-    btn.appendChild(text);
-    return btn;
+    this.handleBorderEl.setAttribute(
+      'material',
+      `color: #FFFFFF; shader: flat; opacity: ${opacity}; transparent: true`,
+    );
+  }
+
+  applyTheme(theme: ZoneTheme): void {
+    this.currentTheme = theme;
+    const palette = getThemePalette(theme);
+
+    this.handleEl.setAttribute(
+      'material',
+      `color: ${palette.handleBgColor}; shader: flat; opacity: ${palette.handleBgOpacity}; transparent: true`,
+    );
+    this.handleBorderEl.setAttribute(
+      'material',
+      `color: ${palette.handleBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
+    );
+    for (const dot of this.dotEls) {
+      dot.setAttribute('material', `color: ${palette.handleDotsColor}; shader: flat`);
+    }
+
+    this.minusBtnEl.setAttribute(
+      'material',
+      `color: ${palette.buttonBgColor}; shader: flat; opacity: ${palette.buttonBgOpacity}; transparent: true`,
+    );
+    this.minusBorderEl.setAttribute(
+      'material',
+      `color: ${palette.buttonBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
+    );
+    this.minusTextEl.setAttribute('color', palette.buttonTextColor);
+    this.minusTextEl.setAttribute('troika-text', 'color', palette.buttonTextColor);
+
+    this.plusBtnEl.setAttribute(
+      'material',
+      `color: ${palette.buttonBgColor}; shader: flat; opacity: ${palette.buttonBgOpacity}; transparent: true`,
+    );
+    this.plusBorderEl.setAttribute(
+      'material',
+      `color: ${palette.buttonBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
+    );
+    this.plusTextEl.setAttribute('color', palette.buttonTextColor);
+    this.plusTextEl.setAttribute('troika-text', 'color', palette.buttonTextColor);
   }
 
   private cameraEntity(): Entity | null {
@@ -319,7 +440,6 @@ export class DragHandleController {
 }
 
 AFRAME.registerComponent<DragHandleComponent>('imx-drag-handle', {
-  dependencies: ['imx-panel'],
   schema: {
     cameraSelector: { type: 'string', default: '#main-camera' },
     hoverRevealMs: { type: 'number', default: HANDLE_HOVER_REVEAL_MS },
@@ -329,8 +449,8 @@ AFRAME.registerComponent<DragHandleComponent>('imx-drag-handle', {
   init() {
     this.controller = new DragHandleController(this.el, this.data);
   },
-  tick(_time, timeDelta) {
-    this.controller?.tick(timeDelta);
+  tick(_time, delta) {
+    this.controller?.tick(delta);
   },
   remove() {
     this.controller?.dispose();
