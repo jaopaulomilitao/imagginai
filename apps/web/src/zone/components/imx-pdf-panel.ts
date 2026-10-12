@@ -145,8 +145,15 @@ export class PdfPanelController {
     const planeW = data.width - 0.06;
     const planeH = data.height - 0.22;
     const geometry = new THREE.PlaneGeometry(planeW, planeH);
-    const material = new THREE.MeshBasicMaterial({ color: '#FFFFFF', side: THREE.FrontSide });
+    // define transparent: true e renderOrder > 0 para desenhar na fila transparente após o passthrough (renderOrder -1)
+    const material = new THREE.MeshBasicMaterial({
+      color: '#FFFFFF',
+      side: THREE.FrontSide,
+      transparent: true,
+      opacity: 1.0,
+    });
     this.canvasMesh = new THREE.Mesh(geometry, material);
+    this.canvasMesh.renderOrder = 2;
     this.canvasMesh.position.set(0, 0.008, 0.005);
     this.el.object3D.add(this.canvasMesh);
 

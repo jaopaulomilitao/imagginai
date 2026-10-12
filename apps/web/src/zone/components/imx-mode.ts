@@ -4,7 +4,6 @@ import type { PassthroughComponent } from 'interacxr';
 import type { EnvironmentComponent } from './imx-environment';
 import {
   DEFAULT_ZONE_MODE,
-  MODE_TOGGLE_SHORTCUT_KEY,
   MODE_TRANSITION_DURATION_MS,
   ZONE_MODES,
   type ZoneMode,
@@ -24,23 +23,10 @@ export interface ModeComponent extends Component<ModeComponentData> {
   controller?: ZoneModeBridge;
 }
 
-function isEditableElement(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) return false;
-  const tag = target.tagName.toLowerCase();
-  return tag === 'input' || tag === 'textarea' || target.isContentEditable;
-}
-
-// integra o ModeController à cena a-frame, sincronizando passthrough, ambiente e atalho de teclado M
+// integra o ModeController à cena a-frame, sincronizando opacidade de passthrough e ambiente
 export class ZoneModeBridge {
   readonly modeController: ModeController;
   private readonly unsubscribe: () => void;
-  private readonly onKeyDown = (event: KeyboardEvent): void => {
-    if (event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
-    if (isEditableElement(event.target)) return;
-    if (event.key.toLowerCase() === MODE_TOGGLE_SHORTCUT_KEY) {
-      this.modeController.toggle();
-    }
-  };
 
   constructor(
     private readonly el: Entity,
@@ -48,7 +34,6 @@ export class ZoneModeBridge {
   ) {
     this.modeController = new ModeController(data.initialMode, data.durationMs);
     this.unsubscribe = this.modeController.subscribe((snapshot) => this.applySnapshot(snapshot));
-    window.addEventListener('keydown', this.onKeyDown);
     this.applySnapshot(this.modeController.snapshot);
   }
 
@@ -65,7 +50,6 @@ export class ZoneModeBridge {
   }
 
   dispose(): void {
-    window.removeEventListener('keydown', this.onKeyDown);
     this.unsubscribe();
   }
 

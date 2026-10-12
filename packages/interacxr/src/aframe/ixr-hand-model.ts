@@ -1,5 +1,5 @@
 import AFRAME, { type Component, type Entity } from 'aframe';
-import type { Mesh, Vector3 } from 'three';
+import type { Group, Mesh, Vector3, WebGLRenderer } from 'three';
 
 import {
   type HandDataDetail,
@@ -7,6 +7,7 @@ import {
   type Landmark,
   LANDMARK_COUNT,
 } from '../core/landmarks';
+import { detectStereoEyeSign } from '../passthrough/passthrough-layer';
 import { getInteracxrSystem } from './interacxr-system';
 import { HAND_DATA_EVENT } from './ixr-hand-tracking';
 import { THREE } from './three';
@@ -47,6 +48,7 @@ const HAND_CONNECTIONS: readonly (readonly [number, number])[] = [
 ];
 
 export class HandModelController {
+  private readonly handGroup: Group;
   private readonly joints: Mesh[] = [];
   private readonly bones: Mesh[] = [];
   private readonly targets: Vector3[] = [];
@@ -54,6 +56,8 @@ export class HandModelController {
   private readonly tmpMid = new THREE.Vector3();
   private readonly tmpDir = new THREE.Vector3();
   private readonly up = new THREE.Vector3(0, 1, 0);
+  private readonly tmpViewport = new THREE.Vector4();
+  private readonly tmpSize = new THREE.Vector2();
 
   private readonly onHandData = (event: Event): void => {
     this.handleHandData((event as CustomEvent<HandDataDetail>).detail.landmarks);
@@ -63,6 +67,8 @@ export class HandModelController {
     private readonly el: Entity,
     private readonly data: HandModelData,
   ) {
+    this.handGroup = new THREE.Group();
+    this.el.object3D.add(this.handGroup);
     this.createJoints();
     this.createBones();
     data.source?.addEventListener(HAND_DATA_EVENT, this.onHandData);
@@ -70,6 +76,7 @@ export class HandModelController {
 
   dispose(): void {
     this.data.source?.removeEventListener(HAND_DATA_EVENT, this.onHandData);
+    this.handGroup.removeFromParent();
   }
 
   tick(): void {
@@ -82,6 +89,23 @@ export class HandModelController {
     HAND_CONNECTIONS.forEach(([from, to], i) =>
       this.placeBone(this.bones[i], this.joints[from], this.joints[to]),
     );
+  }
+
+  private attachStereoSync(mesh: Mesh): void {
+    mesh.onBeforeRender = (renderer: WebGLRenderer): void => {
+      const system = getInteracxrSystem(this.el);
+      const eyeSign = detectStereoEyeSign(renderer, this.tmpViewport, this.tmpSize);
+      this.handGroup.position.x = eyeSign * system.calibration.stereoOffsetM;
+      this.handGroup.updateMatrix();
+      if (this.handGroup.parent) {
+        this.handGroup.matrixWorld.multiplyMatrices(
+          this.handGroup.parent.matrixWorld,
+          this.handGroup.matrix,
+        );
+      }
+      mesh.updateMatrix();
+      mesh.matrixWorld.multiplyMatrices(this.handGroup.matrixWorld, mesh.matrix);
+    };
   }
 
   private createJoints(): void {
@@ -98,7 +122,8 @@ export class HandModelController {
       const joint = new THREE.Mesh(geometry, material);
       joint.renderOrder = 999;
       joint.visible = false;
-      this.el.object3D.add(joint);
+      this.attachStereoSync(joint);
+      this.handGroup.add(joint);
       this.joints.push(joint);
       this.targets.push(new THREE.Vector3());
     }
@@ -117,7 +142,8 @@ export class HandModelController {
       const bone = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 1, 8), material);
       bone.renderOrder = 999;
       bone.visible = false;
-      this.el.object3D.add(bone);
+      this.attachStereoSync(bone);
+      this.handGroup.add(bone);
       this.bones.push(bone);
     }
   }

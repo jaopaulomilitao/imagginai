@@ -129,7 +129,7 @@ export class PanelController {
       width: data.width - 0.06,
       height: 0.003,
       position: `0 ${data.height / 2 - 0.095} 0.002`,
-      material: 'color: #334155; shader: flat',
+      material: 'color: #334155; shader: flat; opacity: 1; transparent: true',
     });
 
     const bodyHalfW = (data.width - 0.08) / 2;

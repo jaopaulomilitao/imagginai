@@ -33,5 +33,53 @@ export const PT_BR = {
       radiusNearer: '−',
       radiusFarther: '+',
     },
+    belt: {
+      items: {
+        'exit-zone': {
+          icon: '⏻',
+          label: 'Sair',
+          confirmLabel: 'Confirmar?',
+        },
+        'switch-zone': {
+          icon: '◈',
+          label: 'Zonas',
+        },
+        'toggle-mode': {
+          icon: '◐',
+          label: 'Modo',
+        },
+        'toggle-pomodoro': {
+          icon: '◷',
+          label: 'Pomodoro',
+        },
+        recenter: {
+          icon: '⌖',
+          label: 'Recentrar',
+        },
+        'ai-assistant': {
+          icon: '✦',
+          label: 'IA (em breve)',
+        },
+      },
+      feedback: {
+        exitConfirmPrompt: 'Confirme em até 3 s para sair da Zona',
+        recentered: 'Painéis recentralizados à sua frente',
+        aiDisabled: 'Assistente de IA: em breve (desativado no MVP)',
+        zonesPickerTitle: 'Zonas baixadas (offline)',
+        demoZoneName: 'Sistema Cardiovascular (Demo)',
+        zoneSwitched: (name: string) => `Zona ativa: ${name}`,
+      },
+    },
+    pomodoro: {
+      idle: 'Pomodoro pronto (25/5)',
+      focusRunning: (mmss: string) => `Foco: ${mmss}`,
+      focusPaused: (mmss: string) => `Pausado: ${mmss}`,
+      oneMinWarning: 'Falta 1 minuto para concluir o bloco de foco',
+      breakTitle: 'Hora da pausa (5 min)',
+      breakBody:
+        'Retire o óculos VRBox, descanse os olhos e hidrate-se antes de iniciar o próximo bloco.',
+      breakTimer: (mmss: string) => `Tempo de pausa: ${mmss}`,
+      skipBreakButton: 'Iniciar novo bloco',
+    },
   },
 } as const;

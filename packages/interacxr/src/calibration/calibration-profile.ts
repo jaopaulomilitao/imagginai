@@ -7,6 +7,8 @@ export interface CalibrationSettings {
   planeDistanceM: number;
   // coeficiente de distorção radial leve aplicado ao vídeo
   k1: number;
+  // deslocamento horizontal por olho em modo estéreo (metros) para evitar convergência forçada
+  stereoOffsetM?: number;
 }
 
 export const DEFAULT_CALIBRATION: Readonly<CalibrationSettings> = {
@@ -14,6 +16,8 @@ export const DEFAULT_CALIBRATION: Readonly<CalibrationSettings> = {
   planeDistanceM: 1.0,
   k1: 0,
 };
+
+export const DEFAULT_STEREO_OFFSET_M = 0.028;
 
 const MIN_FOV_DEG = 10;
 const MAX_FOV_DEG = 120;
@@ -47,6 +51,7 @@ export class CalibrationProfile {
   readonly camVFovDeg: number;
   readonly planeDistanceM: number;
   readonly k1: number;
+  readonly stereoOffsetM: number;
 
   constructor(overrides: Partial<CalibrationSettings> = {}) {
     const settings = { ...DEFAULT_CALIBRATION, ...overrides };
@@ -54,6 +59,10 @@ export class CalibrationProfile {
     this.camVFovDeg = settings.camVFovDeg;
     this.planeDistanceM = settings.planeDistanceM;
     this.k1 = settings.k1;
+    this.stereoOffsetM =
+      typeof overrides.stereoOffsetM === 'number' && Number.isFinite(overrides.stereoOffsetM)
+        ? overrides.stereoOffsetM
+        : DEFAULT_STEREO_OFFSET_M;
   }
 
   // em paisagem (uso no óculos): h = 2·d·tan(fov/2) e w = h·(largura/altura), conforme a seção 3.7;
@@ -71,12 +80,17 @@ export class CalibrationProfile {
     return { distanceM, widthM: shortSideM, heightM: shortSideM * (videoHeight / videoWidth) };
   }
 
-  // a profundidade relativa do mediapipe usa a mesma escala de x, por isso é multiplicada pela largura
+  // projeta cada landmark exatamente sobre o pixel correspondente no plano de vídeo,
+  // escalando x e y pela razão (-z / distanceM) para anular o desvio de perspectiva quando z != 0
   mapLandmark(landmark: Landmark, plane: ProjectionPlane): PlanePoint {
+    const planeX = (landmark.x - 0.5) * plane.widthM;
+    const planeY = -(landmark.y - 0.5) * plane.heightM;
+    const z = -plane.distanceM + landmark.z * 0.15;
+    const perspectiveScale = plane.distanceM > 0 ? -z / plane.distanceM : 1;
     return {
-      x: (landmark.x - 0.5) * plane.widthM,
-      y: -(landmark.y - 0.5) * plane.heightM,
-      z: -plane.distanceM + landmark.z * plane.widthM,
+      x: planeX * perspectiveScale,
+      y: planeY * perspectiveScale,
+      z,
     };
   }
 

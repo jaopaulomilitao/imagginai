@@ -105,7 +105,7 @@ export function snapAndClampSpherical(
 // converte coordenadas esféricas relativas ao usuário sentado na origem do rig (0, 1.2, 0) para cartesianas;
 // yaw positivo gira para a direita (+x), pitch positivo gira para cima (+y), frente em -z
 export function sphericalToCartesian(
-  coords: SphericalCoords,
+  coords: { readonly yawDeg: number; readonly pitchDeg: number; readonly radiusM: number },
   origin: CartesianPoint = RIG_ORIGIN,
 ): CartesianPoint {
   const yawRad = degToRad(coords.yawDeg);
@@ -176,8 +176,8 @@ export function hasAngularCollision(
   widthM: number = PANEL_DEFAULT_WIDTH_M,
   heightM: number = PANEL_DEFAULT_HEIGHT_M,
 ): boolean {
-  const footprintA = calcPanelAngularFootprint(Math.max(a.radiusM, 1.0), widthM, heightM);
-  const footprintB = calcPanelAngularFootprint(Math.max(b.radiusM, 1.0), widthM, heightM);
+  const footprintA = calcPanelAngularFootprint(a.radiusM, widthM, heightM);
+  const footprintB = calcPanelAngularFootprint(b.radiusM, widthM, heightM);
   const yawEdgeGap =
     angularDistanceDeg(a.yawDeg, b.yawDeg) - (footprintA.halfWidthDeg + footprintB.halfWidthDeg);
   const pitchEdgeGap =

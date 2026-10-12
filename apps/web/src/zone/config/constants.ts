@@ -38,8 +38,9 @@ export const HANDLE_MAX_SCALE = 1.15;
 export const PDF_PAGE_CACHE_RADIUS = 1;
 
 // calibração unificada do vídeo e das mãos (seção 3.7)
-export const DEFAULT_CAMERA_VFOV_DEG = 50;
+export const DEFAULT_CAMERA_VFOV_DEG = 82;
 export const PASSTHROUGH_PLANE_DISTANCE_M = 1.0;
+export const DEFAULT_STEREO_EYE_OFFSET_M = 0.028;
 
 // presets de ambiente (seção 3.3 e fase 3)
 export const ENVIRONMENT_PRESETS = ['focus-dark', 'focus-nature'] as const;
@@ -77,6 +78,34 @@ export type ZoneMode = (typeof ZONE_MODES)[number];
 export const DEFAULT_ZONE_MODE: ZoneMode = 'focus';
 export const MODE_TRANSITION_DURATION_MS = 300;
 export const MODE_TOGGLE_SHORTCUT_KEY = 'm';
+
+// belt menu no quadril virtual, histerese e atalhos (seção 3.4 e fase 5)
+export const BELT_SHOW_PITCH_THRESHOLD_DEG = -30;
+export const BELT_HIDE_PITCH_THRESHOLD_DEG = -20;
+export const BELT_SHOW_DWELL_MS = 400;
+export const BELT_YAW_LERP_ALPHA = 0.1;
+export const BELT_CENTER_PITCH_DEG = -38;
+export const BELT_ARC_MAX_HALF_WIDTH_DEG = 40;
+export const BELT_MAX_ITEMS = 6;
+export const BELT_RADIUS_M = 1.0;
+export const BELT_ITEM_WIDTH_M = 0.155;
+export const BELT_ITEM_HEIGHT_M = 0.125;
+export const BELT_EXIT_CONFIRM_TIMEOUT_MS = 3000;
+
+export const BELT_SHORTCUT_EXIT_KEY = 'escape';
+export const BELT_SHORTCUT_ZONES_KEY = 'z';
+export const BELT_SHORTCUT_MODE_KEY = 'm';
+export const BELT_SHORTCUT_POMODORO_KEY = 'p';
+export const BELT_SHORTCUT_RECENTER_KEY = 'c';
+
+// temporizador pomodoro (seção 3.5 e fase 5)
+export const POMODORO_PRESETS = ['25/5', '20/5'] as const;
+export type PomodoroPreset = (typeof POMODORO_PRESETS)[number];
+export const DEFAULT_POMODORO_PRESET: PomodoroPreset = '25/5';
+export const POMODORO_FOCUS_25_MS = 25 * 60 * 1000;
+export const POMODORO_FOCUS_20_MS = 20 * 60 * 1000;
+export const POMODORO_BREAK_5_MS = 5 * 60 * 1000;
+export const POMODORO_WARNING_BEFORE_END_MS = 60 * 1000;
 
 // métricas de desempenho e overlay de depuração (seção 3.8 e fase 3)
 export const TARGET_MIN_FPS = 50;

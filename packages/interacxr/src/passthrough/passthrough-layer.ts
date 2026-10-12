@@ -1,7 +1,14 @@
-import type { Mesh, Object3D, PlaneGeometry, ShaderMaterial, VideoTexture } from 'three';
+import type {
+  Mesh,
+  Object3D,
+  PlaneGeometry,
+  ShaderMaterial,
+  VideoTexture,
+  WebGLRenderer,
+} from 'three';
 
 import { THREE } from '../aframe/three';
-import type { ProjectionPlane } from '../calibration/calibration-profile';
+import { DEFAULT_STEREO_OFFSET_M, type ProjectionPlane } from '../calibration/calibration-profile';
 import {
   MASK_MODE,
   type MaskMode,
@@ -14,6 +21,7 @@ export interface PassthroughLayerOptions {
   maskMode: MaskMode;
   feather: number;
   k1: number;
+  stereoOffsetM: number;
 }
 
 export const DEFAULT_PASSTHROUGH_OPTIONS: PassthroughLayerOptions = {
@@ -21,6 +29,7 @@ export const DEFAULT_PASSTHROUGH_OPTIONS: PassthroughLayerOptions = {
   maskMode: MASK_MODE.FULL,
   feather: 0.08,
   k1: 0,
+  stereoOffsetM: DEFAULT_STEREO_OFFSET_M,
 };
 
 // desenhado antes de tudo e sem teste de profundidade: o vídeo funciona como fundo da cena
@@ -30,10 +39,27 @@ function clampUnit(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
+// identifica se o passe atual do renderer corresponde ao olho esquerdo (-1), direito (+1) ou mono (0)
+export function detectStereoEyeSign(
+  renderer: WebGLRenderer,
+  tmpViewport: { x: number; y: number; z: number; w: number },
+  tmpSize: { x: number; y: number },
+): -1 | 0 | 1 {
+  renderer.getViewport(tmpViewport as never);
+  renderer.getSize(tmpSize as never);
+  if (tmpSize.x <= 0 || tmpViewport.z > tmpSize.x * 0.65) {
+    return 0;
+  }
+  return tmpViewport.x > 0 ? 1 : -1;
+}
+
 // plano de vídeo preso à cabeça, dimensionado pelo mesmo plano de projeção usado pelas mãos
 export class PassthroughLayer {
   readonly mesh: Mesh<PlaneGeometry, ShaderMaterial>;
   private readonly texture: VideoTexture;
+  private stereoOffsetM: number;
+  private readonly tmpViewport = new THREE.Vector4();
+  private readonly tmpSize = new THREE.Vector2();
 
   constructor(
     video: HTMLVideoElement,
@@ -41,11 +67,21 @@ export class PassthroughLayer {
     options: Partial<PassthroughLayerOptions> = {},
   ) {
     const settings = { ...DEFAULT_PASSTHROUGH_OPTIONS, ...options };
+    this.stereoOffsetM = settings.stereoOffsetM;
     this.texture = new THREE.VideoTexture(video);
     this.texture.colorSpace = THREE.SRGBColorSpace;
     this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), this.createMaterial(settings));
     this.mesh.renderOrder = BACKGROUND_RENDER_ORDER;
     this.mesh.frustumCulled = false;
+    // desloca levemente para a esquerda no olho esquerdo e para a direita no olho direito para alinhar com a IPD
+    this.mesh.onBeforeRender = (renderer: WebGLRenderer): void => {
+      const eyeSign = detectStereoEyeSign(renderer, this.tmpViewport, this.tmpSize);
+      this.mesh.position.x = eyeSign * this.stereoOffsetM;
+      this.mesh.updateMatrix();
+      if (this.mesh.parent) {
+        this.mesh.matrixWorld.multiplyMatrices(this.mesh.parent.matrixWorld, this.mesh.matrix);
+      }
+    };
     this.resize(plane);
   }
 
@@ -61,6 +97,12 @@ export class PassthroughLayer {
   resize(plane: ProjectionPlane): void {
     this.mesh.scale.set(plane.widthM, plane.heightM, 1);
     this.mesh.position.set(0, 0, -plane.distanceM);
+  }
+
+  setStereoOffset(offsetM: number): void {
+    if (Number.isFinite(offsetM)) {
+      this.stereoOffsetM = offsetM;
+    }
   }
 
   setOpacity(opacity: number): void {

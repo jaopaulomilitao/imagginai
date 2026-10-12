@@ -38,6 +38,7 @@ export class PassthroughController {
     const system = getInteracxrSystem(this.el);
     this.layer?.resize(system.projectionPlane);
     this.layer?.setK1(system.calibration.k1);
+    this.layer?.setStereoOffset(system.calibration.stereoOffsetM);
   };
 
   constructor(
@@ -59,6 +60,7 @@ export class PassthroughController {
     const system = getInteracxrSystem(this.el);
     this.layer = new PassthroughLayer(video, system.projectionPlane, {
       k1: system.calibration.k1,
+      stereoOffsetM: system.calibration.stereoOffsetM,
     });
     this.layer.attachTo(this.el.object3D);
     this.update(this.data);

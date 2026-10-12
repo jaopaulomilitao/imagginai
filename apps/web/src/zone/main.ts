@@ -9,12 +9,14 @@ import './components/imx-panel';
 import './components/imx-card-panel';
 import './components/imx-pdf-panel';
 import './components/imx-drag-handle';
+import './components/imx-belt-menu';
 
 import { PT_BR } from '../shared/i18n/pt-br';
 import { logger } from '../shared/logger';
 import { ZoneWorkspaceController } from './components/zone-workspace';
 import {
   DEFAULT_CAMERA_VFOV_DEG,
+  DEFAULT_STEREO_EYE_OFFSET_M,
   MODE_TRANSITION_DURATION_MS,
   PASSTHROUGH_PLANE_DISTANCE_M,
   RIG_ORIGIN,
@@ -39,10 +41,14 @@ function configureZoneScene(scene: Scene): void {
   const cameraEl = requireElement<Entity>('#main-camera');
   cameraEl.setAttribute('imx-debug-overlay', 'enabled', params.debug);
 
+  const beltEl = requireElement<Entity>('#zone-belt-menu');
+  beltEl.setAttribute('imx-belt-menu', 'zoneId', params.zoneId);
+
   const system = getInteracxrSystem(scene);
   system.setCalibration({
     camVFovDeg: DEFAULT_CAMERA_VFOV_DEG,
     planeDistanceM: PASSTHROUGH_PLANE_DISTANCE_M,
+    stereoOffsetM: DEFAULT_STEREO_EYE_OFFSET_M,
   });
 
   const panelsContainer = requireElement<Entity>('#zone-panels');
