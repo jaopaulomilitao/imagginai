@@ -121,13 +121,14 @@ export class CursorController {
       new THREE.MeshBasicMaterial(config),
     );
     mesh.position.set(0, 0, -1);
+    mesh.renderOrder = 1000;
     this.el.object3D.add(mesh);
     return mesh;
   }
 
   private onHit(hit: Intersection): void {
-    // é realizada a busca pelo elemento pai que possui o componente a-frame
-    const owner = findOwnerEntity(hit.object);
+    // é realizada a busca pelo elemento pai que possui o componente a-frame ou corresponde ao seletor
+    const owner = findOwnerEntity(hit.object, this.data.targetClass);
     if (owner && this.hoveredElement !== owner) {
       if (this.hoveredElement) this.emitHover('ixr-cursor-hover-end', this.hoveredElement);
       this.hoveredElement = owner;

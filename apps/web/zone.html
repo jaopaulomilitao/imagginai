@@ -110,11 +110,14 @@
     <a-scene
       id="zone-scene"
       vr-mode-ui="enabled: true"
+      webxr="referenceSpaceType: local"
       background="color: #0B0F17"
       renderer="colorManagement: true"
       imx-mode="initialMode: focus; durationMs: 300; cameraSelector: #main-camera; environmentSelector: #zone-environment"
     >
       <a-entity id="zone-environment" imx-environment="preset: focus-dark; opacity: 1"></a-entity>
+
+      <a-entity id="zone-panels"></a-entity>
 
       <a-entity id="camera-rig" position="0 1.2 0">
         <a-entity

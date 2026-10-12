@@ -104,3 +104,5 @@ declare module 'aframe' {
   const AFRAME: AFrameGlobal;
   export default AFRAME;
 }
+
+declare module 'aframe-troika-text';

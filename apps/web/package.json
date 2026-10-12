@@ -16,7 +16,10 @@
   },
   "dependencies": {
     "aframe": "1.7.1",
+    "aframe-troika-text": "0.14.0",
+    "dexie": "4.4.6",
     "interacxr": "workspace:*",
+    "pdfjs-dist": "6.4.299",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router": "7.18.4"

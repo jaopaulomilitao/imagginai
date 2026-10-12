@@ -10,8 +10,8 @@ export default defineConfig(({ mode }) => ({
     port: 5173,
   },
   build: {
-    // o a-frame embute o three.js (~1,3 mb minificado) em um único módulo indivisível
-    chunkSizeWarningLimit: 1500,
+    // o bundle da zona reúne a-frame (three.js), troika-three-text e pdfjs-dist para uso offline
+    chunkSizeWarningLimit: 2500,
     rolldownOptions: {
       input: {
         main: 'index.html',

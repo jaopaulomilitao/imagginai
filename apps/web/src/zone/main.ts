@@ -5,9 +5,14 @@ import { getInteracxrSystem } from 'interacxr';
 import './components/imx-environment';
 import './components/imx-mode';
 import './components/imx-debug-overlay';
+import './components/imx-panel';
+import './components/imx-card-panel';
+import './components/imx-pdf-panel';
+import './components/imx-drag-handle';
 
 import { PT_BR } from '../shared/i18n/pt-br';
 import { logger } from '../shared/logger';
+import { ZoneWorkspaceController } from './components/zone-workspace';
 import {
   DEFAULT_CAMERA_VFOV_DEG,
   MODE_TRANSITION_DURATION_MS,
@@ -22,7 +27,7 @@ function requireElement<T extends Element>(selector: string): T {
   return element;
 }
 
-// aplica os parâmetros de execução (preset de ambiente, calibração unificada e modo debug)
+// aplica os parâmetros de execução, inicializa os 3 painéis iniciais e restaura o layout salvo no dexie
 function configureZoneScene(scene: Scene): void {
   const params = parseZoneParams(window.location.search);
   const rig = requireElement<Entity>('#camera-rig');
@@ -38,6 +43,38 @@ function configureZoneScene(scene: Scene): void {
   system.setCalibration({
     camVFovDeg: DEFAULT_CAMERA_VFOV_DEG,
     planeDistanceM: PASSTHROUGH_PLANE_DISTANCE_M,
+  });
+
+  const panelsContainer = requireElement<Entity>('#zone-panels');
+  const workspace = new ZoneWorkspaceController(scene, panelsContainer, params.zoneId);
+  void workspace.init().catch((error: unknown) => {
+    logger.error('failed to initialize zone workspace panels', error);
+  });
+
+  const syncRigHeight = (): void => {
+    if (!scene.is('vr-mode')) {
+      rig.object3D.position.y = RIG_ORIGIN.y;
+      return;
+    }
+    // caso o webxr em vr aplique altura de chão (local-floor ~1.6m),
+    // compensa no rig para manter o olhar do usuário alinhado em RIG_ORIGIN.y (1.2m)
+    const cameraObj = cameraEl.getObject3D('camera');
+    const cameraLocalY = cameraObj ? cameraObj.position.y : cameraEl.object3D.position.y;
+    if (cameraLocalY > 0.3) {
+      rig.object3D.position.y = RIG_ORIGIN.y - cameraLocalY;
+    } else {
+      rig.object3D.position.y = RIG_ORIGIN.y;
+    }
+  };
+
+  scene.addEventListener('enter-vr', () => {
+    syncRigHeight();
+    window.setTimeout(syncRigHeight, 100);
+    window.setTimeout(syncRigHeight, 500);
+  });
+
+  scene.addEventListener('exit-vr', () => {
+    rig.object3D.position.y = RIG_ORIGIN.y;
   });
 }
 

@@ -1,9 +1,11 @@
 import {
   DEBUG_QUERY_PARAM,
+  DEFAULT_DEMO_ZONE_ID,
   DEFAULT_ENVIRONMENT_PRESET,
   ENVIRONMENT_PRESETS,
   ENVIRONMENT_QUERY_PARAM,
   FPS_SMOOTHING_ALPHA,
+  ZONE_ID_QUERY_PARAM,
   type EnvironmentPreset,
   type ZoneMode,
 } from './constants';
@@ -12,6 +14,7 @@ import {
 export interface ZoneRuntimeParams {
   readonly debug: boolean;
   readonly environment: EnvironmentPreset;
+  readonly zoneId: string;
 }
 
 export interface DebugMetrics {
@@ -39,7 +42,9 @@ export function parseZoneParams(search: string): ZoneRuntimeParams {
   const debug = rawDebug === '1' || rawDebug === 'true';
   const rawEnv = params.get(ENVIRONMENT_QUERY_PARAM);
   const environment = isEnvironmentPreset(rawEnv) ? rawEnv : DEFAULT_ENVIRONMENT_PRESET;
-  return { debug, environment };
+  const rawZoneId = params.get(ZONE_ID_QUERY_PARAM)?.trim();
+  const zoneId = rawZoneId ? rawZoneId : DEFAULT_DEMO_ZONE_ID;
+  return { debug, environment, zoneId };
 }
 
 // calcula a média móvel exponencial da taxa de quadros por segundo para o overlay de depuração

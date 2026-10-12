@@ -85,10 +85,18 @@ export class HandModelController {
   }
 
   private createJoints(): void {
-    const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    // ativa transparent, desativa depthTest e define renderOrder alto para desenhar após painéis transparentes
+    const material = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 1.0,
+      depthTest: false,
+      depthWrite: false,
+    });
     for (let i = 0; i < LANDMARK_COUNT; i++) {
       const geometry = new THREE.SphereGeometry(this.data.jointRadius, 12, 12);
       const joint = new THREE.Mesh(geometry, material);
+      joint.renderOrder = 999;
       joint.visible = false;
       this.el.object3D.add(joint);
       this.joints.push(joint);
@@ -97,10 +105,17 @@ export class HandModelController {
   }
 
   private createBones(): void {
-    const material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    const material = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 1.0,
+      depthTest: false,
+      depthWrite: false,
+    });
     const radius = this.data.boneRadius;
     for (let i = 0; i < HAND_CONNECTIONS.length; i++) {
       const bone = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 1, 8), material);
+      bone.renderOrder = 999;
       bone.visible = false;
       this.el.object3D.add(bone);
       this.bones.push(bone);

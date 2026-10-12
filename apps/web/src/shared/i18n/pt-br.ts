@@ -25,5 +25,13 @@ export const PT_BR = {
       'focus-dark': 'Foco Escuro',
       'focus-nature': 'Foco Natureza',
     },
+    panels: {
+      sourceCitationPrefix: 'Fonte: pág.',
+      pdfPrevPage: '◀ Ant.',
+      pdfNextPage: 'Próx. ▶',
+      pdfPageIndicator: (current: number, total: number) => `Pág. ${current} / ${total}`,
+      radiusNearer: '−',
+      radiusFarther: '+',
+    },
   },
 } as const;

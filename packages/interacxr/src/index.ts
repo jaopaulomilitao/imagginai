@@ -83,6 +83,8 @@ export type {
 } from './core/pose-classifier';
 export { HAND_LOST_EVENT } from './aframe/ixr-gesture-detector';
 export type { PosePayload } from './aframe/ixr-gesture-detector';
+export { CursorController } from './aframe/ixr-cursor';
+export type { CursorComponent, CursorHoverDetail } from './aframe/ixr-cursor';
 export { domObserverFactory, TargetCache } from './core/target-cache';
 export type { ObserverFactory } from './core/target-cache';
 export {

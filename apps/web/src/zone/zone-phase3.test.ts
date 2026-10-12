@@ -134,14 +134,17 @@ describe('zone runtime params and debug helpers', () => {
     expect(parseZoneParams('')).toEqual({
       debug: false,
       environment: 'focus-dark',
+      zoneId: 'zone-demo',
     });
-    expect(parseZoneParams('?debug=1&env=focus-nature')).toEqual({
+    expect(parseZoneParams('?debug=1&env=focus-nature&zoneId=zone-custom')).toEqual({
       debug: true,
       environment: 'focus-nature',
+      zoneId: 'zone-custom',
     });
     expect(parseZoneParams('?debug=0&env=invalid-preset')).toEqual({
       debug: false,
       environment: 'focus-dark',
+      zoneId: 'zone-demo',
     });
   });
 
