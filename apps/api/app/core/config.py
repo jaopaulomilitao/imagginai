@@ -46,7 +46,23 @@ JOB_PROGRESS_MAX = 100
 JOB_PROGRESS_EXTRACTING = 20
 JOB_PROGRESS_EMBEDDING = 60
 JOB_PROGRESS_SAVING = 85
+JOB_PROGRESS_EXTRACTING_PACK = 92
+JOB_PROGRESS_GROUNDING_PACK = 96
 JOB_PROGRESS_DONE = 100
+
+# constantes de geração do study pack, grounding e layout 3d (seções 2.4 e 3.6.1)
+GROUNDING_MIN_SIMILARITY = 0.70
+PACK_CONCEPTS_MIN = 15
+PACK_CONCEPTS_MAX = 30
+PACK_QUIZ_MIN = 8
+PACK_QUIZ_MAX = 12
+PACK_SEQUENCE_ASSETS_MIN = 1
+PACK_SEQUENCE_ASSETS_MAX = 2
+GRAPH_LAYOUT_DIM = 3
+GRAPH_LAYOUT_SEED = 42
+LLM_MAX_RETRIES = 3
+LLM_INITIAL_BACKOFF_SECONDS = 1.0
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 Feature = Literal["supabase", "embeddings", "llm"]
 
@@ -108,8 +124,13 @@ class Settings(BaseSettings):
     @field_validator("supabase_url")
     @classmethod
     def require_https_supabase_url(cls, value: str | None) -> str | None:
-        if value is not None and not value.startswith("https://"):
-            raise ValueError("SUPABASE_URL must start with https://")
+        if value is not None:
+            cleaned = value.strip().rstrip("/")
+            if cleaned.endswith("/rest/v1"):
+                cleaned = cleaned[: -len("/rest/v1")].rstrip("/")
+            if not cleaned.startswith("https://"):
+                raise ValueError("SUPABASE_URL must start with https://")
+            return cleaned
         return value
 
     def missing_for(self, feature: Feature) -> list[str]:

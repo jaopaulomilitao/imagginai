@@ -1,0 +1,819 @@
+{
+  "schemaVersion": "1.0",
+  "packId": "cbe9d5fb-ab7a-4776-9ede-ed22110d023f",
+  "zoneId": "zone-demo-saude-anatomia-humana",
+  "sources": [
+    {
+      "id": "src-caderno-anatomia-humana",
+      "title": "Caderno de Estudos Práticos em Anatomia Humana",
+      "pageCount": 30
+    }
+  ],
+  "concepts": [
+    {
+      "id": "c-1",
+      "label": "Anatomia Humana",
+      "definition": "Ramo da biologia que estuda a organização estrutural do corpo e dos sistemas orgânicos, órgãos e tecidos constituintes.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 6,
+          "chunkId": "d150d742-0bfe-5c4f-812d-4a16159f113f"
+        }
+      ],
+      "position": [0.1925, 0.8055, 0.1021]
+    },
+    {
+      "id": "c-2",
+      "label": "Cabeça",
+      "definition": "Extremidade superior do corpo humano, anatomicamente dividida em crânio e face.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 9,
+          "chunkId": "88e4abd4-fda0-54ba-a231-0a1801ca3a48"
+        }
+      ],
+      "position": [0.1121, 1.0, 0.131]
+    },
+    {
+      "id": "c-4",
+      "label": "Tronco",
+      "definition": "Divisão do corpo subdividida em tórax, abdome e pelve e suas respectivas cavidades.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 9,
+          "chunkId": "88e4abd4-fda0-54ba-a231-0a1801ca3a48"
+        }
+      ],
+      "position": [0.2984, 0.5807, 0.0617]
+    },
+    {
+      "id": "c-5",
+      "label": "Membros Superiores",
+      "definition": "Membros torácicos compostos por uma raiz (ombro) e por uma parte livre (braço, antebraço e mão).",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 9,
+          "chunkId": "88e4abd4-fda0-54ba-a231-0a1801ca3a48"
+        }
+      ],
+      "position": [0.4129, 0.3384, 0.0174]
+    },
+    {
+      "id": "c-7",
+      "label": "Antímeros",
+      "definition": "Duas metades do corpo que exibem simetria bilateral, a qual não é perfeitamente exata devido a assimetrias.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 12,
+          "chunkId": "ba2a7197-d8af-5e5a-81fc-6a5b947b08db"
+        }
+      ],
+      "position": [1.0, -1.0, -0.758]
+    },
+    {
+      "id": "c-8",
+      "label": "Metameria",
+      "definition": "Princípio de construção corpórea em que planos transversais seccionam o corpo em segmentos semelhantes.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 12,
+          "chunkId": "ba2a7197-d8af-5e5a-81fc-6a5b947b08db"
+        }
+      ],
+      "position": [-1.0, -0.8622, 0.1914]
+    },
+    {
+      "id": "c-9",
+      "label": "Paquimeria",
+      "definition": "Princípio em que o corpo é dividido em dois tubos: paquímero ventral e paquímero dorsal.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 12,
+          "chunkId": "ba2a7197-d8af-5e5a-81fc-6a5b947b08db"
+        }
+      ],
+      "position": [-0.4347, -0.7958, 1.0]
+    },
+    {
+      "id": "c-10",
+      "label": "Sistema Locomotor",
+      "definition": "Sistema responsável pela motricidade, constituído pelo esquelético e pelo muscular, funcionando como alavancas.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 15,
+          "chunkId": "3128b200-7dd1-5fd6-b8e8-5e0cda632ac1"
+        }
+      ],
+      "position": [-0.4253, 0.1212, -0.9448]
+    },
+    {
+      "id": "c-11",
+      "label": "Osteologia",
+      "definition": "Ramo da anatomia responsável pelo estudo da estrutura, forma e desenvolvimento dos ossos.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 15,
+          "chunkId": "3128b200-7dd1-5fd6-b8e8-5e0cda632ac1"
+        }
+      ],
+      "position": [-0.3234, 0.4566, -1.0]
+    },
+    {
+      "id": "c-12",
+      "label": "Ossos",
+      "definition": "Estruturas vivas, rígidas e sólidas, de tecido conjuntivo calcificado, atuando como braços de alavanca passivos.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 15,
+          "chunkId": "3128b200-7dd1-5fd6-b8e8-5e0cda632ac1"
+        }
+      ],
+      "position": [-0.3869, 0.2917, -0.9923]
+    },
+    {
+      "id": "c-13",
+      "label": "Esqueleto Axial",
+      "definition": "Porção esquelética que forma o eixo principal de suporte do corpo, composta por cabeça, coluna vertebral e tórax.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 18,
+          "chunkId": "2c8c114f-1a45-5dc4-8f2d-7cee271720f3"
+        }
+      ],
+      "position": [0.6215, -0.1629, -0.0534]
+    },
+    {
+      "id": "c-14",
+      "label": "Esqueleto Apendicular",
+      "definition": "Parte do esqueleto formada pelos membros superiores, membros inferiores e respectivas cinturas articulares.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 18,
+          "chunkId": "2c8c114f-1a45-5dc4-8f2d-7cee271720f3"
+        }
+      ],
+      "position": [0.5244, 0.0869, -0.0234]
+    },
+    {
+      "id": "c-15",
+      "label": "Crânio",
+      "definition": "Caixa óssea formada por 29 ossos com função de proteger o encéfalo e a maioria dos órgãos dos sentidos.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 18,
+          "chunkId": "2c8c114f-1a45-5dc4-8f2d-7cee271720f3"
+        }
+      ],
+      "position": [0.6946, -0.3806, -0.0702]
+    },
+    {
+      "id": "c-16",
+      "label": "Artrologia",
+      "definition": "Ramo da anatomia que estuda as articulações, ou junturas, e seus conjuntos de movimentos.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 24,
+          "chunkId": "1b0fc8ef-a7e8-55fc-b13f-a502ba85b80c"
+        }
+      ],
+      "position": [0.3204, -0.6105, 0.6798]
+    },
+    {
+      "id": "c-17",
+      "label": "Sinartroses",
+      "definition": "Articulações que apresentam pouca ou nenhuma mobilidade em sua amplitude de movimentos.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 24,
+          "chunkId": "1b0fc8ef-a7e8-55fc-b13f-a502ba85b80c"
+        }
+      ],
+      "position": [0.1773, -0.6193, 0.6702]
+    },
+    {
+      "id": "c-18",
+      "label": "Anfiartroses",
+      "definition": "Articulações caracterizadas por possuírem mobilidade bem reduzida.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 24,
+          "chunkId": "1b0fc8ef-a7e8-55fc-b13f-a502ba85b80c"
+        }
+      ],
+      "position": [0.315, -0.6441, 0.8407]
+    },
+    {
+      "id": "c-19",
+      "label": "Diartroses",
+      "definition": "Articulações caracterizadas por apresentarem movimentos mais amplos.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 24,
+          "chunkId": "1b0fc8ef-a7e8-55fc-b13f-a502ba85b80c"
+        }
+      ],
+      "position": [0.3705, -0.8538, 0.7208]
+    },
+    {
+      "id": "c-20",
+      "label": "Lábios Articulares",
+      "definition": "Estruturas fibroelásticas que contornam a borda articular, ampliando a cavidade do acetábulo ou fossa glenóide.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 27,
+          "chunkId": "271c6c16-42f1-59d7-ba45-0b4e5d739040"
+        }
+      ],
+      "position": [0.4334, -0.4747, 0.7283]
+    },
+    {
+      "id": "c-21",
+      "label": "Meniscos",
+      "definition": "Estruturas em meia-lua e cunha no joelho entre tíbia e fêmur, para absorver impactos e estabilizar a articulação.",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 27,
+          "chunkId": "271c6c16-42f1-59d7-ba45-0b4e5d739040"
+        }
+      ],
+      "position": [0.3044, -0.5187, 0.5225]
+    }
+  ],
+  "edges": [
+    {
+      "sourceId": "c-1",
+      "targetId": "c-2",
+      "relation": "Anatomia Humana (Ramo da biologia que estuda a organização estrutural do corpo e dos sistemas orgânicos, órgãos e tecidos constituintes.) divide o corpo incluindo Cabeça (Extremidade superior do corpo humano, anatomicamente dividida em crânio e face.)",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 9,
+          "chunkId": "88e4abd4-fda0-54ba-a231-0a1801ca3a48"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-1",
+      "targetId": "c-4",
+      "relation": "Anatomia Humana (Ramo da biologia que estuda a organização estrutural do corpo e dos sistemas orgânicos, órgãos e tecidos constituintes.) divide o corpo incluindo Tronco (Divisão do corpo subdividida em tórax, abdome e pelve e suas respectivas cavidades.)",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 9,
+          "chunkId": "88e4abd4-fda0-54ba-a231-0a1801ca3a48"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-5",
+      "targetId": "c-4",
+      "relation": "Membros Superiores (Membros torácicos compostos por uma raiz (ombro) e por uma parte livre (braço, antebraço e mão).) liga-se via raiz (ombro) ao Tronco (Divisão do corpo subdividida em tórax, abdome e pelve e suas respectivas cavidades.)",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 9,
+          "chunkId": "88e4abd4-fda0-54ba-a231-0a1801ca3a48"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-10",
+      "targetId": "c-12",
+      "relation": "Sistema Locomotor (Sistema responsável pela motricidade, constituído pelo esquelético e pelo muscular, funcionando como alavancas.) utiliza como alavanca passiva os Ossos (Estruturas vivas, rígidas e sólidas, de tecido conjuntivo calcificado, atuando como braços de alavanca passivos.)",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 15,
+          "chunkId": "3128b200-7dd1-5fd6-b8e8-5e0cda632ac1"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-11",
+      "targetId": "c-12",
+      "relation": "Osteologia (Ramo da anatomia responsável pelo estudo da estrutura, forma e desenvolvimento dos ossos.) estuda a estrutura e forma dos Ossos (Estruturas vivas, rígidas e sólidas, de tecido conjuntivo calcificado, atuando como braços de alavanca passivos.)",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 15,
+          "chunkId": "3128b200-7dd1-5fd6-b8e8-5e0cda632ac1"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-13",
+      "targetId": "c-15",
+      "relation": "Esqueleto Axial (Porção esquelética que forma o eixo principal de suporte do corpo, composta por cabeça, coluna vertebral e tórax.) inclui em sua constituição a Crânio (Caixa óssea formada por 29 ossos com função de proteger o encéfalo e a maioria dos órgãos dos sentidos.)",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 18,
+          "chunkId": "2c8c114f-1a45-5dc4-8f2d-7cee271720f3"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-14",
+      "targetId": "c-5",
+      "relation": "Esqueleto Apendicular (Parte do esqueleto formada pelos membros superiores, membros inferiores e respectivas cinturas articulares.) engloba estruturalmente os Membros Superiores (Membros torácicos compostos por uma raiz (ombro) e por uma parte livre (braço, antebraço e mão).)",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 18,
+          "chunkId": "2c8c114f-1a45-5dc4-8f2d-7cee271720f3"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-14",
+      "targetId": "c-13",
+      "relation": "Esqueleto Apendicular (Parte do esqueleto formada pelos membros superiores, membros inferiores e respectivas cinturas articulares.) articula seus membros com o Esqueleto Axial (Porção esquelética que forma o eixo principal de suporte do corpo, composta por cabeça, coluna vertebral e tórax.)",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 18,
+          "chunkId": "2c8c114f-1a45-5dc4-8f2d-7cee271720f3"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-16",
+      "targetId": "c-17",
+      "relation": "Artrologia (Ramo da anatomia que estuda as articulações, ou junturas, e seus conjuntos de movimentos.) classifica articulações como Sinartroses (Articulações que apresentam pouca ou nenhuma mobilidade em sua amplitude de movimentos.)",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 24,
+          "chunkId": "1b0fc8ef-a7e8-55fc-b13f-a502ba85b80c"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-16",
+      "targetId": "c-18",
+      "relation": "Artrologia (Ramo da anatomia que estuda as articulações, ou junturas, e seus conjuntos de movimentos.) classifica articulações como Anfiartroses (Articulações caracterizadas por possuírem mobilidade bem reduzida.)",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 24,
+          "chunkId": "1b0fc8ef-a7e8-55fc-b13f-a502ba85b80c"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-16",
+      "targetId": "c-19",
+      "relation": "Artrologia (Ramo da anatomia que estuda as articulações, ou junturas, e seus conjuntos de movimentos.) classifica articulações como Diartroses (Articulações caracterizadas por apresentarem movimentos mais amplos.)",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 24,
+          "chunkId": "1b0fc8ef-a7e8-55fc-b13f-a502ba85b80c"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-20",
+      "targetId": "c-16",
+      "relation": "Lábios Articulares (Estruturas fibroelásticas que contornam a borda articular, ampliando a cavidade do acetábulo ou fossa glenóide.) constitui componente acessório em Artrologia (Ramo da anatomia que estuda as articulações, ou junturas, e seus conjuntos de movimentos.)",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 27,
+          "chunkId": "271c6c16-42f1-59d7-ba45-0b4e5d739040"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-21",
+      "targetId": "c-16",
+      "relation": "Meniscos (Estruturas em meia-lua e cunha no joelho entre tíbia e fêmur, para absorver impactos e estabilizar a articulação.) interpõe-se em junturas estudadas na Artrologia (Ramo da anatomia que estuda as articulações, ou junturas, e seus conjuntos de movimentos.)",
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 27,
+          "chunkId": "271c6c16-42f1-59d7-ba45-0b4e5d739040"
+        }
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "id": "card-1",
+      "title": "Conceito e Relevância da Anatomia Humana",
+      "body": "A Anatomia Humana é o ramo da biologia encarregado de estudar a organização das estruturas do corpo e dos sistemas orgânicos, órgãos e tecidos. Constitui base fundamental para os cursos de saúde e correlaciona-se intimamente com a Fisiologia.",
+      "conceptIds": ["c-1"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 6,
+          "chunkId": "d150d742-0bfe-5c4f-812d-4a16159f113f"
+        }
+      ]
+    },
+    {
+      "id": "card-2",
+      "title": "Divisão Anatômica Geral do Corpo",
+      "body": "O corpo humano é dividido anatomicamente em cabeça (crânio e face), pescoço, tronco (tórax, abdome e pelve e suas cavidades) e membros (superiores/torácicos e inferiores/pélvicos).",
+      "conceptIds": ["c-2", "c-4"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 9,
+          "chunkId": "88e4abd4-fda0-54ba-a231-0a1801ca3a48"
+        }
+      ]
+    },
+    {
+      "id": "card-3",
+      "title": "Membros e suas Segmentações",
+      "body": "Cada membro é formado por uma raiz (cíngulo) e uma parte livre. No membro superior, a raiz é o ombro e a parte livre é formada por braço, antebraço e mão. No membro inferior, a raiz é o quadril e a parte livre consiste em coxa, perna e pé.",
+      "conceptIds": ["c-5"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 9,
+          "chunkId": "88e4abd4-fda0-54ba-a231-0a1801ca3a48"
+        }
+      ]
+    },
+    {
+      "id": "card-4",
+      "title": "Antimeria e Assimetrias Corporais",
+      "body": "A antimeria divide o corpo em duas metades chamadas antímeros. Contudo, essa simetria bilateral não é perfeita, havendo assimetrias morfológicas (posição do fígado ou coração) e funcionais (destros e canhotos).",
+      "conceptIds": ["c-7"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 12,
+          "chunkId": "ba2a7197-d8af-5e5a-81fc-6a5b947b08db"
+        }
+      ]
+    },
+    {
+      "id": "card-5",
+      "title": "Princípios de Metameria e Paquimeria",
+      "body": "Na metameria, cortes transversais definem metâmeros semelhantes (exemplificado na coluna vertebral humana). Na paquimeria, o corpo é dividido em dois tubos longitudinais: o paquímero ventral e o paquímero dorsal.",
+      "conceptIds": ["c-8", "c-9"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 12,
+          "chunkId": "ba2a7197-d8af-5e5a-81fc-6a5b947b08db"
+        }
+      ]
+    },
+    {
+      "id": "card-6",
+      "title": "Mecânica do Sistema Locomotor",
+      "body": "A motricidade do sistema locomotor funciona como um sistema de alavancas: os ossos atuam como braços de alavanca (elemento passivo), as articulações representam os pontos de apoio ou fulcro, e o sistema muscular provê a força (elemento ativo).",
+      "conceptIds": ["c-10", "c-12"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 15,
+          "chunkId": "3128b200-7dd1-5fd6-b8e8-5e0cda632ac1"
+        }
+      ]
+    },
+    {
+      "id": "card-7",
+      "title": "Fundamentos da Osteologia",
+      "body": "A osteologia é o ramo que investiga os ossos, descritos como estruturas vivas, sólidas e rígidas compostas por tecido conjuntivo calcificado, constituindo o esqueleto juntamente com as junturas.",
+      "conceptIds": ["c-11", "c-12"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 15,
+          "chunkId": "3128b200-7dd1-5fd6-b8e8-5e0cda632ac1"
+        }
+      ]
+    },
+    {
+      "id": "card-8",
+      "title": "Divisões do Esqueleto Humano",
+      "body": "O esqueleto humano divide-se em esqueleto axial (suporte do eixo principal: cabeça, coluna vertebral e tórax) e esqueleto apendicular (membros superiores e inferiores e suas cinturas). A contagem varia para 200 ossos caso desconsiderados os ossículos da orelha média.",
+      "conceptIds": ["c-13", "c-14"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 18,
+          "chunkId": "2c8c114f-1a45-5dc4-8f2d-7cee271720f3"
+        }
+      ]
+    },
+    {
+      "id": "card-9",
+      "title": "Constituição Geral do Crânio",
+      "body": "O crânio é uma estrutura óssea rígida de proteção encefálica e sensorial, formada por 29 ossos distribuídos entre neurocrânio e viscerocrânio.",
+      "conceptIds": ["c-15"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 18,
+          "chunkId": "2c8c114f-1a45-5dc4-8f2d-7cee271720f3"
+        }
+      ]
+    },
+    {
+      "id": "card-10",
+      "title": "Classificação Articular por Movimento",
+      "body": "Pela amplitude de movimento, a artrologia categoriza as articulações em sinartroses (pouca ou nenhuma mobilidade), anfiartroses (mobilidade bem reduzida) e diartroses (movimentos mais amplos).",
+      "conceptIds": ["c-16", "c-17", "c-18", "c-19"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 24,
+          "chunkId": "1b0fc8ef-a7e8-55fc-b13f-a502ba85b80c"
+        }
+      ]
+    },
+    {
+      "id": "card-11",
+      "title": "Estruturas Acessórias: Lábios Articulares e Meniscos",
+      "body": "Os lábios ampliam a borda articular do acetábulo e da fossa glenóide. Já os meniscos, situados no joelho entre fêmur e tíbia em formato de meia-lua, absorvem impactos e adaptam superfícies não congruentes.",
+      "conceptIds": ["c-20", "c-21"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 27,
+          "chunkId": "271c6c16-42f1-59d7-ba45-0b4e5d739040"
+        }
+      ]
+    }
+  ],
+  "quiz": [
+    {
+      "id": "q-1",
+      "prompt": "De acordo com o texto, qual ramo da anatomia é responsável pelo estudo específico das articulações e seus movimentos?",
+      "options": ["Osteologia", "Artrologia", "Fisiologia", "Miologia"],
+      "correctIndex": 1,
+      "explanation": "A artrologia é o ramo da anatomia que estuda as articulações ou junturas e seus movimentos.",
+      "conceptIds": ["c-16"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 24,
+          "chunkId": "1b0fc8ef-a7e8-55fc-b13f-a502ba85b80c"
+        }
+      ]
+    },
+    {
+      "id": "q-2",
+      "prompt": "Como os ossos atuam no sistema locomotor segundo o conceito mecânico de alavancas?",
+      "options": [
+        "Como a força exercida ou elemento ativo",
+        "Como ponto de apoio ou fulcro",
+        "Como braços da alavanca e elemento passivo",
+        "Como conectores de amortecimento elástico"
+      ],
+      "correctIndex": 2,
+      "explanation": "No sistema locomotor, os ossos desempenham o papel de braços da alavanca, atuando como elemento passivo.",
+      "conceptIds": ["c-10", "c-12"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 15,
+          "chunkId": "3128b200-7dd1-5fd6-b8e8-5e0cda632ac1"
+        }
+      ]
+    },
+    {
+      "id": "q-3",
+      "prompt": "Quais estruturas compõem o esqueleto axial humano?",
+      "options": [
+        "Membros superiores, inferiores e cíngulos",
+        "Cabeça, coluna vertebral e tórax",
+        "Pelve, membros torácicos e crânio",
+        "Apenas os ossos dos membros livres"
+      ],
+      "correctIndex": 1,
+      "explanation": "O esqueleto axial forma o eixo principal de suporte e é composto pela cabeça, coluna vertebral e tórax.",
+      "conceptIds": ["c-13"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 18,
+          "chunkId": "2c8c114f-1a45-5dc4-8f2d-7cee271720f3"
+        }
+      ]
+    },
+    {
+      "id": "q-4",
+      "prompt": "Qual é a classificação funcional de articulações que apresentam pouca ou nenhuma mobilidade?",
+      "options": ["Diartroses", "Anfiartroses", "Sinartroses", "Sinoviais"],
+      "correctIndex": 2,
+      "explanation": "As sinartroses são caracterizadas por possuírem pouca ou nenhuma mobilidade.",
+      "conceptIds": ["c-17"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 24,
+          "chunkId": "1b0fc8ef-a7e8-55fc-b13f-a502ba85b80c"
+        }
+      ]
+    },
+    {
+      "id": "q-5",
+      "prompt": "A raiz do membro superior e a parte livre do membro inferior correspondem, respectivamente, a:",
+      "options": [
+        "Ombro; coxa, perna e pé",
+        "Braço; quadril e pé",
+        "Quadril; braço, antebraço e mão",
+        "Ombro; antebraço e coxa"
+      ],
+      "correctIndex": 0,
+      "explanation": "A raiz do membro superior corresponde ao ombro, e a parte livre do membro inferior corresponde à coxa, perna e pé.",
+      "conceptIds": ["c-5"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 9,
+          "chunkId": "88e4abd4-fda0-54ba-a231-0a1801ca3a48"
+        }
+      ]
+    },
+    {
+      "id": "q-6",
+      "prompt": "Qual princípio de construção anatômica divide o corpo humano em paquímero ventral e paquímero dorsal?",
+      "options": ["Metameria", "Antimeria", "Paquimeria", "Estratificação"],
+      "correctIndex": 2,
+      "explanation": "Na paquimeria, o corpo humano é concebido em dois tubos denominados paquímero ventral e paquímero dorsal.",
+      "conceptIds": ["c-9"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 12,
+          "chunkId": "ba2a7197-d8af-5e5a-81fc-6a5b947b08db"
+        }
+      ]
+    },
+    {
+      "id": "q-7",
+      "prompt": "Os meniscos estão localizados em qual articulação e apresentam qual formato específico?",
+      "options": [
+        "Articulação do ombro; formato esférico",
+        "Articulação do joelho; formato de meia-lua e cunha",
+        "Articulação do quadril; formato anelar",
+        "Articulação esternoclavicular; formato cilíndrico"
+      ],
+      "correctIndex": 1,
+      "explanation": "Os meniscos se interpõem entre as superfícies articulares da tíbia e do fêmur no joelho e têm formato de meia-lua e cunha.",
+      "conceptIds": ["c-21"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 27,
+          "chunkId": "271c6c16-42f1-59d7-ba45-0b4e5d739040"
+        }
+      ]
+    },
+    {
+      "id": "q-8",
+      "prompt": "Por que a simetria bilateral em antímeros não é considerada perfeita no ser humano?",
+      "options": [
+        "Porque o número de ossos é completamente diferente entre os lados",
+        "Devido a assimetrias morfológicas (como a posição de órgãos) e funcionais",
+        "Pela ausência de metamerização na coluna vertebral",
+        "Porque a paquimeria desfaz a separação dos membros"
+      ],
+      "correctIndex": 1,
+      "explanation": "A correspondência exata não ocorre em razão de assimetrias morfológicas (como localização de coração e fígado) e funcionais (uso preferencial em destros/canhotos).",
+      "conceptIds": ["c-7"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 12,
+          "chunkId": "ba2a7197-d8af-5e5a-81fc-6a5b947b08db"
+        }
+      ]
+    },
+    {
+      "id": "q-9",
+      "prompt": "Quantos ossos formam a caixa óssea do crânio, de acordo com o texto?",
+      "options": ["200 ossos", "206 ossos", "29 ossos", "12 ossos"],
+      "correctIndex": 2,
+      "explanation": "O texto descreve o crânio como uma caixa óssea formada especificamente por 29 ossos.",
+      "conceptIds": ["c-15"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 18,
+          "chunkId": "2c8c114f-1a45-5dc4-8f2d-7cee271720f3"
+        }
+      ]
+    },
+    {
+      "id": "q-10",
+      "prompt": "Qual é a função primordial dos lábios articulares observados no quadril e ombro?",
+      "options": [
+        "Atuar como ponto de inserção muscular passivo",
+        "Diminuir a superfície articular para limitar a rotação",
+        "Aumentar a área da superfície da cavidade articular",
+        "Substituir os ligamentos extracapsulares"
+      ],
+      "correctIndex": 2,
+      "explanation": "Os lábios envolvem a borda da cavidade articular, ampliando a área da articulação no acetábulo e na fossa glenóide.",
+      "conceptIds": ["c-20"],
+      "anchors": [
+        {
+          "sourceId": "src-caderno-anatomia-humana",
+          "page": 27,
+          "chunkId": "271c6c16-42f1-59d7-ba45-0b4e5d739040"
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "asset-graph",
+      "kind": "concept-graph",
+      "title": "Organização do Sistema Locomotor e Divisões Esqueléticas",
+      "whySpatial": "Exibe espacialmente as conexões mecânicas e a hierarquia morfológica entre o esqueleto axial, esqueleto apendicular e o sistema articular no espaço tridimensional.",
+      "nodeIds": [
+        "c-1",
+        "c-2",
+        "c-4",
+        "c-5",
+        "c-10",
+        "c-11",
+        "c-12",
+        "c-13",
+        "c-14",
+        "c-15",
+        "c-16",
+        "c-17",
+        "c-18",
+        "c-19",
+        "c-20",
+        "c-21"
+      ]
+    },
+    {
+      "id": "asset-seq-2",
+      "kind": "sequence-order",
+      "title": "Hierarquia de Mobilidade das Articulações",
+      "whySpatial": "Ordena espacialmente os tipos articulares em um gradiente de amplitude de movimento, da fixidez estrutural à máxima mobilidade articular.",
+      "steps": [
+        {
+          "id": "s-5",
+          "text": "Sinartroses: articulações com pouca ou nenhuma mobilidade",
+          "anchors": [
+            {
+              "sourceId": "src-caderno-anatomia-humana",
+              "page": 24,
+              "chunkId": "1b0fc8ef-a7e8-55fc-b13f-a502ba85b80c"
+            }
+          ]
+        },
+        {
+          "id": "s-6",
+          "text": "Anfiartroses: articulações com mobilidade bem reduzida",
+          "anchors": [
+            {
+              "sourceId": "src-caderno-anatomia-humana",
+              "page": 24,
+              "chunkId": "1b0fc8ef-a7e8-55fc-b13f-a502ba85b80c"
+            }
+          ]
+        },
+        {
+          "id": "s-7",
+          "text": "Diartroses: articulações dotadas de movimentos mais amplos",
+          "anchors": [
+            {
+              "sourceId": "src-caderno-anatomia-humana",
+              "page": 24,
+              "chunkId": "1b0fc8ef-a7e8-55fc-b13f-a502ba85b80c"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "generatedAt": "2026-10-22T21:01:45.596344Z",
+    "promptVersion": "1.0.0",
+    "model": "gemini-3.8-flash",
+    "discarded": 12
+  }
+}

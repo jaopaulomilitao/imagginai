@@ -2,6 +2,7 @@
 
 import hashlib
 import math
+import time
 from collections.abc import Sequence
 from typing import Any, Protocol, cast
 
@@ -12,6 +13,8 @@ from google.genai import types
 from app.core.config import (
     EMBEDDING_BATCH_SIZE,
     EMBEDDING_DIMENSION,
+    LLM_INITIAL_BACKOFF_SECONDS,
+    LLM_MAX_RETRIES,
     MissingSettingsError,
     Settings,
     get_settings,
@@ -59,14 +62,28 @@ class GeminiEmbeddingClient:
 
     def _embed_batch(self, batch: Sequence[str]) -> list[list[float]]:
         # envia apenas o texto bruto do material de estudo conforme a regra de privacidade
-        try:
-            response = self._client.models.embed_content(
-                model=self._model,
-                contents=list(batch),
-                config=types.EmbedContentConfig(output_dimensionality=EMBEDDING_DIMENSION),
-            )
-        except Exception as exc:
-            raise EmbeddingError(f"gemini embedding request failed: {exc}") from exc
+        response: Any = None
+        last_exc: Exception | None = None
+        for attempt in range(LLM_MAX_RETRIES):
+            try:
+                response = self._client.models.embed_content(
+                    model=self._model,
+                    contents=list(batch),
+                    config=types.EmbedContentConfig(output_dimensionality=EMBEDDING_DIMENSION),
+                )
+                last_exc = None
+                break
+            except Exception as exc:
+                last_exc = exc
+                msg = str(exc).lower()
+                is_transient = "429" in msg or "resource_exhausted" in msg or "503" in msg
+                if is_transient and attempt + 1 < LLM_MAX_RETRIES:
+                    time.sleep(LLM_INITIAL_BACKOFF_SECONDS * (2**attempt))
+                    continue
+                raise EmbeddingError(f"gemini embedding request failed: {exc}") from exc
+
+        if last_exc is not None:
+            raise EmbeddingError(f"gemini embedding request failed: {last_exc}") from last_exc
 
         raw_embeddings = getattr(response, "embeddings", None)
         if not raw_embeddings or len(raw_embeddings) != len(batch):

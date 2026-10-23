@@ -6,6 +6,7 @@ from app.core.config import (
     JOB_PROGRESS_DONE,
     JOB_PROGRESS_EMBEDDING,
     JOB_PROGRESS_EXTRACTING,
+    JOB_PROGRESS_EXTRACTING_PACK,
     JOB_PROGRESS_MIN,
     JOB_PROGRESS_SAVING,
 )
@@ -16,6 +17,8 @@ from app.services.ingestion import (
     PdfExtractionResult,
     chunk_extracted_pages,
 )
+from app.services.llm import LlmProvider
+from app.services.pack_generator import generate_zone_study_pack
 
 logger = logging.getLogger("imagginai.api.jobs")
 
@@ -67,8 +70,9 @@ def run_source_ingestion_job(
     extraction: PdfExtractionResult,
     store: DatabaseStore,
     embedding_client: EmbeddingClient,
+    llm_provider: LlmProvider | None = None,
 ) -> JobRecord:
-    """executa o pipeline de chunking e embeddings atualizando o progresso do job."""
+    """executa o pipeline de chunking, embeddings e geração opcional do study pack."""
     try:
         store.update_job(
             job_id,
@@ -100,6 +104,24 @@ def run_source_ingestion_job(
             message="salvando trechos indexados",
         )
         _persist_embedded_chunks(store, user_id, zone_id, chunks, vectors)
+
+        if llm_provider is not None:
+            store.update_job(
+                job_id,
+                status="running",
+                progress=JOB_PROGRESS_EXTRACTING_PACK,
+                message="extraindo study pack com verificação de grounding e layout 3d",
+            )
+            sources = store.list_sources_for_zone(user_id, zone_id)
+            zone_chunks = store.list_chunks_for_zone(user_id, zone_id)
+            pack = generate_zone_study_pack(
+                zone_id=zone_id,
+                sources=sources,
+                chunks=zone_chunks,
+                llm_provider=llm_provider,
+                embedding_client=embedding_client,
+            )
+            store.save_study_pack(user_id, zone_id, pack)
 
         return store.update_job(
             job_id,

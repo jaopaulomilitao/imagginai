@@ -7,6 +7,7 @@ from app.core.config import FEATURE_REQUIREMENTS, Settings, get_settings, valida
 from app.core.db import DatabaseStore
 from app.routers import health, jobs, zones
 from app.services.embeddings import EmbeddingClient
+from app.services.llm import LlmProvider
 
 logger = logging.getLogger("imagginai.api")
 
@@ -24,6 +25,7 @@ def create_app(
     *,
     db_store: DatabaseStore | None = None,
     embedding_client: EmbeddingClient | None = None,
+    llm_provider: LlmProvider | None = None,
 ) -> FastAPI:
     app_settings = settings or get_settings()
     validate_startup(app_settings)
@@ -33,6 +35,7 @@ def create_app(
     app.state.settings = app_settings
     app.state.db_store = db_store
     app.state.embedding_client = embedding_client
+    app.state.llm_provider = llm_provider
 
     app.add_middleware(
         CORSMiddleware,

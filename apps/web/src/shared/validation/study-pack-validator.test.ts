@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import demoPack from '../../../../../fixtures/demo-pack.json';
 import invalidCases from '../../../../../fixtures/study-pack-invalid-cases.json';
+import engineeringDemoPack from '../../../public/demo-packs/engineering-dc-circuits.json';
+import healthDemoPack from '../../../public/demo-packs/health-human-anatomy.json';
 import { isRecord } from './schema-reader';
 import { validateStudyPack } from './study-pack-validator';
 
@@ -55,5 +57,13 @@ describe('validateStudyPack', () => {
 
   it.each(invalidCases as InvalidCase[])('rejects: $name', (invalidCase) => {
     expect(validateStudyPack(applyCase(demoPack, invalidCase)).ok).toBe(false);
+  });
+
+  it('accepts the Phase 7 real grounded Engineering and Health demo packs', () => {
+    const engResult = validateStudyPack(engineeringDemoPack);
+    const healthResult = validateStudyPack(healthDemoPack);
+
+    expect(engResult.ok ? [] : engResult.errors).toEqual([]);
+    expect(healthResult.ok ? [] : healthResult.errors).toEqual([]);
   });
 });

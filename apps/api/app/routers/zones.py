@@ -10,12 +10,14 @@ from fastapi import (
     Depends,
     File,
     HTTPException,
+    Request,
     UploadFile,
     status,
 )
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.db import DatabaseStore, ZoneRecord, get_db_store
+from app.schemas.study_pack import StudyPack
 from app.schemas.zones import (
     SourceUploadResponse,
     ZoneCreateRequest,
@@ -26,6 +28,7 @@ from app.schemas.zones import (
 from app.services.embeddings import EmbeddingClient, get_embedding_client
 from app.services.ingestion import PdfValidationError, extract_pdf_pages
 from app.services.jobs import create_ingestion_job, run_source_ingestion_job
+from app.services.llm import LlmProvider, get_llm_provider
 
 router = APIRouter(prefix="/zones", tags=["zones"])
 
@@ -109,6 +112,17 @@ def delete_zone(
     return ZoneDeleteResponse(id=zone_id, deleted=True)
 
 
+def _resolve_optional_llm_provider(request: Request) -> LlmProvider | None:
+    # resolve o provedor llm quando configurado ou quando as chaves estão disponíveis no .env
+    existing = getattr(request.app.state, "llm_provider", None)
+    if existing is not None:
+        return existing  # type: ignore[no-any-return]
+    try:
+        return get_llm_provider(request)
+    except HTTPException:
+        return None
+
+
 @router.post(
     "/{zone_id}/sources",
     response_model=SourceUploadResponse,
@@ -116,6 +130,7 @@ def delete_zone(
 )
 async def upload_zone_source(
     zone_id: str,
+    request: Request,
     background_tasks: BackgroundTasks,
     file: Annotated[UploadFile, File()],
     current_user: Annotated[AuthenticatedUser, Depends(get_current_user)],
@@ -151,6 +166,7 @@ async def upload_zone_source(
         size_bytes=extraction.size_bytes,
     )
     job = create_ingestion_job(store, current_user.user_id, zone_id)
+    llm_provider = _resolve_optional_llm_provider(request)
 
     background_tasks.add_task(
         run_source_ingestion_job,
@@ -161,6 +177,7 @@ async def upload_zone_source(
         extraction=extraction,
         store=store,
         embedding_client=embedding_client,
+        llm_provider=llm_provider,
     )
 
     return SourceUploadResponse(
@@ -169,3 +186,20 @@ async def upload_zone_source(
         title=title,
         page_count=extraction.page_count,
     )
+
+
+@router.get("/{zone_id}/pack", response_model=StudyPack)
+def get_zone_pack(
+    zone_id: str,
+    current_user: Annotated[AuthenticatedUser, Depends(get_current_user)],
+    store: Annotated[DatabaseStore, Depends(get_db_store)],
+) -> StudyPack:
+    """retorna o study pack validado da zona ou 404 caso ainda não tenha sido gerado."""
+    zone = store.get_zone(current_user.user_id, zone_id)
+    if zone is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="zone not found")
+
+    pack = store.get_zone_study_pack(current_user.user_id, zone_id)
+    if pack is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="study pack not found")
+    return pack

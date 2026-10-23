@@ -10,12 +10,14 @@ from fastapi import HTTPException, Request, status
 from supabase import Client, create_client
 
 from app.core.config import (
+    STORAGE_PACKS_BUCKET,
     STORAGE_SOURCES_BUCKET,
     MissingSettingsError,
     Settings,
     get_settings,
 )
 from app.schemas.jobs import JobStatus
+from app.schemas.study_pack import StudyPack, parse_study_pack
 from app.schemas.zones import EnvironmentPreset, PanelLayoutSchema
 
 
@@ -88,6 +90,21 @@ class JobRecord:
     updated_at: str
 
 
+@dataclass(frozen=True)
+class PackRecord:
+    """metadados de um study pack armazenado no bucket privado packs."""
+
+    id: str
+    user_id: str
+    zone_id: str
+    storage_path: str
+    schema_version: str
+    prompt_version: str
+    model: str
+    discarded: int
+    created_at: str
+
+
 class DatabaseStore(Protocol):
     """contrato de persistência desacoplado do cliente externo para permitir mocks nos testes."""
 
@@ -156,6 +173,19 @@ class DatabaseStore(Protocol):
     ) -> JobRecord: ...
 
     def get_job(self, user_id: str, job_id: str) -> JobRecord | None: ...
+
+    def save_study_pack(
+        self,
+        user_id: str,
+        zone_id: str,
+        pack: StudyPack,
+    ) -> PackRecord: ...
+
+    def get_zone_study_pack(
+        self,
+        user_id: str,
+        zone_id: str,
+    ) -> StudyPack | None: ...
 
 
 def _parse_layout_json(raw_layout: Any) -> list[PanelLayoutSchema]:
@@ -480,6 +510,67 @@ class SupabaseStore:
             return None
         return _row_to_job(rows[0])
 
+    def save_study_pack(
+        self,
+        user_id: str,
+        zone_id: str,
+        pack: StudyPack,
+    ) -> PackRecord:
+        storage_path = f"{user_id}/{zone_id}/{pack.pack_id}.json"
+        raw_bytes = pack.model_dump_json(by_alias=True).encode("utf-8")
+        self._client.storage.from_(STORAGE_PACKS_BUCKET).upload(
+            path=storage_path,
+            file=raw_bytes,
+            file_options={"content-type": "application/json", "upsert": "true"},
+        )
+        payload = {
+            "id": pack.pack_id,
+            "user_id": user_id,
+            "zone_id": zone_id,
+            "storage_path": storage_path,
+            "schema_version": pack.schema_version,
+            "prompt_version": pack.meta.prompt_version,
+            "model": pack.meta.model,
+            "discarded": pack.meta.discarded,
+        }
+        response = self._client.table("packs").insert(payload).execute()
+        row = cast(list[dict[str, Any]], response.data or [])[0]
+        self._client.table("zones").update({"pack_id": pack.pack_id}).eq("user_id", user_id).eq(
+            "id", zone_id
+        ).execute()
+        return PackRecord(
+            id=str(row["id"]),
+            user_id=str(row["user_id"]),
+            zone_id=str(row["zone_id"]),
+            storage_path=str(row["storage_path"]),
+            schema_version=str(row["schema_version"]),
+            prompt_version=str(row["prompt_version"]),
+            model=str(row["model"]),
+            discarded=int(row["discarded"]),
+            created_at=str(row["created_at"]),
+        )
+
+    def get_zone_study_pack(
+        self,
+        user_id: str,
+        zone_id: str,
+    ) -> StudyPack | None:
+        response = (
+            self._client.table("packs")
+            .select("*")
+            .eq("user_id", user_id)
+            .eq("zone_id", zone_id)
+            .order("created_at", desc=True)
+            .limit(1)
+            .execute()
+        )
+        rows = cast(list[dict[str, Any]], response.data or [])
+        if not rows:
+            return None
+        storage_path = str(rows[0]["storage_path"])
+        raw_bytes = self._client.storage.from_(STORAGE_PACKS_BUCKET).download(storage_path)
+        return parse_study_pack(raw_bytes)
+
 
 class InMemoryStore:
     """armazenamento em memória usado em testes automatizados sem chamadas de rede."""
@@ -489,6 +580,7 @@ class InMemoryStore:
         self.sources: dict[str, SourceRecord] = {}
         self.chunks: list[ChunkRecord] = []
         self.jobs: dict[str, JobRecord] = {}
+        self.packs: dict[str, PackRecord] = {}
         self.storage_objects: dict[str, bytes] = {}
 
     def _zone_source_ids(self, user_id: str, zone_id: str) -> list[str]:
@@ -707,6 +799,57 @@ class InMemoryStore:
         if record is None or record.user_id != user_id:
             return None
         return record
+
+    def save_study_pack(
+        self,
+        user_id: str,
+        zone_id: str,
+        pack: StudyPack,
+    ) -> PackRecord:
+        storage_path = f"{user_id}/{zone_id}/{pack.pack_id}.json"
+        self.storage_objects[storage_path] = pack.model_dump_json(by_alias=True).encode("utf-8")
+        record = PackRecord(
+            id=pack.pack_id,
+            user_id=user_id,
+            zone_id=zone_id,
+            storage_path=storage_path,
+            schema_version=pack.schema_version,
+            prompt_version=pack.meta.prompt_version,
+            model=pack.meta.model,
+            discarded=pack.meta.discarded,
+            created_at=_utc_now_iso(),
+        )
+        self.packs[record.id] = record
+        existing_zone = self.zones.get(zone_id)
+        if existing_zone is not None and existing_zone.user_id == user_id:
+            self.zones[zone_id] = ZoneRecord(
+                id=existing_zone.id,
+                user_id=existing_zone.user_id,
+                name=existing_zone.name,
+                environment=existing_zone.environment,
+                source_ids=self._zone_source_ids(user_id, zone_id),
+                pack_id=pack.pack_id,
+                layout=list(existing_zone.layout),
+                created_at=existing_zone.created_at,
+                updated_at=_utc_now_iso(),
+            )
+        return record
+
+    def get_zone_study_pack(
+        self,
+        user_id: str,
+        zone_id: str,
+    ) -> StudyPack | None:
+        zone_packs = [
+            p for p in self.packs.values() if p.user_id == user_id and p.zone_id == zone_id
+        ]
+        if not zone_packs:
+            return None
+        latest = zone_packs[-1]
+        raw_bytes = self.storage_objects.get(latest.storage_path)
+        if raw_bytes is None:
+            return None
+        return parse_study_pack(raw_bytes)
 
 
 def get_db_store(request: Request) -> DatabaseStore:

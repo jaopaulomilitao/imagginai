@@ -1,0 +1,855 @@
+{
+  "schemaVersion": "1.0",
+  "packId": "3977fa22-2f78-485f-827b-8663e99b85b8",
+  "zoneId": "zone-demo-engenharia-circuitos-cc",
+  "sources": [
+    {
+      "id": "src-circuitos-eletricos-cc",
+      "title": "Circuitos Elétricos em Corrente Contínua (CC)",
+      "pageCount": 40
+    }
+  ],
+  "concepts": [
+    {
+      "id": "c-potencial-eletrico",
+      "label": "Potencial Elétrico",
+      "definition": "Grandeza escalar definida como o trabalho por unidade de carga positiva para deslocá-la a partir do infinito.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 5,
+          "chunkId": "f369433a-8ef8-58ff-99be-e167454d7dd9"
+        }
+      ],
+      "position": [1.0, 1.0, 0.0905]
+    },
+    {
+      "id": "c-ddp",
+      "label": "Diferença de Potencial",
+      "definition": "Trabalho por unidade de carga para deslocar uma carga elétrica entre dois pontos específicos A e B.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 5,
+          "chunkId": "f369433a-8ef8-58ff-99be-e167454d7dd9"
+        }
+      ],
+      "position": [0.9595, 0.7879, 0.0349]
+    },
+    {
+      "id": "c-corrente-eletrica",
+      "label": "Intensidade de Corrente Elétrica",
+      "definition": "Quantidade de carga elétrica líquida que atravessa uma determinada superfície condutora por unidade de tempo.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 5,
+          "chunkId": "f369433a-8ef8-58ff-99be-e167454d7dd9"
+        }
+      ],
+      "position": [-0.9947, -0.6773, 0.2315]
+    },
+    {
+      "id": "c-resistor-linear",
+      "label": "Bipolo Passivo Linear",
+      "definition": "Componente cuja relação tensão-corrente é uma reta passando pela origem, regida pela função V = R · I.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 10,
+          "chunkId": "6b911669-35ac-5069-a6a8-7752df1841dd"
+        }
+      ],
+      "position": [0.7057, 0.0071, -0.2622]
+    },
+    {
+      "id": "c-bateria-real",
+      "label": "Bateria Real",
+      "definition": "Modelo composto por uma fonte com força eletromotriz E em série com uma resistência interna r.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 10,
+          "chunkId": "6b911669-35ac-5069-a6a8-7752df1841dd"
+        }
+      ],
+      "position": [0.6138, -0.238, -0.4189]
+    },
+    {
+      "id": "c-corrente-curto",
+      "label": "Corrente de Curto-Circuito",
+      "definition": "Valor de corrente fornecido por um bipolo ativo linear quando a tensão entre seus terminais é nula.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 10,
+          "chunkId": "6b911669-35ac-5069-a6a8-7752df1841dd"
+        }
+      ],
+      "position": [0.5719, -0.1789, -0.6403]
+    },
+    {
+      "id": "c-fem",
+      "label": "Força Eletromotriz",
+      "definition": "Tensão elétrica máxima em circuito aberto nos terminais de um gerador ideal ou fonte ativa.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 10,
+          "chunkId": "6b911669-35ac-5069-a6a8-7752df1841dd"
+        }
+      ],
+      "position": [0.5736, -0.5417, -0.3939]
+    },
+    {
+      "id": "c-assoc-serie",
+      "label": "Associação em Série",
+      "definition": "Ligação na qual as f.e.m.s e as resistências dos bipolos são somadas para compor o bipolo equivalente.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 14,
+          "chunkId": "6ac9b2e4-9c8a-5c35-ade5-1e2d1b3eb654"
+        }
+      ],
+      "position": [0.552, -0.7876, -0.3875]
+    },
+    {
+      "id": "c-assoc-paralelo",
+      "label": "Associação em Paralelo",
+      "definition": "Ligação de bipolos sob a mesma tensão cujas correntes individuais e condutâncias são somadas.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 14,
+          "chunkId": "6ac9b2e4-9c8a-5c35-ade5-1e2d1b3eb654"
+        }
+      ],
+      "position": [0.532, -0.1076, -0.8368]
+    },
+    {
+      "id": "c-condutancia",
+      "label": "Condutância do Bipolo",
+      "definition": "Parâmetro que relaciona a tensão e a corrente no gerador real de corrente através da equação I = Icc - g·V.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 14,
+          "chunkId": "6ac9b2e4-9c8a-5c35-ade5-1e2d1b3eb654"
+        }
+      ],
+      "position": [0.5107, -0.0466, -1.0]
+    },
+    {
+      "id": "c-primeira-lei-kirchhoff",
+      "label": "1ª Lei de Kirchhoff",
+      "definition": "Princípio pelo qual a soma algébrica das correntes elétricas aferentes a um nó da rede é sempre nula.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 18,
+          "chunkId": "2bb4d27a-84d1-52f6-94a4-f45a712dd0d2"
+        }
+      ],
+      "position": [-0.8564, -0.8314, 0.0241]
+    },
+    {
+      "id": "c-segunda-lei-kirchhoff",
+      "label": "2ª Lei de Kirchhoff",
+      "definition": "Princípio pelo qual a soma algébrica das tensões medidas ordenadamente ao longo de uma malha é nula.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 18,
+          "chunkId": "2bb4d27a-84d1-52f6-94a4-f45a712dd0d2"
+        }
+      ],
+      "position": [0.8919, 0.5372, -0.0432]
+    },
+    {
+      "id": "c-no-eletrico",
+      "label": "Nó Elétrico",
+      "definition": "Ponto de convergência em um circuito onde não pode ocorrer acúmulo contínuo de cargas elétricas.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 18,
+          "chunkId": "2bb4d27a-84d1-52f6-94a4-f45a712dd0d2"
+        }
+      ],
+      "position": [-0.9638, -0.7989, 0.1275]
+    },
+    {
+      "id": "c-superposicao",
+      "label": "Superposição de Efeitos",
+      "definition": "Método de resolução linear calculando correntes e tensões ativando fontes de forma independente.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 23,
+          "chunkId": "7487122c-dc2a-518e-a89b-a05a63914f3e"
+        }
+      ],
+      "position": [-0.8697, 0.5619, -0.5994]
+    },
+    {
+      "id": "c-gerador-thevenin",
+      "label": "Equivalente de Thévenin",
+      "definition": "Substituição de uma rede linear vista por dois terminais por uma fonte de tensão com resistor série.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 27,
+          "chunkId": "cba4e6cc-5095-5bdf-ba62-d53b6794f94a"
+        }
+      ],
+      "position": [-1.0, 0.6684, -0.6528]
+    },
+    {
+      "id": "c-ligacao-estrela",
+      "label": "Ligação em Estrela",
+      "definition": "Configuração na qual três terminais de bipolos passivos encontram-se reunidos num único nó comum.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 27,
+          "chunkId": "cba4e6cc-5095-5bdf-ba62-d53b6794f94a"
+        }
+      ],
+      "position": [0.7529, -0.9065, 0.875]
+    },
+    {
+      "id": "c-ligacao-triangulo",
+      "label": "Ligação em Triângulo",
+      "definition": "Configuração onde os terminais dos bipolos são ligados dois a dois formando uma malha fechada de 3 lados.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 27,
+          "chunkId": "cba4e6cc-5095-5bdf-ba62-d53b6794f94a"
+        }
+      ],
+      "position": [0.7984, -1.0, 1.0]
+    },
+    {
+      "id": "c-circuito-ponte",
+      "label": "Circuito em Ponte",
+      "definition": "Rede formada por quatro resistores e um detector central de corrente para medições de precisão.",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 31,
+          "chunkId": "874cb7fc-b046-56a6-ad47-0be49122d43d"
+        }
+      ],
+      "position": [0.8028, 0.2708, -0.1398]
+    }
+  ],
+  "edges": [
+    {
+      "sourceId": "c-potencial-eletrico",
+      "targetId": "c-ddp",
+      "relation": "Potencial Elétrico (Grandeza escalar definida como o trabalho por unidade de carga positiva para deslocá-la a partir do infinito.) determina a variação entre dois pontos de Diferença de Potencial (Trabalho por unidade de carga para deslocar uma carga elétrica entre dois pontos específicos A e B.)",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 5,
+          "chunkId": "f369433a-8ef8-58ff-99be-e167454d7dd9"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-fem",
+      "targetId": "c-bateria-real",
+      "relation": "Força Eletromotriz (Tensão elétrica máxima em circuito aberto nos terminais de um gerador ideal ou fonte ativa.) atua como componente ideal da Bateria Real (Modelo composto por uma fonte com força eletromotriz E em série com uma resistência interna r.)",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 10,
+          "chunkId": "6b911669-35ac-5069-a6a8-7752df1841dd"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-corrente-curto",
+      "targetId": "c-bateria-real",
+      "relation": "Corrente de Curto-Circuito (Valor de corrente fornecido por um bipolo ativo linear quando a tensão entre seus terminais é nula.) delimita o ponto operacional extremo da Bateria Real (Modelo composto por uma fonte com força eletromotriz E em série com uma resistência interna r.)",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 10,
+          "chunkId": "6b911669-35ac-5069-a6a8-7752df1841dd"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-resistor-linear",
+      "targetId": "c-bateria-real",
+      "relation": "Bipolo Passivo Linear (Componente cuja relação tensão-corrente é uma reta passando pela origem, regida pela função V = R · I.) fornece o modelo de resistência interna para a Bateria Real (Modelo composto por uma fonte com força eletromotriz E em série com uma resistência interna r.)",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 10,
+          "chunkId": "6b911669-35ac-5069-a6a8-7752df1841dd"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-assoc-serie",
+      "targetId": "c-fem",
+      "relation": "Associação em Série (Ligação na qual as f.e.m.s e as resistências dos bipolos são somadas para compor o bipolo equivalente.) soma diretamente os valores de Força Eletromotriz (Tensão elétrica máxima em circuito aberto nos terminais de um gerador ideal ou fonte ativa.)",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 14,
+          "chunkId": "6ac9b2e4-9c8a-5c35-ade5-1e2d1b3eb654"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-assoc-paralelo",
+      "targetId": "c-condutancia",
+      "relation": "Associação em Paralelo (Ligação de bipolos sob a mesma tensão cujas correntes individuais e condutâncias são somadas.) soma diretamente as parcelas de Condutância do Bipolo (Parâmetro que relaciona a tensão e a corrente no gerador real de corrente através da equação I = Icc - g·V.)",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 14,
+          "chunkId": "6ac9b2e4-9c8a-5c35-ade5-1e2d1b3eb654"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-assoc-paralelo",
+      "targetId": "c-corrente-curto",
+      "relation": "Associação em Paralelo (Ligação de bipolos sob a mesma tensão cujas correntes individuais e condutâncias são somadas.) soma as correntes aferidas de Corrente de Curto-Circuito (Valor de corrente fornecido por um bipolo ativo linear quando a tensão entre seus terminais é nula.)",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 14,
+          "chunkId": "6ac9b2e4-9c8a-5c35-ade5-1e2d1b3eb654"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-corrente-eletrica",
+      "targetId": "c-no-eletrico",
+      "relation": "Intensidade de Corrente Elétrica (Quantidade de carga elétrica líquida que atravessa uma determinada superfície condutora por unidade de tempo.) conserva seu balanço de fluxo no Nó Elétrico (Ponto de convergência em um circuito onde não pode ocorrer acúmulo contínuo de cargas elétricas.)",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 18,
+          "chunkId": "2bb4d27a-84d1-52f6-94a4-f45a712dd0d2"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-primeira-lei-kirchhoff",
+      "targetId": "c-no-eletrico",
+      "relation": "1ª Lei de Kirchhoff (Princípio pelo qual a soma algébrica das correntes elétricas aferentes a um nó da rede é sempre nula.) estabelece soma nula de correntes no Nó Elétrico (Ponto de convergência em um circuito onde não pode ocorrer acúmulo contínuo de cargas elétricas.)",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 18,
+          "chunkId": "2bb4d27a-84d1-52f6-94a4-f45a712dd0d2"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-ddp",
+      "targetId": "c-segunda-lei-kirchhoff",
+      "relation": "Diferença de Potencial (Trabalho por unidade de carga para deslocar uma carga elétrica entre dois pontos específicos A e B.) integra ordenadamente as parcelas da 2ª Lei de Kirchhoff (Princípio pelo qual a soma algébrica das tensões medidas ordenadamente ao longo de uma malha é nula.)",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 18,
+          "chunkId": "2bb4d27a-84d1-52f6-94a4-f45a712dd0d2"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-superposicao",
+      "targetId": "c-gerador-thevenin",
+      "relation": "Superposição de Efeitos (Método de resolução linear calculando correntes e tensões ativando fontes de forma independente.) valida as soluções de circuito obtidas por Equivalente de Thévenin (Substituição de uma rede linear vista por dois terminais por uma fonte de tensão com resistor série.)",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 27,
+          "chunkId": "cba4e6cc-5095-5bdf-ba62-d53b6794f94a"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-ligacao-estrela",
+      "targetId": "c-ligacao-triangulo",
+      "relation": "Ligação em Estrela (Configuração na qual três terminais de bipolos passivos encontram-se reunidos num único nó comum.) transforma-se bidirecionalmente com a Ligação em Triângulo (Configuração onde os terminais dos bipolos são ligados dois a dois formando uma malha fechada de 3 lados.)",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 27,
+          "chunkId": "cba4e6cc-5095-5bdf-ba62-d53b6794f94a"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-segunda-lei-kirchhoff",
+      "targetId": "c-circuito-ponte",
+      "relation": "2ª Lei de Kirchhoff (Princípio pelo qual a soma algébrica das tensões medidas ordenadamente ao longo de uma malha é nula.) fornece as relações entre malhas no Circuito em Ponte (Rede formada por quatro resistores e um detector central de corrente para medições de precisão.)",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 31,
+          "chunkId": "874cb7fc-b046-56a6-ad47-0be49122d43d"
+        }
+      ]
+    },
+    {
+      "sourceId": "c-resistor-linear",
+      "targetId": "c-circuito-ponte",
+      "relation": "Bipolo Passivo Linear (Componente cuja relação tensão-corrente é uma reta passando pela origem, regida pela função V = R · I.) constitui os quatro ramos do Circuito em Ponte (Rede formada por quatro resistores e um detector central de corrente para medições de precisão.)",
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 31,
+          "chunkId": "874cb7fc-b046-56a6-ad47-0be49122d43d"
+        }
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "id": "card-potencial-tensao",
+      "title": "Potencial Elétrico e Tensão",
+      "body": "O potencial elétrico Vr é definido como o trabalho W realizado contra o campo por unidade de carga. A diferença de potencial VBA = VB - VA entre os pontos A e B representa o trabalho para deslocar a carga unitária entre ambos.",
+      "conceptIds": ["c-potencial-eletrico", "c-ddp"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 5,
+          "chunkId": "f369433a-8ef8-58ff-99be-e167454d7dd9"
+        }
+      ]
+    },
+    {
+      "id": "card-bipolos-lineares",
+      "title": "Bipolos Passivos e Ativos Lineares",
+      "body": "Um resistor com resistência R constante é um bipolo passivo linear com V=R·I. Uma bateria associa um gerador ideal de f.e.m. E com resistência interna r, originando a equação terminal VAB = E - r·I, que intercepta os eixos em (0, E) e (Icc, 0).",
+      "conceptIds": ["c-resistor-linear", "c-bateria-real", "c-corrente-curto", "c-fem"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 10,
+          "chunkId": "6b911669-35ac-5069-a6a8-7752df1841dd"
+        }
+      ]
+    },
+    {
+      "id": "card-associacao-bipolos",
+      "title": "Associações Série e Paralelo",
+      "body": "Na associação em série de bipolos ativos, o equivalente é obtido pela soma das forças eletromotrizes e das resistências. Na associação em paralelo, somam-se as correntes de curto-circuito individuais Icci e as condutâncias gi sob a mesma tensão V.",
+      "conceptIds": ["c-assoc-serie", "c-assoc-paralelo", "c-condutancia"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 14,
+          "chunkId": "6ac9b2e4-9c8a-5c35-ade5-1e2d1b3eb654"
+        }
+      ]
+    },
+    {
+      "id": "card-primeira-lei-kirchhoff",
+      "title": "1ª Lei de Kirchhoff (Nós)",
+      "body": "A soma algébrica das correntes aferentes a um nó qualquer de uma rede é identicamente nula (Σ Ii = 0). O critério atribui sinais opostos a correntes que entram e saem, fundamentando-se na impossibilidade de acúmulo de cargas elétricas no nó.",
+      "conceptIds": ["c-primeira-lei-kirchhoff", "c-no-eletrico", "c-corrente-eletrica"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 18,
+          "chunkId": "2bb4d27a-84d1-52f6-94a4-f45a712dd0d2"
+        }
+      ]
+    },
+    {
+      "id": "card-segunda-lei-kirchhoff",
+      "title": "2ª Lei de Kirchhoff (Malhas)",
+      "body": "A soma algébrica das tensões medidas ordenadamente nos ramos ao longo de uma malha fechada é nula (Σ Vi = 0). A aplicação prática exige a escolha prévia de um sentido de percurso para compatibilizar a convenção de sinais de tensão.",
+      "conceptIds": ["c-segunda-lei-kirchhoff", "c-ddp"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 18,
+          "chunkId": "2bb4d27a-84d1-52f6-94a4-f45a712dd0d2"
+        }
+      ]
+    },
+    {
+      "id": "card-superposicao-efeitos",
+      "title": "Princípio da Superposição",
+      "body": "Em redes elétricas lineares contendo múltiplos geradores, a resposta total em corrente em qualquer ramo é determinada calculando separadamente a contribuição de cada gerador individual mantendo as demais fontes desativadas, somando-se ao final as parcelas.",
+      "conceptIds": ["c-superposicao"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 23,
+          "chunkId": "7487122c-dc2a-518e-a89b-a05a63914f3e"
+        }
+      ]
+    },
+    {
+      "id": "card-thevenin-estrela-triangulo",
+      "title": "Equivalente Thévenin e Transformações",
+      "body": "Substitui-se a rede linear vista de dois nós por uma f.e.m. equivalente com resistor série. Já a transformação estrela-triângulo modifica três bipolos unidos num nó para uma malha de três lados, preservando as condições terminais equivalentes.",
+      "conceptIds": ["c-gerador-thevenin", "c-ligacao-estrela", "c-ligacao-triangulo"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 27,
+          "chunkId": "cba4e6cc-5095-5bdf-ba62-d53b6794f94a"
+        }
+      ]
+    },
+    {
+      "id": "card-ponte-medicao",
+      "title": "Circuito em Ponte e Equilíbrio",
+      "body": "A ponte é configurada com resistores fixos R1 e R2, resistência variável RV e resistor desconhecido Rx com detector RD. Ao equilibrar a ponte tal que ID = 0 e VAB = 0, a 2ª Lei nas malhas I e II define a proporção I1·R1 = I2·Rx e I1·R2 = I2·RV.",
+      "conceptIds": ["c-circuito-ponte", "c-segunda-lei-kirchhoff"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 31,
+          "chunkId": "874cb7fc-b046-56a6-ad47-0be49122d43d"
+        }
+      ]
+    },
+    {
+      "id": "card-caracterizacao-baterias",
+      "title": "Parâmetros das Baterias Reais",
+      "body": "Baterias reais são caracterizadas por medições como a tensão em vazio (f.e.m. com corrente nula) e corrente de curto-circuito Icc. A partir desses dados obtém-se a resistência interna r = E / Icc e a reta característica VxI para associações em série ou paralelo.",
+      "conceptIds": ["c-bateria-real", "c-corrente-curto", "c-fem", "c-assoc-serie"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 10,
+          "chunkId": "6b911669-35ac-5069-a6a8-7752df1841dd"
+        },
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 40,
+          "chunkId": "6f511208-cbc5-555a-ae99-ee04d83b4c08"
+        }
+      ]
+    }
+  ],
+  "quiz": [
+    {
+      "id": "q-1",
+      "prompt": "Como é definido teoricamente o potencial elétrico Vr de acordo com os conceitos fundamentais de circuitos?",
+      "options": [
+        "A quantidade de carga por unidade de tempo que cruza um condutor",
+        "A soma algébrica das tensões que percorrem ordenadamente uma malha",
+        "O trabalho por unidade de carga para deslocar uma carga a partir do infinito",
+        "A inclinação angular da curva de condução em um resistor passivo"
+      ],
+      "correctIndex": 2,
+      "explanation": "Conforme o texto (pág. 5), o potencial elétrico Vr é uma grandeza escalar definida pelo trabalho W por unidade de carga (q2) ao trazê-la do infinito.",
+      "conceptIds": ["c-potencial-eletrico"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 5,
+          "chunkId": "f369433a-8ef8-58ff-99be-e167454d7dd9"
+        }
+      ]
+    },
+    {
+      "id": "q-2",
+      "prompt": "Em uma bateria real linear com f.e.m. E e resistência interna r, qual é a expressão da tensão terminal VAB em função da corrente I?",
+      "options": ["VAB = E + r · I", "VAB = E - r · I", "VAB = r · I - E", "VAB = (E - r) / I"],
+      "correctIndex": 1,
+      "explanation": "A expressão terminal é expressa textualmente como VAB = VAC + VCB = E - r·I, representando a reta de um bipolo ativo linear.",
+      "conceptIds": ["c-bateria-real"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 10,
+          "chunkId": "6b911669-35ac-5069-a6a8-7752df1841dd"
+        }
+      ]
+    },
+    {
+      "id": "q-3",
+      "prompt": "O que indica a corrente de curto-circuito (Icc) de um bipolo ativo linear?",
+      "options": [
+        "A corrente máxima admitida quando a resistência interna atinge o infinito",
+        "A corrente fornecida aos terminais do bipolo quando sua tensão terminal é nula",
+        "A corrente medida sob condição de circuito aberto",
+        "A corrente mínima em que o resistor atua em modo linear"
+      ],
+      "correctIndex": 1,
+      "explanation": "O texto explicita que Icc representa a corrente quando a tensão nos terminais do bipolo é nula, ou seja, terminais curto-circuitados.",
+      "conceptIds": ["c-corrente-curto"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 10,
+          "chunkId": "6b911669-35ac-5069-a6a8-7752df1841dd"
+        }
+      ]
+    },
+    {
+      "id": "q-4",
+      "prompt": "Como é calculada a força eletromotriz equivalente em uma associação de bipolos ativos em série?",
+      "options": [
+        "Pela média ponderada das condutâncias individuais",
+        "Pelo inverso da soma dos inversos das f.e.m.s",
+        "Pela soma das forças eletromotrizes individuais de cada bipolo",
+        "Pelo produto entre a corrente de curto-circuito e a condutância total"
+      ],
+      "correctIndex": 2,
+      "explanation": "Na associação em série, o texto descreve que basta somarmos as f.e.m.s (e resistências) individuais de cada bipolo.",
+      "conceptIds": ["c-assoc-serie", "c-fem"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 14,
+          "chunkId": "6ac9b2e4-9c8a-5c35-ade5-1e2d1b3eb654"
+        }
+      ]
+    },
+    {
+      "id": "q-5",
+      "prompt": "Qual é a base conceitual física que justifica a 1ª Lei de Kirchhoff (soma algébrica das correntes no nó igual a zero)?",
+      "options": [
+        "A conservação do fluxo magnético nas malhas da rede",
+        "A impossibilidade de acúmulo de cargas elétricas no nó",
+        "A equivalência de Norton com geradores ideais de corrente",
+        "A dissipação de calor em resistores passivos ideais"
+      ],
+      "correctIndex": 1,
+      "explanation": "A justificativa formal desta lei é direta: não pode haver acúmulo de cargas elétricas no nó (pág. 18).",
+      "conceptIds": ["c-primeira-lei-kirchhoff", "c-no-eletrico"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 18,
+          "chunkId": "2bb4d27a-84d1-52f6-94a4-f45a712dd0d2"
+        }
+      ]
+    },
+    {
+      "id": "q-6",
+      "prompt": "O que estabelece textualmente a 2ª Lei de Kirchhoff em uma malha de circuito?",
+      "options": [
+        "A soma algébrica das tensões medidas ordenadamente nos ramos da malha é nula",
+        "A condutância total da malha precisa se igualar à soma das condutâncias externas",
+        "A tensão no detector central se anula exclusivamente se todas as correntes forem iguais",
+        "A corrente total da malha independe das resistências internas presentes"
+      ],
+      "correctIndex": 0,
+      "explanation": "A 2ª Lei determina formalmente que: 'A soma algébrica das tensões, medidas ordenadamente nos ramos de uma malha, é nula' (Σ Vi = 0).",
+      "conceptIds": ["c-segunda-lei-kirchhoff"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 18,
+          "chunkId": "2bb4d27a-84d1-52f6-94a4-f45a712dd0d2"
+        }
+      ]
+    },
+    {
+      "id": "q-7",
+      "prompt": "Ao utilizar o princípio da superposição de efeitos em um circuito contendo dois geradores, como se obtém a corrente final em um resistor?",
+      "options": [
+        "Calculando o produto das correntes geradas simultaneamente por ambos os geradores",
+        "Somando as parcelas de corrente em R obtidas mantendo um gerador ativado e o outro desativado sucessivamente",
+        "Calculando a razão de condutâncias entre os geradores em vazio",
+        "Curto-circuitando permanentemente toda a malha externa antes de efetuar as medições"
+      ],
+      "correctIndex": 1,
+      "explanation": "A corrente é obtida pela soma das parcelas I' e I\", calculadas ativando sucessivamente um gerador enquanto o outro é desativado (pág. 23).",
+      "conceptIds": ["c-superposicao"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 23,
+          "chunkId": "7487122c-dc2a-518e-a89b-a05a63914f3e"
+        }
+      ]
+    },
+    {
+      "id": "q-8",
+      "prompt": "Como se definem três bipolos ligados em estrela numa rede de bipolos?",
+      "options": [
+        "Quando estão ligados ordenadamente em anel sem nó comum",
+        "Quando três terminais dos bipolos estão reunidos num único nó",
+        "Quando seus terminais estão unidos em série alternada com fontes ativas",
+        "Quando a corrente que passa por cada um deles é idêntica à de curto-circuito"
+      ],
+      "correctIndex": 1,
+      "explanation": "Diz-se que três bipolos estão ligados em estrela quando três terminais dos bipolos estão reunidos num único nó (pág. 27).",
+      "conceptIds": ["c-ligacao-estrela"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 27,
+          "chunkId": "cba4e6cc-5095-5bdf-ba62-d53b6794f94a"
+        }
+      ]
+    },
+    {
+      "id": "q-9",
+      "prompt": "No circuito em ponte, qual condição operacional comprova o ajuste de equilíbrio entre as resistências fixas e variáveis?",
+      "options": [
+        "O detector de corrente registrar valor nulo, com VAB = 0 e ID = 0",
+        "A f.e.m. do gerador RG cair para a metade do seu valor nominal",
+        "A corrente total se dividir igualmente entre todos os nós",
+        "A resistência Rx atingir valor infinito"
+      ],
+      "correctIndex": 0,
+      "explanation": "O equilíbrio ocorre quando o detector aponta valor nulo, implicando VAB = 0 e portanto corrente ID = 0 no ramo do detector.",
+      "conceptIds": ["c-circuito-ponte"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 31,
+          "chunkId": "874cb7fc-b046-56a6-ad47-0be49122d43d"
+        }
+      ]
+    },
+    {
+      "id": "q-10",
+      "prompt": "Em uma ponte sob condição de equilíbrio, qual relação é obtida ao aplicar a 2ª Lei de Kirchhoff nas malhas I e II?",
+      "options": [
+        "I1 · R1 = I2 · Rx  e  I1 · R2 = I2 · Rv",
+        "I1 + R1 = I2 + Rx  e  I1 + R2 = I2 + Rv",
+        "I1 / R1 = I2 / Rx  e  I1 / R2 = I2 / Rv",
+        "I1 · Rv = I2 · R1  e  I1 · Rx = I2 · R2"
+      ],
+      "correctIndex": 0,
+      "explanation": "Conforme deduzido na página 31, a aplicação da 2ª Lei nas malhas I e II fornece diretamente as relações I1·R1 = I2·Rx e I1·R2 = I2·Rv.",
+      "conceptIds": ["c-circuito-ponte", "c-segunda-lei-kirchhoff"],
+      "anchors": [
+        {
+          "sourceId": "src-circuitos-eletricos-cc",
+          "page": 31,
+          "chunkId": "874cb7fc-b046-56a6-ad47-0be49122d43d"
+        }
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "asset-graph-circuitos",
+      "kind": "concept-graph",
+      "title": "Grafo Conceitual de Circuitos CC",
+      "whySpatial": "Permite visualizar as interconexões espaciais entre fundamentos eletrostáticos, bipolos, leis de Kirchhoff e métodos analíticos de circuitos.",
+      "nodeIds": [
+        "c-potencial-eletrico",
+        "c-ddp",
+        "c-corrente-eletrica",
+        "c-resistor-linear",
+        "c-bateria-real",
+        "c-corrente-curto",
+        "c-fem",
+        "c-assoc-serie",
+        "c-assoc-paralelo",
+        "c-condutancia",
+        "c-primeira-lei-kirchhoff",
+        "c-segunda-lei-kirchhoff",
+        "c-no-eletrico",
+        "c-superposicao",
+        "c-gerador-thevenin",
+        "c-ligacao-estrela",
+        "c-ligacao-triangulo",
+        "c-circuito-ponte"
+      ]
+    },
+    {
+      "id": "asset-seq-superposicao",
+      "kind": "sequence-order",
+      "title": "Passo a Passo da Resolução por Superposição de Efeitos",
+      "whySpatial": "Demonstra a sequência metodológica de isolar individualmente as fontes independentes e sintetizar a contribuição linear no elemento de interesse.",
+      "steps": [
+        {
+          "id": "seq-s2-calcular-parcela1",
+          "text": "Calcular a parcela de corrente I' induzida no resistor de carga pelo primeiro gerador",
+          "anchors": [
+            {
+              "sourceId": "src-circuitos-eletricos-cc",
+              "page": 23,
+              "chunkId": "7487122c-dc2a-518e-a89b-a05a63914f3e"
+            }
+          ]
+        },
+        {
+          "id": "seq-s4-calcular-parcela2",
+          "text": "Determinar a parcela de corrente I\" associada unicamente ao gerador 2",
+          "anchors": [
+            {
+              "sourceId": "src-circuitos-eletricos-cc",
+              "page": 23,
+              "chunkId": "7487122c-dc2a-518e-a89b-a05a63914f3e"
+            }
+          ]
+        },
+        {
+          "id": "seq-s5-somar-efeitos",
+          "text": "Somar as parcelas I' e I\" para encontrar a corrente líquida total no ramo",
+          "anchors": [
+            {
+              "sourceId": "src-circuitos-eletricos-cc",
+              "page": 23,
+              "chunkId": "7487122c-dc2a-518e-a89b-a05a63914f3e"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "asset-seq-ponte-equilibrio",
+      "kind": "sequence-order",
+      "title": "Procedimento de Medição com Circuito em Ponte",
+      "whySpatial": "Exibe o procedimento ordenado de ajuste e cálculo da resistência desconhecida através da condição de corrente nula no detector central.",
+      "steps": [
+        {
+          "id": "seq-p1-montagem",
+          "text": "Montar a ponte com os resistores fixos R1 e R2, a resistência variável Rv, o elemento incógnito Rx e o detector RD",
+          "anchors": [
+            {
+              "sourceId": "src-circuitos-eletricos-cc",
+              "page": 31,
+              "chunkId": "874cb7fc-b046-56a6-ad47-0be49122d43d"
+            }
+          ]
+        },
+        {
+          "id": "seq-p3-igualdade-correntes",
+          "text": "Constatar a igualdade de correntes I1 através de R1 e R2 e de I2 através de Rx e RV",
+          "anchors": [
+            {
+              "sourceId": "src-circuitos-eletricos-cc",
+              "page": 31,
+              "chunkId": "874cb7fc-b046-56a6-ad47-0be49122d43d"
+            }
+          ]
+        },
+        {
+          "id": "seq-p4-leis-malha",
+          "text": "Aplicar a 2ª Lei de Kirchhoff nas malhas I e II obtendo I1·R1 = I2·Rx e I1·R2 = I2·RV",
+          "anchors": [
+            {
+              "sourceId": "src-circuitos-eletricos-cc",
+              "page": 31,
+              "chunkId": "874cb7fc-b046-56a6-ad47-0be49122d43d"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "generatedAt": "2026-10-22T20:56:04.651780Z",
+    "promptVersion": "1.0.0",
+    "model": "gemini-3.8-flash",
+    "discarded": 11
+  }
+}
