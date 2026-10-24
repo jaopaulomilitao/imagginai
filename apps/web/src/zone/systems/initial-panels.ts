@@ -27,41 +27,49 @@ export interface SyntheticPdfPageContent {
   readonly paragraphs: readonly string[];
 }
 
+export function buildPlaceholderStudyCard(slotNumber: 1 | 2, sourceId = 'src-default'): StudyCard {
+  // cria o cartão inicial orientando o usuário a adicionar conteúdos pelo menu da zona
+  return {
+    id: `placeholder-slot-${slotNumber}`,
+    title: `Painel de Estudo Livre (${slotNumber})`,
+    body:
+      slotNumber === 1
+        ? 'Adicione seu primeiro conteúdo de estudo no menu Conteúdos (olhe para baixo ou pressione B) para escolher cartões e conceitos extraídos.'
+        : 'Selecione qualquer cartão ou conceito fundamentado no menu Conteúdos abaixo para fixar neste painel.',
+    conceptIds: [],
+    anchors: [{ sourceId, page: 1, chunkId: `placeholder-${slotNumber}` }],
+  };
+}
+
 // constrói a especificação dos 3 painéis iniciais da zona a partir do study pack (fase 4)
 export function buildInitialZonePanels(pack: StudyPack): InitialZonePanelSpec[] {
-  const firstCard = pack.cards[0];
-  const secondCard = pack.cards[1] ?? pack.cards[0];
   const primarySource = pack.sources[0] ?? {
     id: 'src-default',
     title: 'Material de estudo',
     pageCount: 1,
   };
 
-  const specs: InitialZonePanelSpec[] = [];
-  if (firstCard) {
-    specs.push({
+  return [
+    {
       panelId: 'panel-card-1',
       kind: 'card-panel',
       defaultLayout: DEFAULT_INITIAL_PANEL_LAYOUTS[0],
-      card: firstCard,
-    });
-  }
-  specs.push({
-    panelId: 'panel-pdf-1',
-    kind: 'pdf-panel',
-    defaultLayout: DEFAULT_INITIAL_PANEL_LAYOUTS[1],
-    sourceTitle: primarySource.title,
-    pageCount: primarySource.pageCount,
-  });
-  if (secondCard) {
-    specs.push({
+      card: buildPlaceholderStudyCard(1, primarySource.id),
+    },
+    {
+      panelId: 'panel-pdf-1',
+      kind: 'pdf-panel',
+      defaultLayout: DEFAULT_INITIAL_PANEL_LAYOUTS[1],
+      sourceTitle: primarySource.title,
+      pageCount: primarySource.pageCount,
+    },
+    {
       panelId: 'panel-card-2',
       kind: 'card-panel',
       defaultLayout: DEFAULT_INITIAL_PANEL_LAYOUTS[2],
-      card: secondCard,
-    });
-  }
-  return specs;
+      card: buildPlaceholderStudyCard(2, primarySource.id),
+    },
+  ];
 }
 
 // mescla o layout salvo no dexie com as posições padrão dos painéis iniciais

@@ -1,8 +1,10 @@
-"""validação de tokens jwt emitidos pelo supabase auth para rotas protegidas."""
+"""validação de tokens jwt emitidos pelo supabase auth (hs256 e es256/jwks)."""
 
 from dataclasses import dataclass
-from typing import Annotated
+from functools import lru_cache
+from typing import Annotated, Any
 
+import httpx
 import jwt
 from fastapi import Header, HTTPException, Request, status
 
@@ -13,6 +15,8 @@ from app.core.config import (
     Settings,
     get_settings,
 )
+
+ASYMMETRIC_JWT_ALGORITHMS: tuple[str, ...] = ("ES256", "RS256")
 
 
 @dataclass(frozen=True)
@@ -57,22 +61,68 @@ def _validate_audience_claim(audience: object) -> None:
     )
 
 
-def verify_supabase_jwt(token: str, jwt_secret: str) -> AuthenticatedUser:
+@lru_cache(maxsize=8)
+def _fetch_supabase_jwk_set(supabase_url: str) -> jwt.PyJWKSet:
+    # obtém e armazena em cache as chaves públicas jwks do projeto supabase para tokens es256/rs256
+    base = supabase_url.rstrip("/")
+    response = httpx.get(f"{base}/auth/v1/.well-known/jwks.json", timeout=10.0)
+    response.raise_for_status()
+    data: dict[str, Any] = response.json()
+    return jwt.PyJWKSet.from_dict(data)
+
+
+def _decode_jwt_payload(
+    token: str,
+    jwt_secret: str,
+    supabase_url: str | None = None,
+) -> dict[str, Any]:
+    # seleciona verificação simétrica (hs256) ou assimétrica via jwks (es256/rs256)
+    header = jwt.get_unverified_header(token)
+    alg = str(header.get("alg", "HS256"))
+    kid = header.get("kid")
+
+    if alg in ASYMMETRIC_JWT_ALGORITHMS and supabase_url:
+        jwk_set = _fetch_supabase_jwk_set(supabase_url)
+        signing_key: Any = None
+        if isinstance(kid, str) and kid:
+            for item in jwk_set.keys:
+                if item.key_id == kid:
+                    signing_key = item.key
+                    break
+        if signing_key is None and jwk_set.keys:
+            signing_key = jwk_set.keys[0].key
+        if signing_key is not None:
+            return jwt.decode(
+                token,
+                signing_key,
+                algorithms=list(ASYMMETRIC_JWT_ALGORITHMS),
+                options={"require": ["sub", "exp"], "verify_aud": False},
+            )
+
+    return jwt.decode(
+        token,
+        jwt_secret,
+        algorithms=list(SUPABASE_JWT_ALGORITHMS),
+        options={"require": ["sub", "exp"], "verify_aud": False},
+    )
+
+
+def verify_supabase_jwt(
+    token: str,
+    jwt_secret: str,
+    *,
+    supabase_url: str | None = None,
+) -> AuthenticatedUser:
     """valida a assinatura, a expiração e o identificador do usuário no token jwt."""
     try:
-        payload = jwt.decode(
-            token,
-            jwt_secret,
-            algorithms=list(SUPABASE_JWT_ALGORITHMS),
-            options={"require": ["sub", "exp"], "verify_aud": False},
-        )
+        payload = _decode_jwt_payload(token, jwt_secret, supabase_url=supabase_url)
     except jwt.ExpiredSignatureError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="token has expired",
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
-    except jwt.InvalidTokenError as exc:
+    except (jwt.InvalidTokenError, httpx.HTTPError) as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="invalid token",
@@ -122,4 +172,8 @@ def get_current_user(
 
     token = _extract_bearer_token(authorization)
     assert settings.supabase_jwt_secret is not None
-    return verify_supabase_jwt(token, settings.supabase_jwt_secret)
+    return verify_supabase_jwt(
+        token,
+        settings.supabase_jwt_secret,
+        supabase_url=settings.supabase_url,
+    )

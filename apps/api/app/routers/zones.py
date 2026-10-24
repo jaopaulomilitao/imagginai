@@ -9,6 +9,7 @@ from fastapi import (
     BackgroundTasks,
     Depends,
     File,
+    Form,
     HTTPException,
     Request,
     UploadFile,
@@ -136,6 +137,7 @@ async def upload_zone_source(
     current_user: Annotated[AuthenticatedUser, Depends(get_current_user)],
     store: Annotated[DatabaseStore, Depends(get_db_store)],
     embedding_client: Annotated[EmbeddingClient, Depends(get_embedding_client)],
+    title: Annotated[str | None, Form()] = None,
 ) -> SourceUploadResponse:
     """recebe um pdf de até 20 mb e 60 páginas, salva no storage e inicia o job de ingestão."""
     zone = store.get_zone(current_user.user_id, zone_id)
@@ -149,7 +151,11 @@ async def upload_zone_source(
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
 
     source_id = str(uuid4())
-    title = _derive_source_title(file.filename)
+    effective_title = (
+        title.strip()
+        if isinstance(title, str) and title.strip()
+        else _derive_source_title(file.filename)
+    )
     storage_path = store.upload_source_pdf(
         user_id=current_user.user_id,
         zone_id=zone_id,
@@ -160,7 +166,7 @@ async def upload_zone_source(
         user_id=current_user.user_id,
         zone_id=zone_id,
         source_id=source_id,
-        title=title,
+        title=effective_title,
         storage_path=storage_path,
         page_count=extraction.page_count,
         size_bytes=extraction.size_bytes,
@@ -183,7 +189,7 @@ async def upload_zone_source(
     return SourceUploadResponse(
         job_id=job.id,
         source_id=source_id,
-        title=title,
+        title=effective_title,
         page_count=extraction.page_count,
     )
 

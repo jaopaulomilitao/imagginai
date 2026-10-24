@@ -95,11 +95,12 @@ describe('Phase 5 — Belt Menu hysteresis, yaw freeze & exit confirmation', () 
     expect(belt.triggerExitAction()).toBe('confirm-pending');
   });
 
-  it('places at most 7 belt items on an arc at pitch -38° within +-40° and disables ai-assistant', () => {
+  it('places at most 8 belt items on an arc at pitch -38° within +-40° and disables ai-assistant', () => {
     const placements = computeBeltItemPlacements();
     expect(placements.length).toBeLessThanOrEqual(BELT_MAX_ITEMS);
-    expect(placements).toHaveLength(7);
+    expect(placements).toHaveLength(8);
     expect(placements.some((p) => p.id === 'toggle-theme')).toBe(true);
+    expect(placements.some((p) => p.id === 'open-contents')).toBe(true);
 
     for (const item of placements) {
       expect(item.pitchDeg).toBe(BELT_CENTER_PITCH_DEG);

@@ -2,12 +2,15 @@ import AFRAME, { type Component, type Entity } from 'aframe';
 
 import { PT_BR } from '../../shared/i18n/pt-br';
 import { logger } from '../../shared/logger';
-import { zoneStorage } from '../../shared/storage/dexie-db';
+import { resolveBundledDemoPack, zoneStorage } from '../../shared/storage/dexie-db';
+import type { StudyCard } from '../../shared/types/study-pack';
 import type { Zone } from '../../shared/types/zone';
 import type { ModeComponent } from './imx-mode';
 import {
+  ZONE_ADD_CONTENT_REQUEST_EVENT,
   ZONE_RECENTER_REQUEST_EVENT,
   ZONE_SWITCH_REQUEST_EVENT,
+  type AddContentRequestDetail,
   type RecenterRequestDetail,
   type SwitchZoneRequestDetail,
 } from './zone-workspace';
@@ -16,6 +19,7 @@ import {
   BELT_ITEM_HEIGHT_M,
   BELT_ITEM_WIDTH_M,
   BELT_RADIUS_M,
+  BELT_SHORTCUT_CONTENTS_KEY,
   BELT_SHORTCUT_EXIT_KEY,
   BELT_SHORTCUT_MODE_KEY,
   BELT_SHORTCUT_POMODORO_KEY,
@@ -129,6 +133,8 @@ export class BeltMenuBridge {
   private toastMessage: string | null = null;
   private toastRemainingMs = 0;
   private zonesPickerOpen = false;
+  private contentsPickerOpen = false;
+  private contentsPageIndex = 0;
   private activeZoneId: string;
   private currentTheme: ZoneTheme;
   private statusBorderEl: Entity | null = null;
@@ -151,6 +157,8 @@ export class BeltMenuBridge {
       this.executeAction('exit-zone');
     } else if (key === BELT_SHORTCUT_ZONES_KEY) {
       this.executeAction('switch-zone');
+    } else if (key === BELT_SHORTCUT_CONTENTS_KEY) {
+      this.executeAction('open-contents');
     } else if (key === BELT_SHORTCUT_MODE_KEY) {
       this.executeAction('toggle-mode');
     } else if (key === BELT_SHORTCUT_THEME_KEY) {
@@ -223,6 +231,7 @@ export class BeltMenuBridge {
       const snap = this.beltController.update(angles.yawDeg, angles.pitchDeg, dt);
       if (prevVisible && !snap.visible) {
         this.zonesPickerOpen = false;
+        this.contentsPickerOpen = false;
         this.zonesCardEl.setAttribute('visible', 'false');
         this.zonesCardEl.object3D.visible = false;
       }
@@ -244,9 +253,22 @@ export class BeltMenuBridge {
         break;
       }
       case 'switch-zone': {
+        this.contentsPickerOpen = false;
         this.zonesPickerOpen = !this.zonesPickerOpen;
         if (this.zonesPickerOpen) {
           void this.populateZonesPicker();
+        } else {
+          this.zonesCardEl.setAttribute('visible', 'false');
+          this.zonesCardEl.object3D.visible = false;
+        }
+        break;
+      }
+      case 'open-contents': {
+        this.zonesPickerOpen = false;
+        this.contentsPickerOpen = !this.contentsPickerOpen;
+        if (this.contentsPickerOpen) {
+          this.contentsPageIndex = 0;
+          void this.populateContentsPicker();
         } else {
           this.zonesCardEl.setAttribute('visible', 'false');
           this.zonesCardEl.object3D.visible = false;
@@ -637,6 +659,153 @@ export class BeltMenuBridge {
     this.syncBeltVisuals();
   }
 
+  private async populateContentsPicker(): Promise<void> {
+    // monta o menu espacial de conteúdos extraídos do study pack da zona ativa
+    while (this.zonesCardEl.firstChild) {
+      this.zonesCardEl.removeChild(this.zonesCardEl.firstChild);
+    }
+
+    const pack =
+      (await zoneStorage.loadStudyPack?.(this.activeZoneId)) ??
+      resolveBundledDemoPack(this.activeZoneId);
+    if (!pack) return;
+
+    const sourceTitle = pack.sources[0]?.title ?? 'Material de estudo';
+    const allItems: { label: string; card: StudyCard; badgeColor: string }[] = [];
+
+    for (const card of pack.cards) {
+      allItems.push({
+        label: `[Cartão] ${card.title}`,
+        card,
+        badgeColor: '#2563EB',
+      });
+    }
+    for (const concept of pack.concepts) {
+      allItems.push({
+        label: `[Conceito] ${concept.label}`,
+        card: {
+          id: `concept-card-${concept.id}`,
+          title: concept.label,
+          body: concept.definition,
+          conceptIds: [concept.id],
+          anchors: concept.anchors,
+        },
+        badgeColor: '#D97706',
+      });
+    }
+
+    const pageSize = 5;
+    const totalPages = Math.max(1, Math.ceil(allItems.length / pageSize));
+    const safePage = Math.max(0, Math.min(this.contentsPageIndex, totalPages - 1));
+    this.contentsPageIndex = safePage;
+    const slice = allItems.slice(safePage * pageSize, (safePage + 1) * pageSize);
+
+    const cardHeight = 0.16 + slice.length * 0.056;
+    const bgEl = document.createElement('a-plane') as Entity;
+    bgEl.setAttribute('width', '0.58');
+    bgEl.setAttribute('height', String(cardHeight));
+    bgEl.setAttribute('material', 'shader: flat; color: #05070B; opacity: 0.96; transparent: true');
+    this.zonesCardEl.appendChild(bgEl);
+
+    const titleEl = createTroikaText({
+      position: `0 ${cardHeight / 2 - 0.032} 0.004`,
+      value: `${PT_BR.zone.belt.feedback.contentsPickerTitle} (${safePage + 1}/${totalPages})`,
+      color: '#FACC15',
+      fontSize: 0.016,
+      maxWidth: 0.54,
+    });
+    this.zonesCardEl.appendChild(titleEl);
+
+    slice.forEach((item, idx) => {
+      const yOffset = cardHeight / 2 - 0.08 - idx * 0.054;
+      const btn = document.createElement('a-plane') as Entity;
+      btn.classList.add('interactable');
+      btn.setAttribute('width', '0.52');
+      btn.setAttribute('height', '0.046');
+      btn.setAttribute('position', `0 ${yOffset} 0.008`);
+      btn.setAttribute(
+        'material',
+        `shader: flat; color: ${item.badgeColor}; opacity: 0.92; transparent: true`,
+      );
+      btn.addEventListener('click', (event: Event) => {
+        event.stopPropagation();
+        const detail: AddContentRequestDetail = { card: item.card, sourceTitle };
+        this.el.sceneEl.emit(ZONE_ADD_CONTENT_REQUEST_EVENT, detail);
+        this.contentsPickerOpen = false;
+        this.zonesCardEl.setAttribute('visible', 'false');
+        this.zonesCardEl.object3D.visible = false;
+        this.showToast(PT_BR.zone.belt.feedback.contentAddedToPanel(item.card.title), 2200);
+      });
+
+      const txt = createTroikaText({
+        position: '0 0 0.004',
+        value: item.label,
+        color: '#FFFDF7',
+        fontSize: 0.016,
+        maxWidth: 0.49,
+      });
+      btn.appendChild(txt);
+      this.zonesCardEl.appendChild(btn);
+    });
+
+    if (totalPages > 1) {
+      const navY = -cardHeight / 2 + 0.038;
+      const prevBtn = document.createElement('a-plane') as Entity;
+      prevBtn.classList.add('interactable');
+      prevBtn.setAttribute('width', '0.22');
+      prevBtn.setAttribute('height', '0.042');
+      prevBtn.setAttribute('position', `-0.14 ${navY} 0.008`);
+      prevBtn.setAttribute(
+        'material',
+        'shader: flat; color: #1E293B; opacity: 0.95; transparent: true',
+      );
+      prevBtn.addEventListener('click', (event: Event) => {
+        event.stopPropagation();
+        this.contentsPageIndex = (this.contentsPageIndex - 1 + totalPages) % totalPages;
+        void this.populateContentsPicker();
+      });
+      prevBtn.appendChild(
+        createTroikaText({
+          position: '0 0 0.004',
+          value: '◀ Página ant.',
+          color: '#FFFDF7',
+          fontSize: 0.015,
+          maxWidth: 0.2,
+        }),
+      );
+      this.zonesCardEl.appendChild(prevBtn);
+
+      const nextBtn = document.createElement('a-plane') as Entity;
+      nextBtn.classList.add('interactable');
+      nextBtn.setAttribute('width', '0.22');
+      nextBtn.setAttribute('height', '0.042');
+      nextBtn.setAttribute('position', `0.14 ${navY} 0.008`);
+      nextBtn.setAttribute(
+        'material',
+        'shader: flat; color: #1E293B; opacity: 0.95; transparent: true',
+      );
+      nextBtn.addEventListener('click', (event: Event) => {
+        event.stopPropagation();
+        this.contentsPageIndex = (this.contentsPageIndex + 1) % totalPages;
+        void this.populateContentsPicker();
+      });
+      nextBtn.appendChild(
+        createTroikaText({
+          position: '0 0 0.004',
+          value: 'Próx. página ▶',
+          color: '#FFFDF7',
+          fontSize: 0.015,
+          maxWidth: 0.2,
+        }),
+      );
+      this.zonesCardEl.appendChild(nextBtn);
+    }
+
+    this.zonesCardEl.setAttribute('visible', 'true');
+    this.zonesCardEl.object3D.visible = true;
+    this.syncBeltVisuals();
+  }
+
   private handlePomodoroEvents(events: PomodoroStepEvents): void {
     if (events.warningJustTriggered) {
       this.showToast(PT_BR.zone.pomodoro.oneMinWarning, 4000);
@@ -695,8 +864,8 @@ export class BeltMenuBridge {
     this.statusTextEl.setAttribute('value', statusMessage);
     this.statusTextEl.setAttribute('troika-text', 'value', statusMessage);
 
-    if (this.zonesPickerOpen) {
-      const pickerPitch = BELT_CENTER_PITCH_DEG + 17;
+    if (this.zonesPickerOpen || this.contentsPickerOpen) {
+      const pickerPitch = BELT_CENTER_PITCH_DEG + 19;
       const pickerPos = sphericalToCartesian({
         yawDeg: snap.beltYawDeg,
         pitchDeg: pickerPitch,

@@ -92,14 +92,15 @@ export const BELT_SHOW_DWELL_MS = 400;
 export const BELT_YAW_LERP_ALPHA = 0.1;
 export const BELT_CENTER_PITCH_DEG = -38;
 export const BELT_ARC_MAX_HALF_WIDTH_DEG = 40;
-export const BELT_MAX_ITEMS = 7;
+export const BELT_MAX_ITEMS = 8;
 export const BELT_RADIUS_M = 1.0;
-export const BELT_ITEM_WIDTH_M = 0.155;
+export const BELT_ITEM_WIDTH_M = 0.145;
 export const BELT_ITEM_HEIGHT_M = 0.125;
 export const BELT_EXIT_CONFIRM_TIMEOUT_MS = 3000;
 
 export const BELT_SHORTCUT_EXIT_KEY = 'escape';
 export const BELT_SHORTCUT_ZONES_KEY = 'z';
+export const BELT_SHORTCUT_CONTENTS_KEY = 'b';
 export const BELT_SHORTCUT_MODE_KEY = 'm';
 export const BELT_SHORTCUT_THEME_KEY = 't';
 export const BELT_SHORTCUT_POMODORO_KEY = 'p';

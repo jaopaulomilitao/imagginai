@@ -1,5 +1,6 @@
 """camada de acesso a dados e storage do supabase com implementação em memória para testes."""
 
+import json
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -23,6 +24,18 @@ from app.schemas.zones import EnvironmentPreset, PanelLayoutSchema
 
 def _utc_now_iso() -> str:
     return datetime.now(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _parse_embedding_column(raw: Any) -> list[float]:
+    # converte o vetor retornado pelo postgrest/pgvector (string json ou lista) em lista de floats
+    if raw is None:
+        return []
+    if isinstance(raw, str):
+        parsed = json.loads(raw)
+        return [float(val) for val in parsed] if isinstance(parsed, list) else []
+    if isinstance(raw, Sequence):
+        return [float(val) for val in raw]
+    return []
 
 
 @dataclass(frozen=True)
@@ -459,7 +472,7 @@ class SupabaseStore:
                 chunk_index=int(row["chunk_index"]),
                 content=str(row["content"]),
                 token_count=int(row["token_count"]),
-                embedding=list(row.get("embedding") or []),
+                embedding=_parse_embedding_column(row.get("embedding")),
                 created_at=str(row["created_at"]),
             )
             for row in rows

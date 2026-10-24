@@ -13,6 +13,7 @@ import {
 export const BELT_ITEM_IDS = [
   'exit-zone',
   'switch-zone',
+  'open-contents',
   'toggle-mode',
   'toggle-theme',
   'toggle-pomodoro',
