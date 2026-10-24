@@ -1,13 +1,4 @@
-import {
-  ArrowLeft,
-  CheckCircle,
-  EnvelopeSimple,
-  Key,
-  SignIn,
-  UserPlus,
-  UserSwitch,
-  WarningCircle,
-} from '@phosphor-icons/react';
+import { ArrowLeft, CheckCircle, SignIn, UserPlus, WarningCircle } from '@phosphor-icons/react';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 
@@ -62,7 +53,7 @@ export function LoginPage({ themeId, onAuthSuccess }: LoginPageProps) {
     setLoading(true);
     try {
       const session = await signInAnonymously();
-      onAuthSuccess(session.user.email ?? 'Anônimo (Supabase)');
+      onAuthSuccess(session.user.email ?? 'Visitante');
       await navigate('/');
     } catch (error) {
       setErrorMsg(error instanceof Error ? error.message : String(error));
@@ -75,35 +66,35 @@ export function LoginPage({ themeId, onAuthSuccess }: LoginPageProps) {
     <main className="imx-shell justify-center" data-imx-theme={themeId}>
       <section className="imx-glass-panel max-w-xl">
         <div className="imx-panel-header">
-          <Link to="/" className="imx-glass-button text-sm py-2 px-3">
-            <ArrowLeft size={18} weight="bold" />
+          <Link to="/" className="imx-glass-button text-xs py-2 px-3.5">
+            <ArrowLeft size={16} weight="bold" />
             <span>{PT_BR.auth.backToZones}</span>
           </Link>
-          <span className="imx-badge imx-badge-blue">Supabase Auth</span>
+          <span className="imx-badge imx-badge-darkblue">Acesso</span>
         </div>
 
         <h1 className="imx-title">{PT_BR.auth.title}</h1>
         <p className="imx-subtitle text-sm">{PT_BR.auth.subtitle}</p>
 
         {errorMsg && (
-          <div className="imx-glass-card mb-4 border-2 border-[var(--imx-accent-red)] flex items-start gap-2.5">
+          <div className="imx-glass-card mb-4 border border-[var(--imx-accent-danger)] flex items-start gap-2.5">
             <WarningCircle
-              size={22}
-              weight="duotone"
-              style={{ color: 'var(--imx-accent-red)', flexShrink: 0 }}
+              size={20}
+              weight="regular"
+              style={{ color: 'var(--imx-accent-danger)', flexShrink: 0 }}
             />
-            <span className="text-sm font-medium" style={{ color: 'var(--imx-accent-red)' }}>
+            <span className="text-sm font-medium" style={{ color: 'var(--imx-accent-danger)' }}>
               {errorMsg}
             </span>
           </div>
         )}
 
         {infoMsg && (
-          <div className="imx-glass-card mb-4 border-2 border-[var(--imx-accent-blue)] flex items-start gap-2.5">
+          <div className="imx-glass-card mb-4 border border-[var(--imx-accent-darkblue)] flex items-start gap-2.5">
             <CheckCircle
-              size={22}
-              weight="duotone"
-              style={{ color: 'var(--imx-accent-blue)', flexShrink: 0 }}
+              size={20}
+              weight="regular"
+              style={{ color: 'var(--imx-accent-darkblue)', flexShrink: 0 }}
             />
             <span className="text-sm font-medium">{infoMsg}</span>
           </div>
@@ -111,11 +102,11 @@ export function LoginPage({ themeId, onAuthSuccess }: LoginPageProps) {
 
         <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4 mb-5">
           <div>
-            <label className="block text-sm font-semibold mb-1.5" htmlFor="imx-login-email">
-              <span className="inline-flex items-center gap-1.5">
-                <EnvelopeSimple size={17} weight="duotone" />
-                <span>{PT_BR.auth.emailLabel}</span>
-              </span>
+            <label
+              className="block text-xs font-bold uppercase tracking-wider mb-1.5 imx-display-font"
+              htmlFor="imx-login-email"
+            >
+              {PT_BR.auth.emailLabel}
             </label>
             <input
               id="imx-login-email"
@@ -129,11 +120,11 @@ export function LoginPage({ themeId, onAuthSuccess }: LoginPageProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-semibold mb-1.5" htmlFor="imx-login-password">
-              <span className="inline-flex items-center gap-1.5">
-                <Key size={17} weight="duotone" />
-                <span>{PT_BR.auth.passwordLabel}</span>
-              </span>
+            <label
+              className="block text-xs font-bold uppercase tracking-wider mb-1.5 imx-display-font"
+              htmlFor="imx-login-password"
+            >
+              {PT_BR.auth.passwordLabel}
             </label>
             <input
               id="imx-login-password"
@@ -155,12 +146,12 @@ export function LoginPage({ themeId, onAuthSuccess }: LoginPageProps) {
             >
               {mode === 'signin' ? (
                 <>
-                  <SignIn size={20} weight="bold" />
+                  <SignIn size={18} weight="bold" />
                   <span>{PT_BR.auth.signInButton}</span>
                 </>
               ) : (
                 <>
-                  <UserPlus size={20} weight="bold" />
+                  <UserPlus size={18} weight="bold" />
                   <span>{PT_BR.auth.signUpButton}</span>
                 </>
               )}
@@ -170,25 +161,24 @@ export function LoginPage({ themeId, onAuthSuccess }: LoginPageProps) {
               type="button"
               disabled={loading}
               onClick={() => setMode((m) => (m === 'signin' ? 'signup' : 'signin'))}
-              className="imx-glass-button text-sm"
+              className="imx-glass-button text-xs"
             >
               {mode === 'signin' ? PT_BR.auth.switchToSignUp : PT_BR.auth.switchToSignIn}
             </button>
           </div>
         </form>
 
-        <div className="pt-4 border-t border-[var(--imx-glass-border-subtle)] flex flex-wrap items-center justify-between gap-3">
+        <div className="pt-4 border-t border-[var(--imx-border-subtle)] flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
             disabled={loading}
             onClick={() => void handleAnonymous()}
-            className="imx-glass-button text-sm"
+            className="imx-glass-button text-xs"
           >
-            <UserSwitch size={18} weight="duotone" />
             <span>{PT_BR.auth.anonymousButton}</span>
           </button>
 
-          <Link to="/" className="imx-glass-button imx-button-accent text-sm">
+          <Link to="/" className="imx-glass-button imx-button-accent text-xs">
             <span>{PT_BR.auth.continueLocalButton}</span>
           </Link>
         </div>

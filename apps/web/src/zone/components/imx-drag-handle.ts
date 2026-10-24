@@ -1,7 +1,6 @@
 import AFRAME, { type Component, type Entity } from 'aframe';
 import type { CursorComponent, CursorHoverDetail } from 'interacxr';
 
-import { PT_BR } from '../../shared/i18n/pt-br';
 import type { PanelLayout } from '../../shared/types/zone';
 import {
   HANDLE_HOVER_REVEAL_MS,
@@ -13,6 +12,10 @@ import {
   type ZoneTheme,
 } from '../config/constants';
 import { DragHandleStateMachine } from '../systems/dwell-controller';
+import {
+  createPhosphorIconEntity,
+  updatePhosphorIconAppearance,
+} from '../systems/phosphor-icon-canvas';
 import '../systems/rounded-shape';
 import {
   calcHandleBarScale,
@@ -30,12 +33,19 @@ import {
 import type { PanelComponent } from './imx-panel';
 
 export const PANEL_DROP_EVENT = 'imx-panel-drop';
+export const PANEL_DELETE_EVENT = 'imx-panel-delete';
+
+export interface PanelDeleteDetail {
+  readonly panelId: string;
+  readonly contentId: string;
+}
 
 interface DragHandleData {
   cameraSelector: string;
   hoverRevealMs: number;
   width: number;
   height: number;
+  contentId: string;
 }
 
 export interface DragHandleComponent extends Component<DragHandleData> {
@@ -50,7 +60,7 @@ function createSubEntity(tag: string, attributes: Record<string, unknown>): Enti
   return el;
 }
 
-// alça de arraste de 6 pontos (2x3) com cantos arredondados, feedback de borda branca e botões -/+
+// alça superior de controle com botões phosphor (- / +), alça de 6 pontos e botão de exclusão (trash)
 export class DragHandleController {
   readonly state: DragHandleStateMachine;
   private readonly barRootEl: Entity;
@@ -59,14 +69,18 @@ export class DragHandleController {
   private readonly dotEls: Entity[] = [];
   private readonly minusBorderEl: Entity;
   private readonly minusBtnEl: Entity;
-  private readonly minusTextEl: Entity;
+  private readonly minusIconEl: Entity;
   private readonly plusBorderEl: Entity;
   private readonly plusBtnEl: Entity;
-  private readonly plusTextEl: Entity;
+  private readonly plusIconEl: Entity;
+  private readonly trashBorderEl: Entity;
+  private readonly trashBtnEl: Entity;
+  private readonly trashIconEl: Entity;
   private readonly cameraDirection = new AFRAME.THREE.Vector3();
   private lastVisibleState: boolean | null = null;
   private lastBarScale = -1;
   private currentTheme: ZoneTheme;
+  private isDeleting = false;
 
   private readonly onThemeChange = (event: Event): void => {
     const detail = (event as CustomEvent<{ theme: ZoneTheme }>).detail;
@@ -116,6 +130,25 @@ export class DragHandleController {
     this.changeRadius(-1);
   };
 
+  // botão de lixeira (trash) remove o painel da cena com transição fade-out e libera o item no menu conteúdos (seção 4.4)
+  private readonly onTrashClick = (): void => {
+    if (this.isDeleting) return;
+    this.isDeleting = true;
+    const panelCtrl = this.panelController();
+    const panelId = panelCtrl?.panelId ?? this.el.id;
+    const contentId = this.data.contentId || panelId;
+    const detail: PanelDeleteDetail = { panelId, contentId };
+
+    if (panelCtrl) {
+      panelCtrl.fadeOutAndRemove(240, () => {
+        this.el.sceneEl?.emit(PANEL_DELETE_EVENT, detail);
+      });
+    } else {
+      this.el.remove();
+      this.el.sceneEl?.emit(PANEL_DELETE_EVENT, detail);
+    }
+  };
+
   constructor(
     private readonly el: Entity,
     private data: DragHandleData,
@@ -131,7 +164,7 @@ export class DragHandleController {
     this.currentTheme = resolveInitialTheme(storedPref);
     const palette = getThemePalette(this.currentTheme);
 
-    const topY = data.height / 2 + PANEL_HANDLE_HEIGHT_M / 2 + 0.012;
+    const topY = data.height / 2 + PANEL_HANDLE_HEIGHT_M / 2 + 0.014;
     this.barRootEl = createSubEntity('a-entity', {
       position: `0 ${topY} 0.012`,
       visible: false,
@@ -165,9 +198,10 @@ export class DragHandleController {
       }
     }
 
-    const sideOffset = PANEL_HANDLE_WIDTH_M / 2 + PANEL_BUTTON_SIZE_M / 2 + 0.016;
-
+    const sideOffset = PANEL_HANDLE_WIDTH_M / 2 + PANEL_BUTTON_SIZE_M / 2 + 0.018;
+    const trashOffset = sideOffset + PANEL_BUTTON_SIZE_M + 0.018;
     const bStroke = 0.004;
+
     this.minusBorderEl = createSubEntity('a-entity', {
       geometry: `primitive: rounded-rect; width: ${PANEL_BUTTON_SIZE_M + 2 * bStroke}; height: ${PANEL_HANDLE_HEIGHT_M + 2 * bStroke}; radius: ${0.014 + bStroke}`,
       position: `${-sideOffset} 0 -0.001`,
@@ -179,18 +213,13 @@ export class DragHandleController {
       position: `${-sideOffset} 0 0`,
       material: `color: ${palette.buttonBgColor}; shader: flat; opacity: ${palette.buttonBgOpacity}; transparent: true`,
     });
-    this.minusTextEl = createSubEntity('a-troika-text', {
-      position: '0 0 0.003',
-      align: 'center',
-      anchor: 'center',
-      baseline: 'center',
+    this.minusIconEl = createPhosphorIconEntity({
+      icon: 'minus',
       color: palette.buttonTextColor,
-      'font-size': 0.024,
-      fontSize: 0.024,
-      value: PT_BR.zone.panels.radiusNearer,
-      'troika-text': `value: ${PT_BR.zone.panels.radiusNearer}; fontSize: 0.024; color: ${palette.buttonTextColor}; align: center; anchor: center; baseline: center`,
+      size: 0.032,
+      position: '0 0 0.004',
     });
-    this.minusBtnEl.appendChild(this.minusTextEl);
+    this.minusBtnEl.appendChild(this.minusIconEl);
 
     this.plusBorderEl = createSubEntity('a-entity', {
       geometry: `primitive: rounded-rect; width: ${PANEL_BUTTON_SIZE_M + 2 * bStroke}; height: ${PANEL_HANDLE_HEIGHT_M + 2 * bStroke}; radius: ${0.014 + bStroke}`,
@@ -203,18 +232,34 @@ export class DragHandleController {
       position: `${sideOffset} 0 0`,
       material: `color: ${palette.buttonBgColor}; shader: flat; opacity: ${palette.buttonBgOpacity}; transparent: true`,
     });
-    this.plusTextEl = createSubEntity('a-troika-text', {
-      position: '0 0 0.003',
-      align: 'center',
-      anchor: 'center',
-      baseline: 'center',
+    this.plusIconEl = createPhosphorIconEntity({
+      icon: 'plus',
       color: palette.buttonTextColor,
-      'font-size': 0.024,
-      fontSize: 0.024,
-      value: PT_BR.zone.panels.radiusFarther,
-      'troika-text': `value: ${PT_BR.zone.panels.radiusFarther}; fontSize: 0.024; color: ${palette.buttonTextColor}; align: center; anchor: center; baseline: center`,
+      size: 0.032,
+      position: '0 0 0.004',
     });
-    this.plusBtnEl.appendChild(this.plusTextEl);
+    this.plusBtnEl.appendChild(this.plusIconEl);
+
+    // botão de exclusão (trash phosphor icon) posicionado ao lado do controle +
+    this.trashBorderEl = createSubEntity('a-entity', {
+      geometry: `primitive: rounded-rect; width: ${PANEL_BUTTON_SIZE_M + 2 * bStroke}; height: ${PANEL_HANDLE_HEIGHT_M + 2 * bStroke}; radius: ${0.014 + bStroke}`,
+      position: `${trashOffset} 0 -0.001`,
+      material: `color: #FB7185; shader: flat; opacity: 0.9; transparent: true`,
+    });
+    this.trashBtnEl = createSubEntity('a-entity', {
+      class: 'interactable',
+      'data-action': 'delete-panel',
+      geometry: `primitive: rounded-rect; width: ${PANEL_BUTTON_SIZE_M}; height: ${PANEL_HANDLE_HEIGHT_M}; radius: 0.014`,
+      position: `${trashOffset} 0 0`,
+      material: `color: #18181B; shader: flat; opacity: 0.92; transparent: true`,
+    });
+    this.trashIconEl = createPhosphorIconEntity({
+      icon: 'trash',
+      color: '#FB7185',
+      size: 0.034,
+      position: '0 0 0.004',
+    });
+    this.trashBtnEl.appendChild(this.trashIconEl);
 
     this.barRootEl.appendChild(this.minusBorderEl);
     this.barRootEl.appendChild(this.minusBtnEl);
@@ -222,10 +267,13 @@ export class DragHandleController {
     this.barRootEl.appendChild(this.handleEl);
     this.barRootEl.appendChild(this.plusBorderEl);
     this.barRootEl.appendChild(this.plusBtnEl);
+    this.barRootEl.appendChild(this.trashBorderEl);
+    this.barRootEl.appendChild(this.trashBtnEl);
     this.el.appendChild(this.barRootEl);
 
     this.minusBtnEl.addEventListener('click', this.onMinusClick);
     this.plusBtnEl.addEventListener('click', this.onPlusClick);
+    this.trashBtnEl.addEventListener('click', this.onTrashClick);
 
     const cameraEl = this.cameraEntity();
     cameraEl?.addEventListener('ixr-cursor-hover-start', this.onHoverStart);
@@ -258,6 +306,7 @@ export class DragHandleController {
     cameraEl?.removeEventListener('ixr-hand-lost', this.onGrabEnd);
     this.minusBtnEl.removeEventListener('click', this.onMinusClick);
     this.plusBtnEl.removeEventListener('click', this.onPlusClick);
+    this.trashBtnEl.removeEventListener('click', this.onTrashClick);
     this.barRootEl.remove();
   }
 
@@ -272,7 +321,7 @@ export class DragHandleController {
     });
     this.handleBorderEl.setAttribute(
       'material',
-      `color: #FFFFFF; shader: flat; opacity: ${opacity}; transparent: true`,
+      `color: #F5F3EB; shader: flat; opacity: ${opacity}; transparent: true`,
     );
   }
 
@@ -300,8 +349,7 @@ export class DragHandleController {
       'material',
       `color: ${palette.buttonBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
     );
-    this.minusTextEl.setAttribute('color', palette.buttonTextColor);
-    this.minusTextEl.setAttribute('troika-text', 'color', palette.buttonTextColor);
+    updatePhosphorIconAppearance(this.minusIconEl, palette.buttonTextColor);
 
     this.plusBtnEl.setAttribute(
       'material',
@@ -311,8 +359,7 @@ export class DragHandleController {
       'material',
       `color: ${palette.buttonBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
     );
-    this.plusTextEl.setAttribute('color', palette.buttonTextColor);
-    this.plusTextEl.setAttribute('troika-text', 'color', palette.buttonTextColor);
+    updatePhosphorIconAppearance(this.plusIconEl, palette.buttonTextColor);
   }
 
   private cameraEntity(): Entity | null {
@@ -348,7 +395,7 @@ export class DragHandleController {
     const scale = calcHandleBarScale(radiusM);
     if (scale === this.lastBarScale) return;
     this.lastBarScale = scale;
-    const topY = this.data.height / 2 + (PANEL_HANDLE_HEIGHT_M * scale) / 2 + 0.012;
+    const topY = this.data.height / 2 + (PANEL_HANDLE_HEIGHT_M * scale) / 2 + 0.014;
     this.barRootEl.setAttribute('position', `0 ${topY} 0.012`);
     this.barRootEl.setAttribute('scale', `${scale} ${scale} 1`);
   }
@@ -445,6 +492,7 @@ AFRAME.registerComponent<DragHandleComponent>('imx-drag-handle', {
     hoverRevealMs: { type: 'number', default: HANDLE_HOVER_REVEAL_MS },
     width: { type: 'number', default: PANEL_DEFAULT_WIDTH_M },
     height: { type: 'number', default: PANEL_DEFAULT_HEIGHT_M },
+    contentId: { type: 'string', default: '' },
   },
   init() {
     this.controller = new DragHandleController(this.el, this.data);

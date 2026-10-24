@@ -85,17 +85,22 @@ export const DEFAULT_ZONE_MODE: ZoneMode = 'focus';
 export const MODE_TRANSITION_DURATION_MS = 300;
 export const MODE_TOGGLE_SHORTCUT_KEY = 'm';
 
-// belt menu no quadril virtual, histerese e atalhos (seção 3.4 e fase 5)
-export const BELT_SHOW_PITCH_THRESHOLD_DEG = -30;
-export const BELT_HIDE_PITCH_THRESHOLD_DEG = -20;
-export const BELT_SHOW_DWELL_MS = 400;
+// belt menu ergonômico, histerese, retenção de olhar e atalhos (seção 3.4 e fase 5)
+export const BELT_SHOW_PITCH_THRESHOLD_DEG = -28;
+export const BELT_HIDE_PITCH_THRESHOLD_DEG = -14;
+export const BELT_SUBMENU_MAX_PITCH_DEG = 22;
+export const BELT_SUBMENU_MAX_YAW_DELTA_DEG = 68;
+export const BELT_SHOW_DWELL_MS = 350;
+export const BELT_FADE_DURATION_MS = 220;
 export const BELT_YAW_LERP_ALPHA = 0.1;
-export const BELT_CENTER_PITCH_DEG = -38;
-export const BELT_ARC_MAX_HALF_WIDTH_DEG = 40;
-export const BELT_MAX_ITEMS = 8;
-export const BELT_RADIUS_M = 1.0;
-export const BELT_ITEM_WIDTH_M = 0.145;
-export const BELT_ITEM_HEIGHT_M = 0.125;
+export const BELT_CENTER_PITCH_DEG = -32;
+export const BELT_ARC_MAX_HALF_WIDTH_DEG = 56;
+export const BELT_MAX_ITEMS = 7;
+export const BELT_RADIUS_M = 1.15;
+export const BELT_ITEM_WIDTH_M = 0.138;
+export const BELT_ITEM_HEIGHT_M = 0.118;
+export const BELT_PRIMARY_ITEM_WIDTH_M = 0.195;
+export const BELT_PRIMARY_ITEM_HEIGHT_M = 0.148;
 export const BELT_EXIT_CONFIRM_TIMEOUT_MS = 3000;
 
 export const BELT_SHORTCUT_EXIT_KEY = 'escape';

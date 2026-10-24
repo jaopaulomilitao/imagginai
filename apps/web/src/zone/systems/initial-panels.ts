@@ -1,8 +1,17 @@
+import { PT_BR } from '../../shared/i18n/pt-br';
 import type { StudyCard, StudyPack } from '../../shared/types/study-pack';
 import type { PanelLayout } from '../../shared/types/zone';
-import { DEFAULT_PANEL_RADIUS_M } from '../config/constants';
+import {
+  DEFAULT_PANEL_RADIUS_M,
+  PANEL_DEFAULT_HEIGHT_M,
+  PANEL_DEFAULT_WIDTH_M,
+} from '../config/constants';
+import { normalizeYawDeg } from './belt-controller';
+import { resolvePanelPlacement } from './spherical';
 
 export type InitialPanelKind = 'card-panel' | 'pdf-panel';
+
+export const WELCOME_PLACEHOLDER_PANEL_ID = 'panel-welcome-placeholder';
 
 export interface InitialZonePanelSpec {
   readonly panelId: string;
@@ -11,6 +20,9 @@ export interface InitialZonePanelSpec {
   readonly card?: StudyCard;
   readonly sourceTitle?: string;
   readonly pageCount?: number;
+  readonly width?: number;
+  readonly height?: number;
+  readonly opacityScale?: number;
 }
 
 export const DEFAULT_INITIAL_PANEL_LAYOUTS: readonly [PanelLayout, PanelLayout, PanelLayout] = [
@@ -27,21 +39,85 @@ export interface SyntheticPdfPageContent {
   readonly paragraphs: readonly string[];
 }
 
+// constrói o painel único central menor e de baixa opacidade exibido ao entrar na zona vr vazia (seção 4.1)
+export function buildWelcomePlaceholderSpec(sourceId = 'src-default'): InitialZonePanelSpec {
+  return {
+    panelId: WELCOME_PLACEHOLDER_PANEL_ID,
+    kind: 'card-panel',
+    defaultLayout: {
+      panelId: WELCOME_PLACEHOLDER_PANEL_ID,
+      yawDeg: 0,
+      pitchDeg: 0,
+      radiusM: DEFAULT_PANEL_RADIUS_M,
+    },
+    width: 0.56,
+    height: 0.3,
+    opacityScale: 0.62,
+    card: {
+      id: WELCOME_PLACEHOLDER_PANEL_ID,
+      title: PT_BR.zone.panels.welcomePlaceholderTitle,
+      body: PT_BR.zone.panels.welcomePlaceholderBody,
+      conceptIds: [],
+      anchors: [{ sourceId, page: 1, chunkId: 'welcome-placeholder' }],
+    },
+  };
+}
+
+// calcula dinamicamente uma posição espacial livre em arco para novos painéis sem cobrir painéis já existentes (seção 4.3)
+export function computeCollisionFreeSpawnPlacement(
+  existingLayouts: readonly PanelLayout[],
+  centerYawDeg = 0,
+  panelId = `panel-spawn-${Date.now()}`,
+  widthM = PANEL_DEFAULT_WIDTH_M,
+  heightM = PANEL_DEFAULT_HEIGHT_M,
+): PanelLayout {
+  const candidateOffsets: readonly { yawOffset: number; pitch: number }[] = [
+    { yawOffset: 0, pitch: 0 },
+    { yawOffset: -40, pitch: 0 },
+    { yawOffset: 40, pitch: 0 },
+    { yawOffset: -80, pitch: 0 },
+    { yawOffset: 80, pitch: 0 },
+    { yawOffset: 0, pitch: 25 },
+    { yawOffset: -40, pitch: 25 },
+    { yawOffset: 40, pitch: 25 },
+  ];
+
+  const firstFreeCandidate = candidateOffsets[existingLayouts.length % candidateOffsets.length] ?? {
+    yawOffset: 0,
+    pitch: 0,
+  };
+  const desiredYaw = normalizeYawDeg(centerYawDeg + firstFreeCandidate.yawOffset);
+  const resolved = resolvePanelPlacement(
+    {
+      yawDeg: desiredYaw,
+      pitchDeg: firstFreeCandidate.pitch,
+      radiusM: DEFAULT_PANEL_RADIUS_M,
+    },
+    existingLayouts,
+    panelId,
+    widthM,
+    heightM,
+  );
+
+  return {
+    panelId,
+    yawDeg: resolved.yawDeg,
+    pitchDeg: resolved.pitchDeg,
+    radiusM: resolved.radiusM,
+  };
+}
+
 export function buildPlaceholderStudyCard(slotNumber: 1 | 2, sourceId = 'src-default'): StudyCard {
-  // cria o cartão inicial orientando o usuário a adicionar conteúdos pelo menu da zona
   return {
     id: `placeholder-slot-${slotNumber}`,
-    title: `Painel de Estudo Livre (${slotNumber})`,
-    body:
-      slotNumber === 1
-        ? 'Adicione seu primeiro conteúdo de estudo no menu Conteúdos (olhe para baixo ou pressione B) para escolher cartões e conceitos extraídos.'
-        : 'Selecione qualquer cartão ou conceito fundamentado no menu Conteúdos abaixo para fixar neste painel.',
+    title: PT_BR.zone.panels.welcomePlaceholderTitle,
+    body: PT_BR.zone.panels.welcomePlaceholderBody,
     conceptIds: [],
     anchors: [{ sourceId, page: 1, chunkId: `placeholder-${slotNumber}` }],
   };
 }
 
-// constrói a especificação dos 3 painéis iniciais da zona a partir do study pack (fase 4)
+// mantido para compatibilidade com testes de layout em arco de 3 painéis (fase 4)
 export function buildInitialZonePanels(pack: StudyPack): InitialZonePanelSpec[] {
   const primarySource = pack.sources[0] ?? {
     id: 'src-default',
@@ -87,7 +163,7 @@ export function resolveInitialPanelLayouts(
   });
 }
 
-// extrai o conteúdo textual por página do demo pack para renderizar a página de pdf offline quando não há binário externo
+// extrai o conteúdo textual por página do study pack quando não há binário de pdf externo
 export function buildDemoPdfPageContent(
   pack: StudyPack,
   pageNumber: number,

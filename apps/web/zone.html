@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>IMAGGINAI — Zona</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>IMAGGINAI — Zona de Estudo</title>
     <style>
       html,
       body {
@@ -12,12 +18,13 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
-        background: #05070b;
+        background: #121316;
         font-family:
+          'Plus Jakarta Sans',
           system-ui,
           -apple-system,
           sans-serif;
-        color: #0f172a;
+        color: #121316;
       }
 
       #zone-start-overlay {
@@ -29,8 +36,12 @@
         align-items: center;
         justify-content: center;
         padding: 1.5rem;
-        background: radial-gradient(circle at 50% 30%, rgba(9, 13, 20, 0.94), rgba(5, 7, 11, 0.97));
-        text-align: center;
+        background-color: #121316;
+        background-image:
+          linear-gradient(to right, rgba(255, 254, 250, 0.04) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(255, 254, 250, 0.04) 1px, transparent 1px);
+        background-size: 40px 40px;
+        text-align: left;
         transition: opacity 300ms ease;
       }
 
@@ -39,58 +50,78 @@
       }
 
       .zone-start-card {
-        max-width: 27rem;
+        max-width: 28rem;
+        width: 100%;
         padding: 2rem;
-        border-radius: 24px;
-        border: 2px solid rgba(255, 255, 255, 0.88);
-        background: rgba(241, 245, 249, 0.82);
-        backdrop-filter: blur(18px);
-        -webkit-backdrop-filter: blur(18px);
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+        border-radius: 16px;
+        border: 1px solid #2e323b;
+        background: #18191e;
+        color: #fffefa;
+      }
+
+      .zone-start-tag {
+        display: inline-block;
+        padding: 0.25rem 0.65rem;
+        margin-bottom: 1rem;
+        border: 1px solid #ea580c;
+        border-radius: 999px;
+        font-family: 'Space Grotesk', monospace;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: rgba(234, 88, 12, 0.14);
+        color: #fb923c;
       }
 
       .zone-start-card h1 {
         margin: 0 0 0.75rem;
-        font-size: 1.45rem;
-        color: #0f172a;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 1.65rem;
+        font-weight: 700;
+        color: #fffefa;
+        letter-spacing: -0.02em;
       }
 
       .zone-start-card p {
-        margin: 0 0 1.35rem;
-        font-size: 0.96rem;
+        margin: 0 0 1.5rem;
+        font-size: 0.95rem;
         line-height: 1.55;
-        color: #1e293b;
+        color: #a1a1aa;
       }
 
       #zone-start-btn {
         cursor: pointer;
-        padding: 0.8rem 1.6rem;
-        border: 2px solid #ffffff;
-        border-radius: 14px;
-        background: rgba(226, 232, 240, 0.92);
-        color: #0f172a;
-        font-size: 1rem;
+        width: 100%;
+        padding: 0.85rem 1.4rem;
+        border: 1px solid #ea580c;
+        border-radius: 10px;
+        background: #ea580c;
+        color: #121316;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 0.95rem;
         font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
         transition:
-          box-shadow 150ms ease,
+          background-color 150ms ease,
           transform 120ms ease;
       }
 
       #zone-start-btn:hover,
       #zone-start-btn:focus-visible {
-        box-shadow: 0 0 0 3px #ffffff;
+        background: #f97316;
         outline: none;
       }
 
       #zone-start-btn:active {
-        transform: scale(0.97);
-        box-shadow: 0 0 0 4px #ffffff;
+        transform: translateY(1px);
       }
 
       #zone-start-error {
         margin-top: 1rem;
-        color: #b91c1c;
-        font-size: 0.875rem;
+        color: #fb7185;
+        font-size: 0.85rem;
         font-weight: 600;
       }
 
@@ -99,14 +130,13 @@
         top: 0.75rem;
         left: 0.75rem;
         z-index: 9;
-        padding: 0.45rem 0.75rem;
-        border-radius: 12px;
-        background: rgba(241, 245, 249, 0.82);
-        backdrop-filter: blur(12px);
-        border: 1.5px solid #ffffff;
-        color: #0f172a;
-        font-family: ui-monospace, monospace;
-        font-size: 0.8rem;
+        padding: 0.4rem 0.75rem;
+        border-radius: 8px;
+        background: #18181b;
+        border: 1px solid #2e323b;
+        color: #fffefa;
+        font-family: 'Space Grotesk', monospace;
+        font-size: 0.78rem;
         font-weight: 600;
         pointer-events: none;
       }
@@ -116,12 +146,13 @@
   <body>
     <div id="zone-start-overlay">
       <div class="zone-start-card">
-        <h1 id="zone-start-heading">Zona de Estudo</h1>
+        <span class="zone-start-tag">Imersão 3D</span>
+        <h1 id="zone-start-heading">Pronto para entrar na Zona</h1>
         <p id="zone-start-description">
-          posicione o celular no óculos vr e permita o acesso à câmera traseira para rastreamento
-          das mãos e modo passthrough.
+          Coloque o celular no óculos VR e autorize a câmera para usar os gestos das mãos no seu
+          espaço de estudo.
         </p>
-        <button id="zone-start-btn" type="button">Entrar na Zona (VR)</button>
+        <button id="zone-start-btn" type="button">Iniciar Sessão VR</button>
         <p id="zone-start-error" hidden></p>
       </div>
     </div>
@@ -132,7 +163,7 @@
       id="zone-scene"
       vr-mode-ui="enabled: true"
       webxr="referenceSpaceType: local"
-      background="color: #05070B"
+      background="color: #121316"
       renderer="colorManagement: true"
       imx-mode="initialMode: focus; durationMs: 300; cameraSelector: #main-camera; environmentSelector: #zone-environment"
     >

@@ -1,19 +1,11 @@
-import {
-  CheckCircle,
-  ClockCounterClockwise,
-  FilePdf,
-  Goggles,
-  PlusCircle,
-  Sparkle,
-  Trash,
-} from '@phosphor-icons/react';
+import { ArrowUpRight, ClockCounterClockwise, Goggles, Plus, Trash } from '@phosphor-icons/react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 
 import { PT_BR } from '../../shared/i18n/pt-br';
 import { zoneStorage, type StoredZoneSessionState } from '../../shared/storage/dexie-db';
 import type { Zone } from '../../shared/types/zone';
-import type { EnvironmentPreset, ZoneTheme } from '../../zone/config/constants';
+import type { ZoneTheme } from '../../zone/config/constants';
 import { AppNavbar } from '../components/app-navbar';
 import { createZoneRemote, deleteZoneRemote, fetchZonesRemote } from '../services/api-client';
 import { selectResumeZone } from '../services/pack-customizer';
@@ -45,7 +37,6 @@ export function HomePage({
   const [zones, setZones] = useState<Zone[]>([]);
   const [latestSession, setLatestSession] = useState<StoredZoneSessionState | null>(null);
   const [newZoneName, setNewZoneName] = useState('');
-  const [newZoneEnv, setNewZoneEnv] = useState<EnvironmentPreset>('focus-dark');
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -66,7 +57,7 @@ export function HomePage({
           const merged = await zoneStorage.listZones();
           if (active) setZones(merged);
         } catch {
-          // preserva a listagem local do dexie quando o servidor está inacessível
+          // preserva a listagem local quando o servidor está inacessível
         }
       }
     };
@@ -86,7 +77,7 @@ export function HomePage({
       let created: Zone = {
         id: crypto.randomUUID(),
         name: trimmed,
-        environment: newZoneEnv,
+        environment: 'focus-dark',
         sourceIds: [],
         packId: null,
         layout: [],
@@ -95,9 +86,9 @@ export function HomePage({
       };
       if (userEmail) {
         try {
-          created = await createZoneRemote({ name: trimmed, environment: newZoneEnv });
+          created = await createZoneRemote({ name: trimmed, environment: 'focus-dark' });
         } catch {
-          // mantém criação offline no dexie caso a API não esteja acessível
+          // mantém criação local caso a api não esteja acessível
         }
       }
       await zoneStorage.saveZone(created);
@@ -133,23 +124,40 @@ export function HomePage({
       />
 
       <section className="imx-glass-panel flex flex-col gap-6">
-        <div>
-          <h1 className="imx-title">{PT_BR.home.title}</h1>
-          <p className="imx-subtitle m-0">{PT_BR.home.subtitle}</p>
+        <div className="flex flex-wrap items-end justify-between gap-4 pb-4 border-b border-[var(--imx-border-solid)]">
+          <div>
+            <span className="imx-badge imx-badge-warm mb-2">Estudo Espacial</span>
+            <h1 className="imx-title">{PT_BR.home.title}</h1>
+            <p className="imx-subtitle m-0 max-w-2xl">{PT_BR.home.subtitle}</p>
+          </div>
+          <div className="imx-display-font text-right hidden sm:block">
+            <div className="text-3xl font-bold" style={{ color: 'var(--imx-text-title)' }}>
+              {String(zones.length).padStart(2, '0')}
+            </div>
+            <div
+              className="text-xs uppercase tracking-wider"
+              style={{ color: 'var(--imx-text-muted)' }}
+            >
+              Zonas ativas
+            </div>
+          </div>
         </div>
 
         {/* banner: retomar de onde parou */}
         {resumeMatch && (
-          <div className="imx-glass-card border-2 border-[var(--imx-accent-yellow)] flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
+          <div
+            className="imx-glass-card flex flex-wrap items-center justify-between gap-4"
+            style={{ borderLeft: '4px solid var(--imx-accent-warm)' }}
+          >
+            <div className="flex items-start gap-3.5">
               <span
-                className="inline-flex items-center justify-center w-11 h-11 rounded-xl shrink-0"
-                style={{ background: 'var(--imx-accent-yellow)', color: '#05070b' }}
+                className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-[var(--imx-border-solid)] shrink-0"
+                style={{ background: 'var(--imx-accent-warm)', color: '#121316' }}
               >
-                <ClockCounterClockwise size={24} weight="bold" />
+                <ClockCounterClockwise size={20} weight="bold" />
               </span>
               <div>
-                <span className="imx-badge imx-badge-yellow mb-1">
+                <span className="imx-badge imx-badge-warm mb-1">
                   {PT_BR.home.resumeBanner.badge}
                 </span>
                 <h2
@@ -170,17 +178,16 @@ export function HomePage({
             <div className="flex flex-wrap items-center gap-2.5">
               <Link
                 to={`/zones/${encodeURIComponent(resumeMatch.zone.id)}`}
-                className="imx-glass-button text-sm"
+                className="imx-glass-button text-xs"
               >
-                <FilePdf size={18} weight="duotone" />
                 <span>{PT_BR.home.resumeBanner.reviewButton}</span>
               </Link>
               <button
                 type="button"
                 onClick={() => onRequestEnterZone(resumeMatch.zone)}
-                className="imx-glass-button imx-button-accent text-sm"
+                className="imx-glass-button imx-button-accent text-xs"
               >
-                <Goggles size={20} weight="bold" />
+                <Goggles size={18} weight="bold" />
                 <span>{PT_BR.home.resumeBanner.resumeButton}</span>
               </button>
             </div>
@@ -192,10 +199,10 @@ export function HomePage({
           onSubmit={(e) => void handleCreateZone(e)}
           className="imx-glass-card grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end"
         >
-          <div className="md:col-span-6">
+          <div className="md:col-span-9">
             <label
               htmlFor="imx-new-zone-name"
-              className="block text-xs font-bold uppercase tracking-wider mb-1.5"
+              className="block text-xs font-bold uppercase tracking-wider mb-1.5 imx-display-font"
             >
               {PT_BR.home.zoneNameLabel}
             </label>
@@ -212,97 +219,77 @@ export function HomePage({
           </div>
 
           <div className="md:col-span-3">
-            <label
-              htmlFor="imx-new-zone-env"
-              className="block text-xs font-bold uppercase tracking-wider mb-1.5"
-            >
-              {PT_BR.home.environmentLabel}
-            </label>
-            <select
-              id="imx-new-zone-env"
-              value={newZoneEnv}
-              onChange={(e) => setNewZoneEnv(e.target.value as EnvironmentPreset)}
-              className="imx-input"
-            >
-              <option value="focus-dark">{PT_BR.zone.environmentLabels['focus-dark']}</option>
-              <option value="focus-nature">{PT_BR.zone.environmentLabels['focus-nature']}</option>
-            </select>
-          </div>
-
-          <div className="md:col-span-3">
             <button
               type="submit"
               disabled={creating}
               className="imx-glass-button imx-button-primary w-full"
             >
-              <PlusCircle size={20} weight="bold" />
+              <Plus size={18} weight="bold" />
               <span>{creating ? PT_BR.home.creatingButton : PT_BR.home.createButton}</span>
             </button>
           </div>
         </form>
 
-        {/* grade de zonas */}
+        {/* grade bento de zonas com bordas sólidas de 1px */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {zones.map((zone) => {
+          {zones.map((zone, idx) => {
             const isDemo = DEMO_ZONE_IDS.has(zone.id);
             const hasPack = zone.packId !== null;
 
             return (
-              <article key={zone.id} className="imx-glass-card flex flex-col justify-between gap-4">
+              <article key={zone.id} className="imx-glass-card flex flex-col justify-between gap-5">
                 <div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-                    {isDemo ? (
-                      <span className="imx-badge imx-badge-yellow">
-                        <Sparkle size={14} weight="fill" />
-                        <span>{PT_BR.home.demoBadge}</span>
-                      </span>
-                    ) : (
-                      <span className="imx-badge">{PT_BR.home.localBadge}</span>
-                    )}
-
-                    <span className="imx-badge">
-                      {PT_BR.zone.environmentLabels[zone.environment]}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-3 border-b border-[var(--imx-border-subtle)]">
+                    <span className="imx-display-font text-xs font-bold tracking-wider">
+                      [{String(idx + 1).padStart(2, '0')}]
                     </span>
+                    <div className="flex items-center gap-1.5">
+                      {isDemo ? (
+                        <span className="imx-badge imx-badge-warm">{PT_BR.home.demoBadge}</span>
+                      ) : (
+                        <span className="imx-badge">{PT_BR.home.localBadge}</span>
+                      )}
+                    </div>
                   </div>
 
                   <h3
-                    className="imx-heading text-lg font-extrabold m-0 mb-2"
+                    className="imx-heading text-lg font-extrabold m-0 mb-3"
                     style={{ color: 'var(--imx-text-title)' }}
                   >
                     {zone.name}
                   </h3>
 
-                  <div className="flex items-center gap-1.5 text-xs font-semibold">
+                  <div className="flex items-center gap-1.5 text-xs">
                     {hasPack ? (
-                      <span className="imx-badge imx-badge-blue">
-                        <CheckCircle size={15} weight="bold" />
-                        <span>{PT_BR.home.statusReadyOffline}</span>
+                      <span className="imx-badge imx-badge-darkblue">
+                        {PT_BR.home.statusReadyOffline}
                       </span>
                     ) : (
-                      <span className="imx-badge imx-badge-red">
-                        <FilePdf size={15} weight="bold" />
-                        <span>{PT_BR.home.statusAwaitingPdf}</span>
+                      <span className="imx-badge imx-badge-warm">
+                        {PT_BR.home.statusAwaitingPdf}
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[var(--imx-glass-border-subtle)]">
-                  <button
-                    type="button"
-                    onClick={() => onRequestEnterZone(zone)}
-                    className="imx-glass-button imx-button-primary flex-1 text-sm py-2 px-3"
-                  >
-                    <Goggles size={19} weight="duotone" />
-                    <span>{PT_BR.home.openDemoZone}</span>
-                  </button>
+                <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-[var(--imx-border-solid)]">
+                  {hasPack && (
+                    <button
+                      type="button"
+                      onClick={() => onRequestEnterZone(zone)}
+                      className="imx-glass-button imx-button-primary flex-1 text-xs py-2 px-3"
+                    >
+                      <Goggles size={17} weight="bold" />
+                      <span>{PT_BR.home.openDemoZone}</span>
+                    </button>
+                  )}
 
                   <Link
                     to={`/zones/${encodeURIComponent(zone.id)}`}
-                    className="imx-glass-button text-xs py-2 px-3"
+                    className={`imx-glass-button text-xs py-2 px-3 ${hasPack ? '' : 'imx-button-primary flex-1'}`}
                   >
-                    <FilePdf size={17} weight="duotone" />
                     <span>{PT_BR.home.prepareAndReview}</span>
+                    <ArrowUpRight size={15} weight="bold" />
                   </Link>
 
                   {!isDemo && (
@@ -311,8 +298,9 @@ export function HomePage({
                       onClick={() => void handleDeleteZone(zone.id)}
                       className="imx-glass-button imx-button-danger text-xs py-2 px-2.5"
                       title={PT_BR.home.deleteConfirm}
+                      aria-label={PT_BR.home.deleteConfirm}
                     >
-                      <Trash size={16} weight="duotone" />
+                      <Trash size={15} weight="regular" />
                     </button>
                   )}
                 </div>

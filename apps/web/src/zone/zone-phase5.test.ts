@@ -14,38 +14,67 @@ import {
   lerpYawDeg,
   normalizeYawDeg,
 } from './systems/belt-controller';
-import { DEFAULT_INITIAL_PANEL_LAYOUTS } from './systems/initial-panels';
+import {
+  buildWelcomePlaceholderSpec,
+  computeCollisionFreeSpawnPlacement,
+  DEFAULT_INITIAL_PANEL_LAYOUTS,
+  WELCOME_PLACEHOLDER_PANEL_ID,
+} from './systems/initial-panels';
 import { formatPomodoroMmSs, PomodoroSystem } from './systems/pomodoro-system';
 import { recenterPanelLayouts } from './systems/recenter-layout';
+import { hasAngularCollision } from './systems/spherical';
 
-describe('Phase 5 — Belt Menu hysteresis, yaw freeze & exit confirmation', () => {
-  it('does not open while reading panel bottoms at pitch -25° or exactly -30°', () => {
+describe('Phase 5 — Belt Menu hysteresis, gaze retention, intersection lock & exit confirmation', () => {
+  it('does not open while reading panel bottoms above threshold', () => {
     const belt = new BeltMenuController();
     belt.update(0, -25, 1000);
     expect(belt.snapshot.visible).toBe(false);
     expect(belt.snapshot.lowPitchAccumulatedMs).toBe(0);
 
-    belt.update(0, -30, 1000);
+    belt.update(0, -28, 1000);
     expect(belt.snapshot.visible).toBe(false);
   });
 
-  it('opens after pitch < -30° for >= 400 ms and hides only when pitch > -20°', () => {
+  it('opens after pitch < -28° for >= 350 ms, fades in opacity, and retains visibility until looking away', () => {
     const belt = new BeltMenuController();
 
-    belt.update(15, -35, 250);
+    belt.update(15, -35, 200);
     expect(belt.snapshot.visible).toBe(false);
 
-    belt.update(15, -35, 150);
+    belt.update(15, -35, 200);
+    expect(belt.snapshot.visible).toBe(true);
+    expect(belt.snapshot.opacity).toBeGreaterThan(0);
+
+    // permanece aberto na faixa ergonômica (-26° e -16°)
+    belt.update(25, -26, 200);
+    expect(belt.snapshot.visible).toBe(true);
+    expect(belt.snapshot.opacity).toBe(1);
+    belt.update(25, -16, 200);
     expect(belt.snapshot.visible).toBe(true);
 
-    // permanece aberto na faixa de histerese (-28° e -20°)
-    belt.update(40, -28, 200);
-    expect(belt.snapshot.visible).toBe(true);
-    belt.update(40, -20, 200);
+    // fecha somente quando o olhar sobe acima do limite sem submenu aberto
+    belt.update(25, -10, 50);
+    expect(belt.snapshot.visible).toBe(false);
+  });
+
+  it('retains menu visibility when submenu is open or pointer intersects menu, closing only when looking completely away', () => {
+    const belt = new BeltMenuController();
+    belt.update(0, -35, 400);
     expect(belt.snapshot.visible).toBe(true);
 
-    // fecha somente quando pitch sobe acima de -20°
-    belt.update(40, -19, 50);
+    // abre o submenu conteúdos: olhar para cima em direção ao submenu (pitch +10°) não fecha o menu
+    belt.setSubmenuOpen(true);
+    belt.update(0, 10, 200);
+    expect(belt.snapshot.visible).toBe(true);
+
+    // trava de interseção: enquanto o ponteiro está sobre o menu/submenu, jamais fecha mesmo em ângulos extremos
+    belt.setPointerIntersecting(true);
+    belt.update(90, 45, 200);
+    expect(belt.snapshot.visible).toBe(true);
+
+    // quando sai da interseção e olha completamente para fora do menu e do submenu, fecha
+    belt.setPointerIntersecting(false);
+    belt.update(90, 35, 200);
     expect(belt.snapshot.visible).toBe(false);
   });
 
@@ -62,8 +91,8 @@ describe('Phase 5 — Belt Menu hysteresis, yaw freeze & exit confirmation', () 
     expect(belt.snapshot.visible).toBe(true);
     expect(belt.snapshot.beltYawDeg).toBe(60);
 
-    // enquanto visível, mover a cabeça horizontalmente para -45° não altera o yaw do cinto
-    belt.update(-45, -34, 200);
+    // enquanto visível dentro da janela angular, mover a cabeça horizontalmente não altera o yaw do cinto
+    belt.update(20, -30, 200);
     expect(belt.snapshot.visible).toBe(true);
     expect(belt.snapshot.beltYawDeg).toBe(60);
   });
@@ -82,31 +111,48 @@ describe('Phase 5 — Belt Menu hysteresis, yaw freeze & exit confirmation', () 
     expect(belt.triggerExitAction()).toBe('confirm-pending');
     expect(belt.snapshot.exitConfirmPending).toBe(true);
 
-    // avança 2 segundos (ainda dentro da janela de 3 s) e confirma
     belt.update(0, -35, 2000);
     expect(belt.snapshot.exitConfirmPending).toBe(true);
     expect(belt.triggerExitAction()).toBe('confirmed');
     expect(belt.snapshot.exitConfirmPending).toBe(false);
 
-    // se expirar os 3 segundos, exige nova confirmação
     expect(belt.triggerExitAction()).toBe('confirm-pending');
     belt.update(0, -35, 3100);
     expect(belt.snapshot.exitConfirmPending).toBe(false);
     expect(belt.triggerExitAction()).toBe('confirm-pending');
   });
 
-  it('places at most 8 belt items on an arc at pitch -38° within +-40° and disables ai-assistant', () => {
+  it('places 7 belt items with wide gap and highlights open-contents right in the center (yawOffsetDeg = 0)', () => {
     const placements = computeBeltItemPlacements();
     expect(placements.length).toBeLessThanOrEqual(BELT_MAX_ITEMS);
-    expect(placements).toHaveLength(8);
-    expect(placements.some((p) => p.id === 'toggle-theme')).toBe(true);
-    expect(placements.some((p) => p.id === 'open-contents')).toBe(true);
+    expect(placements).toHaveLength(7);
+
+    const centerItem = placements[3];
+    expect(centerItem?.id).toBe('open-contents');
+    expect(centerItem?.yawOffsetDeg).toBe(0);
+    expect(centerItem?.prominent).toBe(true);
 
     for (const item of placements) {
       expect(item.pitchDeg).toBe(BELT_CENTER_PITCH_DEG);
       expect(Math.abs(item.yawOffsetDeg)).toBeLessThanOrEqual(BELT_ARC_MAX_HALF_WIDTH_DEG);
-      expect(item.disabled).toBe(item.id === 'ai-assistant');
+      expect(item.prominent).toBe(item.id === 'open-contents');
     }
+  });
+
+  it('builds a single smaller low-opacity centered welcome placeholder and spawns new items without collision', () => {
+    const welcome = buildWelcomePlaceholderSpec();
+    expect(welcome.panelId).toBe(WELCOME_PLACEHOLDER_PANEL_ID);
+    expect(welcome.defaultLayout.yawDeg).toBe(0);
+    expect(welcome.defaultLayout.pitchDeg).toBe(0);
+    expect(welcome.opacityScale).toBeLessThan(0.8);
+
+    const firstSpawn = computeCollisionFreeSpawnPlacement([], 0, 'spawn-1');
+    const secondSpawn = computeCollisionFreeSpawnPlacement([firstSpawn], 0, 'spawn-2');
+    const thirdSpawn = computeCollisionFreeSpawnPlacement([firstSpawn, secondSpawn], 0, 'spawn-3');
+
+    expect(hasAngularCollision(firstSpawn, secondSpawn)).toBe(false);
+    expect(hasAngularCollision(firstSpawn, thirdSpawn)).toBe(false);
+    expect(hasAngularCollision(secondSpawn, thirdSpawn)).toBe(false);
   });
 });
 
@@ -117,28 +163,23 @@ describe('Phase 5 — PomodoroSystem timer with fake clock', () => {
     expect(pomodoro.snapshot.remainingMs).toBe(POMODORO_FOCUS_25_MS);
     expect(formatPomodoroMmSs(pomodoro.snapshot.remainingMs)).toBe('25:00');
 
-    // inicia o foco
     pomodoro.toggle();
     expect(pomodoro.snapshot.phase).toBe('focus');
 
-    // avança até faltar 1 minuto e 1 segundo (23m59s decorridos)
     const beforeWarn = pomodoro.step(23 * 60 * 1000 + 59 * 1000);
     expect(beforeWarn.warningJustTriggered).toBe(false);
     expect(pomodoro.snapshot.oneMinuteWarningActive).toBe(false);
 
-    // avança mais 1 segundo -> entra em <= 60s e dispara o aviso uma única vez
     const atWarn = pomodoro.step(1000);
     expect(atWarn.warningJustTriggered).toBe(true);
     expect(pomodoro.snapshot.oneMinuteWarningActive).toBe(true);
     expect(formatPomodoroMmSs(pomodoro.snapshot.remainingMs)).toBe('01:00');
 
-    // pausa e verifica que o tempo não corre enquanto pausado
     pomodoro.toggle();
     expect(pomodoro.snapshot.phase).toBe('paused');
     pomodoro.step(30_000);
     expect(pomodoro.snapshot.remainingMs).toBe(60_000);
 
-    // retoma e conclui o bloco de foco -> entra na pausa de 5 minutos
     pomodoro.toggle();
     expect(pomodoro.snapshot.phase).toBe('focus');
     const endFocus = pomodoro.step(60_000);
@@ -147,12 +188,10 @@ describe('Phase 5 — PomodoroSystem timer with fake clock', () => {
     expect(pomodoro.snapshot.completedBlocks).toBe(1);
     expect(pomodoro.snapshot.remainingMs).toBe(POMODORO_BREAK_5_MS);
 
-    // conclui os 5 minutos de pausa -> retorna ao estado idle pronto para o próximo bloco
     const endBreak = pomodoro.step(POMODORO_BREAK_5_MS);
     expect(endBreak.breakJustEnded).toBe(true);
     expect(pomodoro.snapshot.phase).toBe('idle');
 
-    // troca preset para 20/5 em idle
     pomodoro.setPreset('20/5');
     expect(pomodoro.snapshot.remainingMs).toBe(POMODORO_FOCUS_20_MS);
     expect(formatPomodoroMmSs(pomodoro.snapshot.remainingMs)).toBe('20:00');
@@ -175,7 +214,6 @@ describe('Phase 5 — Recenter panel layouts', () => {
     expect(recentered.every((p) => p.pitchDeg === 0)).toBe(true);
     expect(recentered[1]?.radiusM).toBe(0.75);
 
-    // quando todos os painéis estão na distância mínima (0.55 m), o espaçamento aumenta automaticamente para evitar sobreposição
     const closePanels = DEFAULT_INITIAL_PANEL_LAYOUTS.map((p) => ({
       ...p,
       radiusM: 0.55 as const,

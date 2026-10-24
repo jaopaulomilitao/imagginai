@@ -1,17 +1,8 @@
-import {
-  CubeFocus,
-  MoonStars,
-  ShieldCheck,
-  SignIn,
-  SignOut,
-  SunDim,
-  UserCircle,
-} from '@phosphor-icons/react';
+import { CubeFocus, Moon, ShieldCheck, SignIn, SignOut, Sun } from '@phosphor-icons/react';
 import { Link } from 'react-router';
 
 import { PT_BR } from '../../shared/i18n/pt-br';
 import type { ZoneTheme } from '../../zone/config/constants';
-import { getThemePalette } from '../../zone/systems/theme-controller';
 
 export interface AppNavbarProps {
   readonly themeId: ZoneTheme;
@@ -28,74 +19,69 @@ export function AppNavbar({
   onOpenConsent,
   onSignOut,
 }: AppNavbarProps) {
-  const palette = getThemePalette(themeId);
-
   return (
-    <header className="w-full max-w-6xl mb-6 flex flex-wrap items-center justify-between gap-3 px-1">
+    <header className="imx-navbar-frame">
       <div className="flex items-center gap-3">
         <Link
           to="/"
           className="inline-flex items-center gap-2.5 no-underline"
-          style={{ color: 'var(--imx-white-warm)' }}
+          style={{ color: 'var(--imx-text-title)' }}
         >
           <span
-            className="inline-flex items-center justify-center w-10 h-10 rounded-xl border-2"
+            className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-[var(--imx-border-solid)]"
             style={{
-              background: 'var(--imx-accent-blue)',
-              borderColor: 'var(--imx-white-warm)',
-              color: '#fffdf7',
+              background: 'var(--imx-accent-warm)',
+              color: '#121316',
             }}
           >
-            <CubeFocus size={24} weight="duotone" />
+            <CubeFocus size={20} weight="bold" />
           </span>
-          <span className="imx-heading text-xl font-extrabold tracking-tight text-[#fffdf7]">
-            {PT_BR.appName}
-          </span>
+          <span className="imx-heading text-lg font-extrabold tracking-tight">{PT_BR.appName}</span>
         </Link>
-        <span className="imx-badge imx-badge-yellow hidden sm:inline-flex">WebXR • Offline</span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          className="imx-glass-button text-sm py-2 px-3.5"
+          className="imx-glass-button text-xs py-2 px-3.5"
           onClick={onOpenConsent}
         >
-          <ShieldCheck size={19} weight="duotone" />
+          <ShieldCheck size={17} weight="regular" />
           <span>{PT_BR.nav.privacyAndConsent}</span>
         </button>
 
+        {/* alternador de tema apenas com ícone phosphor (sem rótulo textual) */}
         <button
           type="button"
-          className="imx-glass-button text-sm py-2 px-3.5"
+          className="imx-glass-button p-2.5"
           onClick={onToggleTheme}
+          aria-label={PT_BR.nav.toggleThemeAria}
+          title={PT_BR.nav.toggleThemeAria}
         >
           {themeId === 'light-glass' ? (
-            <SunDim size={19} weight="duotone" />
+            <Moon size={18} weight="regular" />
           ) : (
-            <MoonStars size={19} weight="duotone" />
+            <Sun size={18} weight="regular" />
           )}
-          <span>{palette.name}</span>
         </button>
 
         {userEmail ? (
           <div className="flex items-center gap-2">
-            <span className="imx-badge imx-badge-blue">
-              <UserCircle size={17} weight="duotone" />
+            <span className="imx-badge imx-badge-darkblue normal-case">
               <span className="max-w-[160px] truncate">{userEmail}</span>
             </span>
             <button
               type="button"
-              className="imx-glass-button imx-button-danger text-sm py-2 px-3"
+              className="imx-glass-button imx-button-danger text-xs py-2 px-3"
               onClick={onSignOut}
             >
-              <SignOut size={18} weight="bold" />
+              <SignOut size={16} weight="bold" />
               <span>{PT_BR.nav.logout}</span>
             </button>
           </div>
         ) : (
-          <Link to="/login" className="imx-glass-button imx-button-primary text-sm py-2 px-3.5">
-            <SignIn size={18} weight="bold" />
+          <Link to="/login" className="imx-glass-button imx-button-primary text-xs py-2 px-4">
+            <SignIn size={16} weight="bold" />
             <span>{PT_BR.nav.login}</span>
           </Link>
         )}

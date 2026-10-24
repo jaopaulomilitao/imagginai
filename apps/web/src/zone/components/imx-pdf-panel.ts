@@ -6,7 +6,13 @@ import { PT_BR } from '../../shared/i18n/pt-br';
 import { logger } from '../../shared/logger';
 import { PANEL_DEFAULT_HEIGHT_M, PANEL_DEFAULT_WIDTH_M, type ZoneTheme } from '../config/constants';
 import type { SyntheticPdfPageContent } from '../systems/initial-panels';
-import { clampPdfPage, computePdfPageWindow } from '../systems/pdf-page-window';
+import { computePdfPageWindow } from '../systems/pdf-page-window';
+import { clampPdfPage } from '../systems/pdf-page-window';
+import {
+  createPhosphorIconEntity,
+  updatePhosphorIconAppearance,
+  type PhosphorVrIconName,
+} from '../systems/phosphor-icon-canvas';
 import '../systems/rounded-shape';
 import {
   getThemePalette,
@@ -65,28 +71,28 @@ function drawSyntheticPageToCanvas(
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  ctx.fillStyle = '#F8FAFC';
+  ctx.fillStyle = '#F5F3EB';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = '#0F172A';
+  ctx.fillStyle = '#121316';
   ctx.fillRect(0, 0, canvas.width, 82);
 
-  ctx.fillStyle = '#E2E8F0';
+  ctx.fillStyle = '#F5F3EB';
   ctx.font = 'bold 28px system-ui, sans-serif';
   ctx.fillText(content.sourceTitle, 36, 52);
 
-  ctx.fillStyle = '#0F172A';
+  ctx.fillStyle = '#121316';
   ctx.font = 'bold 36px system-ui, sans-serif';
   ctx.fillText(content.heading, 36, 144);
 
-  ctx.strokeStyle = '#CBD5E1';
+  ctx.strokeStyle = '#121316';
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(36, 166);
   ctx.lineTo(canvas.width - 36, 166);
   ctx.stroke();
 
-  ctx.fillStyle = '#1E293B';
+  ctx.fillStyle = '#18181B';
   ctx.font = '29px system-ui, sans-serif';
   let y = 216;
   const maxWidth = canvas.width - 72;
@@ -102,7 +108,7 @@ function drawSyntheticPageToCanvas(
     if (y > canvas.height - 68) break;
   }
 
-  ctx.fillStyle = '#64748B';
+  ctx.fillStyle = '#52525B';
   ctx.font = '22px system-ui, sans-serif';
   ctx.fillText(
     PT_BR.zone.panels.pdfPageIndicator(content.pageNumber, content.pageCount),
@@ -115,10 +121,11 @@ interface NavButtonRefs {
   readonly containerEl: Entity;
   readonly borderEl: Entity;
   readonly btnEl: Entity;
+  readonly iconEl: Entity;
   readonly textEl: Entity;
 }
 
-// painel de pdf que renderiza com pdf.js em CanvasTexture mantendo em memória apenas a página atual +- 1 (seção 2.2)
+// painel de pdf que renderiza com pdf.js em CanvasTexture mantendo em memória apenas a página atual +- 1
 export class PdfPanelController {
   private readonly pageCache = new Map<number, CanvasTexture>();
   private readonly canvasMesh: Mesh<PlaneGeometry, MeshBasicMaterial>;
@@ -170,13 +177,13 @@ export class PdfPanelController {
       footer: '',
       width: data.width,
       height: data.height,
+      accentColor: '#1E3A8A',
     });
 
     const THREE = AFRAME.THREE;
     const planeW = data.width - 0.06;
     const planeH = data.height - 0.22;
     const geometry = new THREE.PlaneGeometry(planeW, planeH);
-    // define transparent: true e renderOrder > 0 para desenhar na fila transparente após o passthrough (renderOrder -1)
     const material = new THREE.MeshBasicMaterial({
       color: '#FFFFFF',
       side: THREE.FrontSide,
@@ -191,11 +198,13 @@ export class PdfPanelController {
     const footerY = -data.height / 2 + 0.055;
     this.prevNav = this.createNavButton(
       PT_BR.zone.panels.pdfPrevPage,
+      'caret-left',
       -data.width / 2 + 0.11,
       footerY,
     );
     this.nextNav = this.createNavButton(
       PT_BR.zone.panels.pdfNextPage,
+      'caret-right',
       data.width / 2 - 0.11,
       footerY,
     );
@@ -272,6 +281,7 @@ export class PdfPanelController {
     );
     this.prevNav.textEl.setAttribute('color', palette.buttonTextColor);
     this.prevNav.textEl.setAttribute('troika-text', 'color', palette.buttonTextColor);
+    updatePhosphorIconAppearance(this.prevNav.iconEl, palette.buttonTextColor);
 
     this.nextNav.borderEl.setAttribute(
       'material',
@@ -283,6 +293,7 @@ export class PdfPanelController {
     );
     this.nextNav.textEl.setAttribute('color', palette.buttonTextColor);
     this.nextNav.textEl.setAttribute('troika-text', 'color', palette.buttonTextColor);
+    updatePhosphorIconAppearance(this.nextNav.iconEl, palette.buttonTextColor);
 
     this.pageLabelEl.setAttribute('color', palette.textFooterColor);
     this.pageLabelEl.setAttribute('troika-text', 'color', palette.textFooterColor);
@@ -305,7 +316,12 @@ export class PdfPanelController {
     }
   }
 
-  private createNavButton(label: string, x: number, y: number): NavButtonRefs {
+  private createNavButton(
+    label: string,
+    icon: PhosphorVrIconName,
+    x: number,
+    y: number,
+  ): NavButtonRefs {
     const containerEl = createSubEntity('a-entity', {
       position: `${x} ${y} 0.015`,
     });
@@ -313,32 +329,40 @@ export class PdfPanelController {
     const stroke = 0.004;
 
     const borderEl = createSubEntity('a-entity', {
-      geometry: `primitive: rounded-rect; width: ${0.16 + 2 * stroke}; height: ${0.07 + 2 * stroke}; radius: ${0.014 + stroke}`,
+      geometry: `primitive: rounded-rect; width: ${0.17 + 2 * stroke}; height: ${0.068 + 2 * stroke}; radius: ${0.014 + stroke}`,
       position: '0 0 -0.001',
       material: `color: ${palette.buttonBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
     });
     const btnEl = createSubEntity('a-entity', {
       class: 'interactable',
-      geometry: 'primitive: rounded-rect; width: 0.16; height: 0.07; radius: 0.014',
+      geometry: 'primitive: rounded-rect; width: 0.17; height: 0.068; radius: 0.014',
       position: '0 0 0',
       material: `color: ${palette.buttonBgColor}; shader: flat; opacity: ${palette.buttonBgOpacity}; transparent: true`,
     });
+    const isLeft = icon === 'caret-left';
+    const iconEl = createPhosphorIconEntity({
+      icon,
+      color: palette.buttonTextColor,
+      size: 0.022,
+      position: `${isLeft ? -0.056 : 0.056} 0 0.004`,
+    });
     const textEl = createSubEntity('a-troika-text', {
-      position: '0 0 0.003',
+      position: `${isLeft ? 0.012 : -0.012} 0 0.003`,
       align: 'center',
       anchor: 'center',
       baseline: 'center',
       color: palette.buttonTextColor,
-      'font-size': 0.018,
-      fontSize: 0.018,
+      'font-size': 0.016,
+      fontSize: 0.016,
       value: label,
-      'troika-text': `value: ${label}; fontSize: 0.018; color: ${palette.buttonTextColor}; align: center; anchor: center; baseline: center`,
+      'troika-text': `value: ${label}; fontSize: 0.016; color: ${palette.buttonTextColor}; align: center; anchor: center; baseline: center`,
     });
+    btnEl.appendChild(iconEl);
     btnEl.appendChild(textEl);
     containerEl.appendChild(borderEl);
     containerEl.appendChild(btnEl);
 
-    return { containerEl, borderEl, btnEl, textEl };
+    return { containerEl, borderEl, btnEl, iconEl, textEl };
   }
 
   private async syncDocumentAndWindow(): Promise<void> {

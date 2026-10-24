@@ -34,6 +34,8 @@ export interface PanelData {
   yawDeg: number;
   pitchDeg: number;
   radiusM: number;
+  opacityScale: number;
+  accentColor: string;
 }
 
 export interface PanelComponent extends Component<PanelData> {
@@ -97,7 +99,7 @@ function createTroikaTextEntity(attributes: {
   return el;
 }
 
-// painel espacial com estética glassmorphism, cantos arredondados e borda branca de destaque
+// painel espacial com suporte a escala de opacidade e animação suave de fade-out
 export class PanelController {
   private readonly borderEl: Entity;
   private readonly surfaceEl: Entity;
@@ -108,6 +110,8 @@ export class PanelController {
   private coords: SphericalCoords;
   private currentTheme: ZoneTheme;
   private isHighlighted = false;
+  private currentOpacityScale: number;
+  private fadeTimerId: number | null = null;
 
   private readonly onThemeChange = (event: Event): void => {
     const detail = (event as CustomEvent<{ theme: ZoneTheme }>).detail;
@@ -125,6 +129,7 @@ export class PanelController {
       pitchDeg: data.pitchDeg,
       radiusM: data.radiusM,
     });
+    this.currentOpacityScale = Math.max(0, Math.min(1, data.opacityScale ?? 1));
     this.el.classList.add('imx-panel-root');
 
     let storedPref: string | null = null;
@@ -136,11 +141,12 @@ export class PanelController {
     this.currentTheme = resolveInitialTheme(storedPref);
     const palette = getThemePalette(this.currentTheme);
     const stroke = palette.panelBorderNormalStroke;
+    const borderColor = data.accentColor || palette.panelBorderColor;
 
     this.borderEl = createSubEntity('a-entity', {
       geometry: `primitive: rounded-rect; width: ${data.width + 2 * stroke}; height: ${data.height + 2 * stroke}; radius: ${PANEL_CORNER_RADIUS_M + stroke}`,
       position: '0 0 -0.002',
-      material: `color: ${palette.panelBorderColor}; shader: flat; opacity: ${palette.panelBorderNormalOpacity}; transparent: true`,
+      material: `color: ${borderColor}; shader: flat; opacity: ${palette.panelBorderNormalOpacity * this.currentOpacityScale}; transparent: true`,
     });
 
     this.surfaceEl = createSubEntity('a-entity', {
@@ -148,14 +154,14 @@ export class PanelController {
       'data-no-dwell': 'true',
       geometry: `primitive: rounded-rect; width: ${data.width}; height: ${data.height}; radius: ${PANEL_CORNER_RADIUS_M}`,
       position: '0 0 0',
-      material: `color: ${palette.panelBgColor}; shader: flat; opacity: ${palette.panelBgOpacity}; transparent: true`,
+      material: `color: ${palette.panelBgColor}; shader: flat; opacity: ${palette.panelBgOpacity * this.currentOpacityScale}; transparent: true`,
     });
 
     this.headerLineEl = createSubEntity('a-plane', {
       width: data.width - 0.08,
       height: 0.002,
       position: `0 ${data.height / 2 - 0.095} 0.002`,
-      material: `color: ${palette.panelHeaderLineColor}; shader: flat; opacity: 0.65; transparent: true`,
+      material: `color: ${data.accentColor || palette.panelHeaderLineColor}; shader: flat; opacity: ${0.65 * this.currentOpacityScale}; transparent: true`,
     });
 
     const bodyHalfW = (data.width - 0.08) / 2;
@@ -176,7 +182,7 @@ export class PanelController {
       anchor: 'center',
       baseline: 'center',
       color: palette.textBodyColor,
-      fontSize: 0.021,
+      fontSize: 0.02,
       lineHeight: 1.35,
       maxWidth: data.width - 0.08,
       clipRect: `${-bodyHalfW} -0.165 ${bodyHalfW} 0.165`,
@@ -189,7 +195,7 @@ export class PanelController {
       anchor: 'center',
       baseline: 'center',
       color: palette.textFooterColor,
-      fontSize: 0.016,
+      fontSize: 0.015,
       maxWidth: data.width - 0.08,
       value: data.footer,
     });
@@ -218,6 +224,10 @@ export class PanelController {
     return this.currentTheme;
   }
 
+  get opacityScale(): number {
+    return this.currentOpacityScale;
+  }
+
   update(data: PanelData): void {
     this.data = data;
     this.coords = clampSpherical({
@@ -225,6 +235,7 @@ export class PanelController {
       pitchDeg: data.pitchDeg,
       radiusM: data.radiusM,
     });
+    this.currentOpacityScale = Math.max(0, Math.min(1, data.opacityScale ?? 1));
     const palette = getThemePalette(this.currentTheme);
     const stroke = this.isHighlighted
       ? palette.panelBorderActiveStroke
@@ -255,6 +266,7 @@ export class PanelController {
     this.footerEl.setAttribute('max-width', String(data.width - 0.08));
     this.footerEl.setAttribute('value', data.footer);
     this.footerEl.setAttribute('troika-text', 'value', data.footer);
+    this.applyTheme(this.currentTheme);
     this.applyTransform();
   }
 
@@ -266,12 +278,42 @@ export class PanelController {
     this.applyTransform();
   }
 
-  // espessa a borda branca (14 mm) e eleva a opacidade para 100% ao clicar ou arrastar
+  setOpacityScale(scale: number): void {
+    this.currentOpacityScale = Math.max(0, Math.min(1, scale));
+    this.applyTheme(this.currentTheme);
+  }
+
+  // executa transição suave de fade-out de opacidade antes de remover o painel da cena (seções 4.1 e 4.4)
+  fadeOutAndRemove(durationMs = 240, onComplete?: () => void): void {
+    if (this.fadeTimerId !== null) return;
+    const startScale = this.currentOpacityScale;
+    const steps = 8;
+    const intervalMs = Math.max(16, Math.round(durationMs / steps));
+    let currentStep = 0;
+
+    this.fadeTimerId = window.setInterval(() => {
+      currentStep += 1;
+      const nextScale = Math.max(0, startScale * (1 - currentStep / steps));
+      this.setOpacityScale(nextScale);
+      if (currentStep >= steps) {
+        if (this.fadeTimerId !== null) {
+          window.clearInterval(this.fadeTimerId);
+          this.fadeTimerId = null;
+        }
+        this.el.remove();
+        onComplete?.();
+      }
+    }, intervalMs);
+  }
+
   setHighlight(active: boolean): void {
     this.isHighlighted = active;
     const palette = getThemePalette(this.currentTheme);
     const stroke = active ? palette.panelBorderActiveStroke : palette.panelBorderNormalStroke;
-    const opacity = active ? palette.panelBorderActiveOpacity : palette.panelBorderNormalOpacity;
+    const baseOpacity = active
+      ? palette.panelBorderActiveOpacity
+      : palette.panelBorderNormalOpacity;
+    const borderColor = this.data.accentColor || palette.panelBorderColor;
 
     this.borderEl.setAttribute('geometry', {
       primitive: 'rounded-rect',
@@ -281,22 +323,21 @@ export class PanelController {
     });
     this.borderEl.setAttribute(
       'material',
-      `color: ${palette.panelBorderColor}; shader: flat; opacity: ${opacity}; transparent: true`,
+      `color: ${borderColor}; shader: flat; opacity: ${baseOpacity * this.currentOpacityScale}; transparent: true`,
     );
   }
 
-  // aplica a paleta do tema nos componentes visuais do painel
   applyTheme(theme: ZoneTheme): void {
     this.currentTheme = theme;
     const palette = getThemePalette(theme);
 
     this.surfaceEl.setAttribute(
       'material',
-      `color: ${palette.panelBgColor}; shader: flat; opacity: ${palette.panelBgOpacity}; transparent: true`,
+      `color: ${palette.panelBgColor}; shader: flat; opacity: ${palette.panelBgOpacity * this.currentOpacityScale}; transparent: true`,
     );
     this.headerLineEl.setAttribute(
       'material',
-      `color: ${palette.panelHeaderLineColor}; shader: flat; opacity: 0.65; transparent: true`,
+      `color: ${this.data.accentColor || palette.panelHeaderLineColor}; shader: flat; opacity: ${0.65 * this.currentOpacityScale}; transparent: true`,
     );
     this.titleEl.setAttribute('color', palette.textTitleColor);
     this.titleEl.setAttribute('troika-text', 'color', palette.textTitleColor);
@@ -309,6 +350,10 @@ export class PanelController {
   }
 
   dispose(): void {
+    if (this.fadeTimerId !== null) {
+      window.clearInterval(this.fadeTimerId);
+      this.fadeTimerId = null;
+    }
     window.removeEventListener(ZONE_THEME_CHANGE_EVENT, this.onThemeChange);
     this.borderEl.remove();
     this.surfaceEl.remove();
@@ -338,6 +383,8 @@ AFRAME.registerComponent<PanelComponent>('imx-panel', {
     yawDeg: { type: 'number', default: 0 },
     pitchDeg: { type: 'number', default: 0 },
     radiusM: { type: 'number', default: DEFAULT_PANEL_RADIUS_M },
+    opacityScale: { type: 'number', default: 1.0 },
+    accentColor: { type: 'string', default: '' },
   },
   init() {
     this.controller = new PanelController(this.el, this.data);

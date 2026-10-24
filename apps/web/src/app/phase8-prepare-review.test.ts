@@ -106,5 +106,7 @@ describe('Phase 8 — Pack Review, Consent, Resume & Handoff', () => {
     await repo.clearAllLocalData();
     expect(await repo.loadConsent()).toBeNull();
     expect(await repo.loadLatestSessionState()).toBeNull();
+    // zonas recém-criadas pelo usuário não recebem pacotes demonstrativos pré-populados antes do upload
+    expect(await repo.loadStudyPack('custom-empty-zone-uuid')).toBeNull();
   });
 });

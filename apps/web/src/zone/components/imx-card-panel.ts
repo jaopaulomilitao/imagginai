@@ -9,6 +9,7 @@ export interface CardPanelData {
   body: string;
   sourcePage: number;
   sourceTitle: string;
+  accentColor: string;
 }
 
 export interface CardPanelComponent extends Component<CardPanelData> {
@@ -17,11 +18,11 @@ export interface CardPanelComponent extends Component<CardPanelData> {
 
 export function formatCardCitation(sourceTitle: string, sourcePage: number): string {
   const shortTitle =
-    sourceTitle.length > 34 ? `${sourceTitle.slice(0, 31).trimEnd()}…` : sourceTitle;
-  return `${shortTitle} • ${PT_BR.zone.panels.sourceCitationPrefix} ${sourcePage}`;
+    sourceTitle.length > 34 ? `${sourceTitle.slice(0, 31).trimEnd()}...` : sourceTitle;
+  return `${shortTitle} | ${PT_BR.zone.panels.sourceCitationPrefix} ${sourcePage}`;
 }
 
-// especialização de painel espacial para exibir um study card com citação de fonte verificada (seção 3.6.2 e 3.6.4)
+// especialização de painel espacial para exibir um cartão ou item de estudo com citação de fonte verificada
 export class CardPanelController {
   constructor(
     private readonly el: Entity,
@@ -36,12 +37,17 @@ export class CardPanelController {
   }
 
   private syncToPanel(): void {
-    const footer = formatCardCitation(this.data.sourceTitle, this.data.sourcePage);
+    const footer = this.data.sourceTitle
+      ? formatCardCitation(this.data.sourceTitle, this.data.sourcePage)
+      : '';
     const panel = this.el.components['imx-panel'] as PanelComponent | undefined;
     if (panel?.controller) {
       this.el.setAttribute('imx-panel', 'title', this.data.title);
       this.el.setAttribute('imx-panel', 'body', this.data.body);
       this.el.setAttribute('imx-panel', 'footer', footer);
+      if (this.data.accentColor) {
+        this.el.setAttribute('imx-panel', 'accentColor', this.data.accentColor);
+      }
       return;
     }
     this.el.setAttribute('imx-panel', {
@@ -49,6 +55,7 @@ export class CardPanelController {
       title: this.data.title,
       body: this.data.body,
       footer,
+      accentColor: this.data.accentColor,
     });
   }
 }
@@ -61,6 +68,7 @@ AFRAME.registerComponent<CardPanelComponent>('imx-card-panel', {
     body: { type: 'string', default: '' },
     sourcePage: { type: 'int', default: 1 },
     sourceTitle: { type: 'string', default: '' },
+    accentColor: { type: 'string', default: '' },
   },
   init() {
     this.controller = new CardPanelController(this.el, this.data);

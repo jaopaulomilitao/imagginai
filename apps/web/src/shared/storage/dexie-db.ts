@@ -138,8 +138,9 @@ export function mergePanelIntoLayout(
 }
 
 export function resolveBundledDemoPack(zoneId: string): StudyPack | null {
-  // localiza um dos 3 study packs empacotados quando a zona ainda não está no indexeddb
-  const entry = BUNDLED_DEMO_PACKS.find((item) => item.zoneId === zoneId) ?? BUNDLED_DEMO_PACKS[0];
+  // retorna um pacote demonstrativo apenas quando o id pertence de fato a uma zona demo oficial
+  const normalizedId = zoneId === 'zone-demo' ? 'demo' : zoneId;
+  const entry = BUNDLED_DEMO_PACKS.find((item) => item.zoneId === normalizedId);
   if (!entry) return null;
   const validated = validateStudyPack(entry.rawPack);
   return validated.ok ? validated.pack : null;
