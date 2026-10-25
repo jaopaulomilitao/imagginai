@@ -23,8 +23,15 @@ export const LANDMARK = {
   PINKY_TIP: 20,
 } as const;
 
+export interface TrackedHand {
+  readonly landmarks: HandLandmarks;
+  readonly handedness: 'left' | 'right';
+  readonly score: number;
+}
+
 export interface HandDataDetail {
   landmarks: HandLandmarks | null;
+  hands?: readonly TrackedHand[];
   // instante de captura do quadro (performance.now), usado pelos filtros temporais
   timestampMs: number;
 }

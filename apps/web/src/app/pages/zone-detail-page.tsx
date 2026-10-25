@@ -171,13 +171,20 @@ export function ZoneDetailPage({
           selectedFiles.length === 1 && docTitle.trim()
             ? docTitle.trim()
             : file.name.replace(/\.pdf$/i, '');
-        await zoneStorage.savePdfFile({
+        const storedPdfRecord = {
           zoneId: zone.id,
           sourceId: `local-${Date.now()}-${idx}`,
           title: effectiveTitle,
           data: new Uint8Array(buffer),
           savedAt: new Date().toISOString(),
-        });
+        };
+        await zoneStorage.savePdfFile(storedPdfRecord);
+        if (remoteZoneId !== zone.id) {
+          await zoneStorage.savePdfFile({
+            ...storedPdfRecord,
+            zoneId: remoteZoneId,
+          });
+        }
 
         const uploadRes = await uploadZoneSourcePdf(remoteZoneId, file, effectiveTitle);
 

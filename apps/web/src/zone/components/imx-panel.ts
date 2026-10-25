@@ -241,8 +241,9 @@ export class PanelController {
     this.headerLineEl.object3D.visible = !isFrameless;
     this.titleEl.setAttribute('visible', isFrameless ? 'false' : 'true');
     this.titleEl.object3D.visible = !isFrameless;
-    this.bodyEl.setAttribute('visible', isFrameless ? 'false' : 'true');
-    this.bodyEl.object3D.visible = !isFrameless;
+    const hasBody = !isFrameless && Boolean(this.data.body && this.data.body.trim().length > 0);
+    this.bodyEl.setAttribute('visible', hasBody ? 'true' : 'false');
+    this.bodyEl.object3D.visible = hasBody;
     this.footerEl.setAttribute('visible', isFrameless ? 'false' : 'true');
     this.footerEl.object3D.visible = !isFrameless;
   }

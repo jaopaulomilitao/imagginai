@@ -123,13 +123,25 @@ export class DragHandleController {
     }
   };
 
-  // botão '-' afasta o painel (aumenta radiusM, diminuindo o tamanho aparente)
+  // botão '-' redimensiona para menor o grafo 3d ou afasta o painel (seção 3)
   private readonly onMinusClick = (): void => {
+    const conceptGraph = this.el.components['imx-concept-graph'] as
+      { controller?: { adjustScale(direction: 1 | -1): void } } | undefined;
+    if (conceptGraph?.controller) {
+      conceptGraph.controller.adjustScale(-1);
+      return;
+    }
     this.changeRadius(1);
   };
 
-  // botão '+' aproxima o painel do rosto (reduz radiusM, aumentando o tamanho aparente)
+  // botão '+' redimensiona para maior o grafo 3d ou aproxima o painel (seção 3)
   private readonly onPlusClick = (): void => {
+    const conceptGraph = this.el.components['imx-concept-graph'] as
+      { controller?: { adjustScale(direction: 1 | -1): void } } | undefined;
+    if (conceptGraph?.controller) {
+      conceptGraph.controller.adjustScale(1);
+      return;
+    }
     this.changeRadius(-1);
   };
 

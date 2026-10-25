@@ -2,15 +2,8 @@ import AFRAME, { type Component, type Entity } from 'aframe';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { CanvasTexture, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three';
 
-if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-  try {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-      'pdfjs-dist/build/pdf.worker.min.mjs',
-      import.meta.url,
-    ).toString();
-  } catch {
-    // fallback tolerante para ambientes sem suporte a import.meta.url
-  }
+if (typeof window !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
 }
 
 import { PT_BR } from '../../shared/i18n/pt-br';
@@ -253,7 +246,7 @@ export class PdfPanelController {
   }
 
   setPdfBytes(bytes: Uint8Array | null): void {
-    this.pdfBytes = bytes;
+    this.pdfBytes = bytes ? new Uint8Array(bytes) : null;
     this.syntheticProvider = null;
     this.evictAllTextures();
     void this.syncDocumentAndWindow();
@@ -268,7 +261,7 @@ export class PdfPanelController {
   update(data: PdfPanelData): void {
     const urlChanged = data.pdfUrl !== this.loadedUrl;
     this.data = data;
-    this.totalPages = Math.max(1, data.pageCount);
+    this.totalPages = this.pdfDoc ? this.pdfDoc.numPages : Math.max(1, data.pageCount);
     this.currentPage = clampPdfPage(data.page, this.totalPages);
     this.el.setAttribute('imx-panel', 'title', data.sourceTitle);
     if (urlChanged) {
@@ -397,6 +390,7 @@ export class PdfPanelController {
         const loadingTask = pdfjsLib.getDocument({ data: this.pdfBytes });
         this.pdfDoc = await loadingTask.promise;
         this.totalPages = Math.max(1, this.pdfDoc.numPages);
+        this.data.pageCount = this.totalPages;
         this.currentPage = clampPdfPage(this.currentPage, this.totalPages);
       } catch (error) {
         logger.warn('pdf.js load from direct bytes failed', error);
@@ -407,6 +401,7 @@ export class PdfPanelController {
         const loadingTask = pdfjsLib.getDocument({ url: this.data.pdfUrl });
         this.pdfDoc = await loadingTask.promise;
         this.totalPages = Math.max(1, this.pdfDoc.numPages);
+        this.data.pageCount = this.totalPages;
         this.currentPage = clampPdfPage(this.currentPage, this.totalPages);
       } catch (error) {
         logger.warn(
@@ -461,24 +456,44 @@ export class PdfPanelController {
       const viewport = page.getViewport({ scale });
       canvas.width = Math.round(viewport.width);
       canvas.height = Math.round(viewport.height);
-      await page.render({ canvas, viewport }).promise;
-    } else {
-      const content = this.syntheticProvider
-        ? this.syntheticProvider(pageNumber)
-        : {
-            pageNumber,
-            pageCount: this.totalPages,
-            sourceTitle: this.data.sourceTitle,
-            heading: `Página ${pageNumber}`,
-            paragraphs: [this.data.sourceTitle],
-          };
+      const context = canvas.getContext('2d');
+      if (context) {
+        await page.render({ canvasContext: context, canvas, viewport }).promise;
+      }
+    } else if (this.syntheticProvider) {
+      const content = this.syntheticProvider(pageNumber);
       drawSyntheticPageToCanvas(canvas, content);
+    } else {
+      this.drawLoadingPageToCanvas(canvas, pageNumber);
     }
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.needsUpdate = true;
     return texture;
+  }
+
+  private drawLoadingPageToCanvas(canvas: HTMLCanvasElement, pageNumber: number): void {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const isDark = this.currentTheme === 'dark-glass';
+    ctx.fillStyle = isDark ? '#121316' : '#F5F3EB';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = isDark ? '#F5F3EB' : '#121316';
+    ctx.font = 'bold 30px system-ui, sans-serif';
+    ctx.fillText(this.data.sourceTitle || 'Documento PDF', 40, 70);
+
+    ctx.strokeStyle = isDark ? '#27272A' : '#E4E4E7';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(40, 94);
+    ctx.lineTo(canvas.width - 40, 94);
+    ctx.stroke();
+
+    ctx.fillStyle = isDark ? '#A1A1AA' : '#52525B';
+    ctx.font = '22px system-ui, sans-serif';
+    ctx.fillText(`Página ${pageNumber} de ${this.totalPages}`, 40, 150);
   }
 
   private evictAllTextures(): void {

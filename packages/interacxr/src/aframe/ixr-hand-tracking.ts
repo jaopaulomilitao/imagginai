@@ -70,14 +70,18 @@ export class HandTrackingController {
   }
 
   private emitHandData(frame: HandFrame): void {
-    const detail: HandDataDetail = { landmarks: frame.landmarks, timestampMs: frame.timestampMs };
+    const detail: HandDataDetail = {
+      landmarks: frame.landmarks,
+      hands: frame.hands,
+      timestampMs: frame.timestampMs,
+    };
     this.el.emit(HAND_DATA_EVENT, detail);
   }
 }
 
 AFRAME.registerComponent<HandTrackingComponent>('ixr-hand-tracking', {
   schema: {
-    maxHands: { type: 'int', default: 1 },
+    maxHands: { type: 'int', default: 2 },
     delegate: { type: 'string', default: 'GPU', oneOf: ['CPU', 'GPU'] },
     inputWidth: { type: 'int', default: DEFAULT_HAND_TRACKER_OPTIONS.inputWidth },
   },

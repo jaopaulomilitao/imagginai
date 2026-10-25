@@ -32,3 +32,4 @@ Thumbs.db
 
 # mediapipe wasm copied from node_modules by sync-mediapipe (the model file is committed)
 apps/web/public/mediapipe/wasm/
+apps/web/public/pdfjs/

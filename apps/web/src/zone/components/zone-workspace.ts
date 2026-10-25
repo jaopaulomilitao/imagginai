@@ -129,7 +129,7 @@ export class ZoneWorkspaceController {
   private readonly onAddContentRequest = (event: Event): void => {
     const detail = (event as CustomEvent<AddContentRequestDetail>).detail;
     if (!detail?.card) return;
-    this.spawnContentInScene(detail);
+    void this.spawnContentInScene(detail);
   };
 
   private readonly onConceptGraphSelect = (event: Event): void => {
@@ -143,7 +143,7 @@ export class ZoneWorkspaceController {
       conceptId: detail.conceptId,
       durationMs: 6500,
     });
-    this.spawnContentInScene({
+    void this.spawnContentInScene({
       contentId: `concept-${detail.conceptId}`,
       kind: 'flashcard',
       card: detail.card,
@@ -339,7 +339,7 @@ export class ZoneWorkspaceController {
   }
 
   // adiciona um item do menu conteúdos à cena em posição livre sem sobreposição e remove o placeholder inicial (seções 4.1 e 4.3)
-  spawnContentInScene(detail: AddContentRequestDetail): void {
+  async spawnContentInScene(detail: AddContentRequestDetail): Promise<void> {
     const contentId = detail.contentId ?? detail.card.id;
     if (this.activeContentIds.has(contentId)) {
       return;
@@ -374,6 +374,9 @@ export class ZoneWorkspaceController {
     const sourceTitle = detail.sourceTitle ?? pack?.sources[0]?.title ?? 'Material de estudo';
 
     if (detail.kind === 'pdf') {
+      if (!this.cachedPdfRecord && this.storage.loadPdfFile) {
+        this.cachedPdfRecord = (await this.storage.loadPdfFile(this.currentZoneId)) ?? null;
+      }
       let pdfUrl = '';
       let pdfBytes: Uint8Array | null = null;
       if (this.cachedPdfRecord) {
@@ -509,7 +512,7 @@ export class ZoneWorkspaceController {
   }
 
   assignCardToSlot(card: StudyCard, sourceTitle = 'Material de estudo'): void {
-    this.spawnContentInScene({
+    void this.spawnContentInScene({
       contentId: card.id,
       kind: 'flashcard',
       card,

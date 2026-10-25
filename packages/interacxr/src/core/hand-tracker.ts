@@ -3,7 +3,7 @@ import {
   type InferenceRateConfig,
   InferenceRateController,
 } from './inference-rate';
-import type { HandLandmarks } from './landmarks';
+import type { HandLandmarks, TrackedHand } from './landmarks';
 import { logger } from './logger';
 import type { InferenceDelegate, WorkerRequest, WorkerResponse } from './worker-protocol';
 
@@ -19,6 +19,7 @@ export interface HandTrackerOptions {
 
 export interface HandFrame {
   landmarks: HandLandmarks | null;
+  hands?: readonly TrackedHand[];
   timestampMs: number;
   latencyMs: number;
 }
@@ -166,7 +167,16 @@ export class HandTracker {
     if (message.type === 'READY') {
       this.ready = true;
     } else if (message.type === 'RESULT') {
-      this.onResult(message.landmarks[0] ?? null);
+      const hands: readonly TrackedHand[] =
+        message.hands ??
+        message.landmarks.map((lm, idx) => ({
+          landmarks: lm,
+          handedness: (idx === 0 ? 'right' : 'left') as 'left' | 'right',
+          score: 1.0,
+        }));
+      const primaryHand =
+        hands.find((h) => h.handedness === 'right')?.landmarks ?? hands[0]?.landmarks ?? null;
+      this.onResult(primaryHand, hands);
     } else {
       logger.error('hand worker failed', message.message);
       this.ready = false;
@@ -174,13 +184,14 @@ export class HandTracker {
     }
   }
 
-  private onResult(landmarks: HandLandmarks | null): void {
+  private onResult(landmarks: HandLandmarks | null, hands: readonly TrackedHand[] = []): void {
     const now = this.dependencies.now();
     this.busy = false;
     this.rate.reportHand(landmarks !== null, now);
     this.updateStats(now);
     const frame: HandFrame = {
       landmarks,
+      hands,
       timestampMs: this.sentAtMs,
       latencyMs: now - this.sentAtMs,
     };
@@ -207,7 +218,7 @@ export class HandTracker {
 }
 
 export const DEFAULT_HAND_TRACKER_OPTIONS: Omit<HandTrackerOptions, 'wasmBaseUrl' | 'modelUrl'> = {
-  maxHands: 1,
+  maxHands: 2,
   delegate: 'GPU',
   inputWidth: DEFAULT_INPUT_WIDTH,
   rate: DEFAULT_INFERENCE_RATE,

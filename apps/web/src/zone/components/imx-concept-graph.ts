@@ -84,9 +84,10 @@ export class ConceptGraphBridge {
   private targetBoxOpacity = 0.0;
   private animFrameId: number | null = null;
 
-  // estado de foco e controle de rotação com a mão esquerda
+  // estado de foco, escala e controle de rotação com a mão esquerda
   private isHovered = false;
   private isLeftHandGrabbing = false;
+  private currentScale = 1.0;
   private lastHandPos: { x: number; y: number } | null = null;
   private handTrackingSource: Entity | null = null;
 
@@ -97,7 +98,7 @@ export class ConceptGraphBridge {
 
   private readonly onHandData = (event: Event): void => {
     const detail = (event as CustomEvent<HandDataDetail>).detail;
-    this.handleHandTracking(detail?.landmarks ?? null);
+    this.handleHandTracking(detail);
   };
 
   private readonly onRayEnter = (): void => {
@@ -332,24 +333,60 @@ export class ConceptGraphBridge {
     this.animFrameId = requestAnimationFrame(tick);
   }
 
-  private handleHandTracking(landmarks: HandLandmarks | null): void {
-    if (!landmarks || landmarks.length === 0) {
+  // redimensiona o grupo tridimensional do grafo mantendo alças e gizmo proporcionais (seção 3)
+  adjustScale(direction: 1 | -1): void {
+    const nextScale = Math.max(
+      0.4,
+      Math.min(2.5, Math.round((this.currentScale + direction * 0.15) * 100) / 100),
+    );
+    if (nextScale === this.currentScale) return;
+    this.currentScale = nextScale;
+    this.volumeGroupEl.object3D.scale.set(nextScale, nextScale, nextScale);
+
+    // atualiza a altura no imx-panel para reposicionar os botões superiores diretamente sobre o grafo redimensionado
+    const effectiveHeight = 0.56 * nextScale;
+    this.el.setAttribute('imx-panel', 'height', effectiveHeight);
+  }
+
+  private handleHandTracking(detail: HandDataDetail | undefined): void {
+    if (!detail) {
       this.isLeftHandGrabbing = false;
       this.lastHandPos = null;
       return;
     }
 
-    const wrist = landmarks[LANDMARK.WRIST];
-    if (!wrist) return;
+    // localiza a mão esquerda explicitamente pelo array de mãos rastreadas (seção 1)
+    let leftHand: HandLandmarks | null = null;
+    if (detail.hands && detail.hands.length > 0) {
+      const leftTracked = detail.hands.find((h) => h.handedness === 'left');
+      if (leftTracked) {
+        leftHand = leftTracked.landmarks;
+      } else if (detail.hands.length === 1 && detail.hands[0]) {
+        const wrist = detail.hands[0].landmarks[LANDMARK.WRIST];
+        if (wrist && wrist.x < 0.55) {
+          leftHand = detail.hands[0].landmarks;
+        }
+      }
+    } else if (detail.landmarks) {
+      const wrist = detail.landmarks[LANDMARK.WRIST];
+      if (wrist && wrist.x < 0.55) {
+        leftHand = detail.landmarks;
+      }
+    }
 
-    // identifica mão esquerda no campo de visão (x < 0.55 nas coordenadas normalizadas)
-    const isLeftHand = wrist.x < 0.55;
-    if (!isLeftHand) {
+    if (!leftHand || leftHand.length === 0) {
+      this.isLeftHandGrabbing = false;
       this.lastHandPos = null;
+      if (!this.isHovered && !this.isMouseDown) {
+        this.targetBoxOpacity = 0.0;
+      }
       return;
     }
 
-    const pose = classifyFrame(landmarks, this.isLeftHandGrabbing);
+    const wrist = leftHand[LANDMARK.WRIST];
+    if (!wrist) return;
+
+    const pose = classifyFrame(leftHand, this.isLeftHandGrabbing);
     const isClosedFistOrPinch = pose.grab || pose.pinch;
 
     if (this.isHovered && isClosedFistOrPinch) {
@@ -359,7 +396,7 @@ export class ConceptGraphBridge {
       if (this.lastHandPos) {
         const deltaX = wrist.x - this.lastHandPos.x;
         const deltaY = wrist.y - this.lastHandPos.y;
-        // rotação fluida nos eixos yaw e pitch baseada no delta da mão fechada (seção 3.1)
+        // rotação nos eixos yaw e pitch baseada no delta da mão esquerda fechada (seções 1 e 3.1)
         this.volumeGroupEl.object3D.rotation.y += deltaX * Math.PI * 3.2;
         this.volumeGroupEl.object3D.rotation.x += deltaY * Math.PI * 3.2;
       }

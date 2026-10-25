@@ -105,12 +105,6 @@ export class QuizPanelBridge {
 
   setQuestions(items: readonly QuizItem[]): void {
     this.quizController = new QuizSessionController(items);
-    this.el.setAttribute('imx-panel', {
-      width: 0.84,
-      height: 0.68,
-      body: '',
-      accentColor: '#EA580C',
-    });
     this.renderCurrentQuestion();
   }
 
@@ -159,9 +153,50 @@ export class QuizPanelBridge {
         : `Questão de Quiz`;
     this.el.setAttribute('imx-panel', 'title', headerTitle);
 
-    // contraste ajustado no modo claro: utiliza texto escuro legível em vez de branco (seção 2.2)
+    // 1. cálculo antecipado das alturas dos blocos para ajuste dinâmico do painel (seção 4)
+    const optW = 0.76;
+    const promptLines = Math.max(1, Math.ceil(current.prompt.length / 52));
+    const promptH = 0.026 + (promptLines - 1) * 0.022;
+
+    const optionDimensions = current.options.map((optText, optIdx) => {
+      const letter = String.fromCharCode(65 + optIdx);
+      const fullText = `${letter}) ${optText}`;
+      const lines = Math.max(1, Math.ceil(fullText.length / 46));
+      const optH = Math.max(0.048, 0.026 + (lines - 1) * 0.022);
+      return { fullText, optH, optIdx };
+    });
+    const totalOptionsH = optionDimensions.reduce((acc, o) => acc + o.optH + 0.012, 0);
+
+    let expH = 0;
+    let fullExpText = '';
+    if (answer) {
+      const verdict = answer.isCorrect ? 'Correto!' : 'Incorreto.';
+      fullExpText = `${verdict} ${answer.explanation}`;
+      const expLines = Math.max(1, Math.ceil(fullExpText.length / 50));
+      expH = Math.max(0.048, 0.024 + expLines * 0.02);
+    }
+
+    const navH = 0.044;
+    // soma vertical: header (0.115) + prompt + gap + opções + gap + explicação + gap + navegação + footer (0.065)
+    const neededHeight =
+      0.115 + promptH + 0.022 + totalOptionsH + (answer ? expH + 0.018 : 0) + 0.016 + navH + 0.065;
+    const calculatedPanelH = Math.max(0.7, Math.round(neededHeight * 100) / 100);
+
+    this.el.setAttribute('imx-panel', {
+      width: 0.84,
+      height: calculatedPanelH,
+      body: '',
+      accentColor: '#EA580C',
+    });
+
+    // 2. posicionamento estritamente sequencial de cima para baixo (evita sobreposição de elementos)
+    let currentY = calculatedPanelH / 2 - 0.115;
+
+    // pergunta do quiz com contraste adaptado
     const promptColor = isLight ? '#121316' : '#F5F3EB';
-    const promptY = 0.23;
+    const promptY = currentY - promptH / 2;
+    currentY -= promptH + 0.022;
+
     const promptEl = createQuizTroikaText({
       position: `0 ${promptY} 0.004`,
       value: current.prompt,
@@ -174,16 +209,8 @@ export class QuizPanelBridge {
     });
     this.rootGroupEl.appendChild(promptEl);
 
-    const optW = 0.76;
-    let currentY = 0.14;
-
-    current.options.forEach((optText, optIdx) => {
-      // cálculo dinâmico de altura do container para exibir o texto completo sem truncamento (seção 2.2)
-      const letter = String.fromCharCode(65 + optIdx);
-      const fullText = `${letter}) ${optText}`;
-      const estimatedLines = Math.max(1, Math.ceil(fullText.length / 50));
-      const optH = Math.max(0.048, 0.026 + estimatedLines * 0.022);
-
+    // alternativas com quebra de linha dinâmica
+    optionDimensions.forEach(({ fullText, optH, optIdx }) => {
       const y = currentY - optH / 2;
       currentY -= optH + 0.012;
 
@@ -243,14 +270,11 @@ export class QuizPanelBridge {
       this.rootGroupEl.appendChild(btnEl);
     });
 
-    // bloco explicativo posicionado diretamente abaixo das alternativas (seção 2.2)
-    if (answer) {
-      const verdict = answer.isCorrect ? 'Correto!' : 'Incorreto.';
-      const explanationText = `${verdict} ${answer.explanation}`;
-      const expLines = Math.max(1, Math.ceil(explanationText.length / 54));
-      const expH = Math.max(0.046, 0.022 + expLines * 0.02);
+    // bloco explicativo diretamente abaixo das alternativas (seção 2.2 e 4)
+    if (answer && expH > 0) {
+      currentY -= 0.004;
       const expY = currentY - expH / 2;
-      currentY -= expH + 0.014;
+      currentY -= expH + 0.018;
 
       const expBorderColor = answer.isCorrect ? '#10B981' : '#EA580C';
       const expBgColor = isLight
@@ -289,7 +313,7 @@ export class QuizPanelBridge {
       expBoxEl.appendChild(
         createQuizTroikaText({
           position: `${-optW / 2 + 0.02} 0 0.004`,
-          value: explanationText,
+          value: fullExpText,
           color: expTextColor,
           fontSize: 0.013,
           maxWidth: optW - 0.04,
@@ -301,8 +325,9 @@ export class QuizPanelBridge {
       this.rootGroupEl.appendChild(expBoxEl);
     }
 
-    // rodapé com navegação e botão destacada "Próxima pergunta" (seção 2.2)
-    const navY = Math.max(-0.29, currentY - 0.026);
+    // botões de navegação posicionados no fluxo vertical natural (sem clamping rígido que causa sobreposição)
+    currentY -= 0.006;
+    const navY = currentY - navH / 2;
 
     const prevBtn = document.createElement('a-plane') as Entity;
     prevBtn.classList.add('interactable');

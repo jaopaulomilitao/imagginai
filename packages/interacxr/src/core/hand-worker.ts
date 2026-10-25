@@ -51,5 +51,18 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   const results = handLandmarker.detectForVideo(request.image, request.timestamp);
   // é liberada a memória do bitmap imediatamente
   request.image.close();
-  post({ type: 'RESULT', landmarks: results.landmarks });
+
+  const hands = results.landmarks.map((lm, idx) => {
+    const cat = results.handedness?.[idx]?.[0] ?? results.handednesses?.[idx]?.[0];
+    const catName = cat?.categoryName?.toLowerCase();
+    const handedness: 'left' | 'right' =
+      catName === 'left' ? 'left' : catName === 'right' ? 'right' : idx === 0 ? 'right' : 'left';
+    return {
+      landmarks: lm,
+      handedness,
+      score: cat?.score ?? 1.0,
+    };
+  });
+
+  post({ type: 'RESULT', landmarks: results.landmarks, hands });
 };

@@ -1,4 +1,4 @@
-import type { HandLandmarks } from './landmarks';
+import type { HandLandmarks, TrackedHand } from './landmarks';
 
 export type InferenceDelegate = 'CPU' | 'GPU';
 
@@ -26,6 +26,7 @@ export interface WorkerReadyResponse {
 export interface WorkerResultResponse {
   type: 'RESULT';
   landmarks: HandLandmarks[];
+  hands?: TrackedHand[];
 }
 
 export interface WorkerErrorResponse {

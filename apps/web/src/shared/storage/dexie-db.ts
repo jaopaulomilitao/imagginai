@@ -406,10 +406,13 @@ export class DexieLayoutRepository implements LayoutRepository {
     try {
       const record = await this.db.pdfFiles.get(zoneId);
       if (record) return record;
+      // busca o pdf mais recente gravado localmente para garantir o binding mesmo com ids alternativos (seção 5)
+      const latest = await this.db.pdfFiles.orderBy('savedAt').last();
+      if (latest) return latest;
     } catch (error) {
       logger.warn('dexie loadPdfFile fell back to memory', error);
     }
-    return this.pdfFallback.get(zoneId) ?? null;
+    return this.pdfFallback.get(zoneId) ?? Array.from(this.pdfFallback.values()).pop() ?? null;
   }
 
   async loadConsent(): Promise<StoredUserConsent | null> {
