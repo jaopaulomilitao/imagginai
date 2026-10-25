@@ -36,6 +36,7 @@ export interface PanelData {
   radiusM: number;
   opacityScale: number;
   accentColor: string;
+  frameless: boolean;
 }
 
 export interface PanelComponent extends Component<PanelData> {
@@ -144,9 +145,18 @@ export class PanelController {
     const borderColor = data.accentColor || palette.panelBorderColor;
 
     this.borderEl = createSubEntity('a-entity', {
+      class: 'interactable imx-panel-border',
+      'data-no-dwell': 'true',
       geometry: `primitive: rounded-rect; width: ${data.width + 2 * stroke}; height: ${data.height + 2 * stroke}; radius: ${PANEL_CORNER_RADIUS_M + stroke}`,
       position: '0 0 -0.002',
       material: `color: ${borderColor}; shader: flat; opacity: ${palette.panelBorderNormalOpacity * this.currentOpacityScale}; transparent: true`,
+    });
+
+    this.borderEl.addEventListener('mouseenter', () => {
+      this.setHighlight(true);
+    });
+    this.borderEl.addEventListener('mouseleave', () => {
+      this.setHighlight(false);
     });
 
     this.surfaceEl = createSubEntity('a-entity', {
@@ -207,9 +217,34 @@ export class PanelController {
     this.el.appendChild(this.bodyEl);
     this.el.appendChild(this.footerEl);
 
+    if (this.data.frameless) {
+      this.syncFramelessVisibility();
+    }
+
     this.applyTransform();
 
     window.addEventListener(ZONE_THEME_CHANGE_EVENT, this.onThemeChange);
+  }
+
+  isBorderElement(target: EventTarget | null): boolean {
+    if (!target) return false;
+    return target === this.borderEl || (target instanceof Node && this.borderEl.contains(target));
+  }
+
+  private syncFramelessVisibility(): void {
+    const isFrameless = this.data.frameless === true;
+    this.surfaceEl.setAttribute('visible', isFrameless ? 'false' : 'true');
+    this.surfaceEl.object3D.visible = !isFrameless;
+    this.borderEl.setAttribute('visible', isFrameless ? 'false' : 'true');
+    this.borderEl.object3D.visible = !isFrameless;
+    this.headerLineEl.setAttribute('visible', isFrameless ? 'false' : 'true');
+    this.headerLineEl.object3D.visible = !isFrameless;
+    this.titleEl.setAttribute('visible', isFrameless ? 'false' : 'true');
+    this.titleEl.object3D.visible = !isFrameless;
+    this.bodyEl.setAttribute('visible', isFrameless ? 'false' : 'true');
+    this.bodyEl.object3D.visible = !isFrameless;
+    this.footerEl.setAttribute('visible', isFrameless ? 'false' : 'true');
+    this.footerEl.object3D.visible = !isFrameless;
   }
 
   get spherical(): SphericalCoords {
@@ -266,6 +301,7 @@ export class PanelController {
     this.footerEl.setAttribute('max-width', String(data.width - 0.08));
     this.footerEl.setAttribute('value', data.footer);
     this.footerEl.setAttribute('troika-text', 'value', data.footer);
+    this.syncFramelessVisibility();
     this.applyTheme(this.currentTheme);
     this.applyTransform();
   }
@@ -385,6 +421,7 @@ AFRAME.registerComponent<PanelComponent>('imx-panel', {
     radiusM: { type: 'number', default: DEFAULT_PANEL_RADIUS_M },
     opacityScale: { type: 'number', default: 1.0 },
     accentColor: { type: 'string', default: '' },
+    frameless: { type: 'boolean', default: false },
   },
   init() {
     this.controller = new PanelController(this.el, this.data);

@@ -239,6 +239,14 @@ export function ZoneDetailPage({
     await zoneStorage.saveStudyPack(zone.id, nextPack);
   };
 
+  const handleToggleQuizAnswered = async (quizId: string, answered: boolean) => {
+    if (!pack || !zone) return;
+    const updatedQuiz = pack.quiz.map((q) => (q.id === quizId ? { ...q, answered } : q));
+    const nextPack = { ...pack, quiz: updatedQuiz };
+    setPack(nextPack);
+    await zoneStorage.saveStudyPack(zone.id, nextPack);
+  };
+
   const hasProcessedPack = pack !== null;
 
   const showConcepts = categoryFilter === 'all' || categoryFilter === 'concepts';
@@ -854,9 +862,22 @@ export function ZoneDetailPage({
                                 <Exam size={13} weight="bold" />
                                 <span>{PT_BR.zoneDetail.categories.quiz}</span>
                               </span>
-                              <span className="imx-badge text-[11px] py-0.5 px-2">
-                                pág. {firstPage}
-                              </span>
+                              <div className="flex items-center gap-2.5">
+                                <label className="flex items-center gap-1.5 cursor-pointer text-[11px] select-none text-[var(--imx-text-muted)]">
+                                  <input
+                                    type="checkbox"
+                                    checked={item.answered ?? false}
+                                    onChange={(e) =>
+                                      void handleToggleQuizAnswered(item.id, e.target.checked)
+                                    }
+                                    className="rounded border-[var(--imx-border-line)] accent-[var(--imx-accent-warm)] cursor-pointer"
+                                  />
+                                  <span>Respondida</span>
+                                </label>
+                                <span className="imx-badge text-[11px] py-0.5 px-2">
+                                  pág. {firstPage}
+                                </span>
+                              </div>
                             </div>
                             <h3
                               className="font-bold text-sm imx-heading m-0 mb-2"

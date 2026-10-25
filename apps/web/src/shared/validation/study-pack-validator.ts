@@ -92,7 +92,7 @@ function checkCard(ctx: ValidationContext, value: unknown, path: string): void {
   checkAnchors(ctx, record.anchors, `${path}.anchors`);
 }
 
-const QUIZ_KEYS = [
+const REQUIRED_QUIZ_KEYS = [
   'id',
   'prompt',
   'options',
@@ -102,10 +102,12 @@ const QUIZ_KEYS = [
   'anchors',
 ] as const;
 
+const OPTIONAL_QUIZ_KEYS = ['answered'] as const;
+
 function checkQuizItem(ctx: ValidationContext, value: unknown, path: string): void {
   const record = readRecord(ctx, value, path);
   if (!record) return;
-  checkKeys(ctx, record, QUIZ_KEYS, path);
+  checkKeys(ctx, record, REQUIRED_QUIZ_KEYS, path, OPTIONAL_QUIZ_KEYS);
   checkString(ctx, record.id, `${path}.id`);
   checkString(ctx, record.prompt, `${path}.prompt`);
   checkStringArray(ctx, record.options, `${path}.options`, { exactLength: QUIZ_OPTION_COUNT });
@@ -117,6 +119,9 @@ function checkQuizItem(ctx: ValidationContext, value: unknown, path: string): vo
   checkString(ctx, record.explanation, `${path}.explanation`);
   checkStringArray(ctx, record.conceptIds, `${path}.conceptIds`);
   checkAnchors(ctx, record.anchors, `${path}.anchors`);
+  if (record.answered !== undefined && typeof record.answered !== 'boolean') {
+    ctx.fail(`${path}.answered`, 'must be a boolean if provided');
+  }
 }
 
 function checkSequenceStep(ctx: ValidationContext, value: unknown, path: string): void {

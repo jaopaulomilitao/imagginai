@@ -10,6 +10,7 @@ import { HomePage } from './pages/home-page';
 import { LoginPage } from './pages/login-page';
 import { NotFoundPage } from './pages/not-found-page';
 import { ZoneDetailPage } from './pages/zone-detail-page';
+import { deleteAllUserDataRemote, flushPendingTelemetryAggregates } from './services/api-client';
 import { buildZoneHandoffUrl } from './services/pack-customizer';
 import { getActiveSession, signOutSession } from './services/supabase-client';
 
@@ -33,6 +34,9 @@ export function App() {
       }
       if (storedConsent) {
         setConsent(storedConsent);
+        if (storedConsent.research && session?.user) {
+          void flushPendingTelemetryAggregates();
+        }
       }
     };
     void init();
@@ -83,6 +87,13 @@ export function App() {
   };
 
   const handleDeleteAllData = async () => {
+    if (userEmail) {
+      try {
+        await deleteAllUserDataRemote();
+      } catch {
+        // prossegue com a limpeza integral local caso o servidor esteja offline
+      }
+    }
     await zoneStorage.clearAllLocalData();
     setConsent(null);
     setPendingZoneToEnter(null);

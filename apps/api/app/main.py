@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import FEATURE_REQUIREMENTS, Settings, get_settings, validate_startup
 from app.core.db import DatabaseStore
-from app.routers import health, jobs, zones
+from app.routers import health, jobs, telemetry, zones
 from app.services.embeddings import EmbeddingClient
 from app.services.llm import LlmProvider
 
@@ -47,6 +47,7 @@ def create_app(
     app.include_router(health.router)
     app.include_router(zones.router)
     app.include_router(jobs.router)
+    app.include_router(telemetry.router)
     return app
 
 

@@ -106,8 +106,11 @@ export class DragHandleController {
 
   private readonly onGrabStart = (): void => {
     const hovered = this.currentHoveredElement();
-    if (hovered === this.handleEl && this.state.isHandleVisible && this.state.startGrabDrag()) {
-      this.panelController()?.setHighlight(true);
+    const panelCtrl = this.panelController();
+    const isBorder = panelCtrl?.isBorderElement(hovered);
+    const isHandle = hovered === this.handleEl;
+    if ((isHandle || isBorder) && this.state.startGrabDrag()) {
+      panelCtrl?.setHighlight(true);
       this.setHandleHighlight(true);
       this.syncHandleVisibility();
     }

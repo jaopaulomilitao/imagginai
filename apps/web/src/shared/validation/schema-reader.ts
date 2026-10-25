@@ -40,10 +40,13 @@ export function checkKeys(
   record: UnknownRecord,
   allowed: readonly string[],
   path: string,
+  optional: readonly string[] = [],
 ): void {
   // são rejeitadas chaves extras para manter paridade com o pydantic (extra="forbid")
   for (const key of Object.keys(record)) {
-    if (!allowed.includes(key)) ctx.fail(`${path}.${key}`, 'unexpected field');
+    if (!allowed.includes(key) && !optional.includes(key)) {
+      ctx.fail(`${path}.${key}`, 'unexpected field');
+    }
   }
   for (const key of allowed) {
     if (!(key in record)) ctx.fail(`${path}.${key}`, 'missing field');

@@ -37,6 +37,7 @@ export interface QuizItem {
   explanation: string;
   conceptIds: string[];
   anchors: SourceAnchor[];
+  answered?: boolean;
 }
 
 export interface SequenceStep {

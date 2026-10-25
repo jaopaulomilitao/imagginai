@@ -10,10 +10,13 @@ import type { ModeComponent } from './imx-mode';
 import {
   ZONE_ACTIVE_CONTENTS_CHANGE_EVENT,
   ZONE_ADD_CONTENT_REQUEST_EVENT,
+  ZONE_EXIT_FINALIZE_EVENT,
+  ZONE_POMODORO_QUIZ_REQUEST_EVENT,
   ZONE_RECENTER_REQUEST_EVENT,
   ZONE_SWITCH_REQUEST_EVENT,
   type ActiveContentsChangeDetail,
   type AddContentRequestDetail,
+  type PomodoroQuizRequestDetail,
   type RecenterRequestDetail,
   type SpawnableContentKind,
   type SwitchZoneRequestDetail,
@@ -54,6 +57,7 @@ import {
   PomodoroSystem,
   type PomodoroStepEvents,
 } from '../systems/pomodoro-system';
+import { PerfDegradationController } from '../systems/perf-degradation-controller';
 import '../systems/rounded-shape';
 import {
   directionToSphericalAngles,
@@ -145,6 +149,7 @@ function isEditableElement(target: EventTarget | null): boolean {
 export class BeltMenuBridge {
   readonly beltController = new BeltMenuController();
   readonly pomodoro: PomodoroSystem;
+  readonly perfDegradation = new PerfDegradationController();
 
   private readonly rootEl: Entity;
   private readonly beltGroupEl: Entity;
@@ -269,6 +274,12 @@ export class BeltMenuBridge {
     }
 
     this.pomodoro.step(dt);
+
+    const instantFps = dt > 0 ? Math.min(120, 1000 / dt) : 60;
+    const perfReport = this.perfDegradation.recordSample(dt, instantFps);
+    if (perfReport?.economyJustTriggered) {
+      this.showToast('Modo econômico ativado (10 Hz) para manter fluidez', 3500);
+    }
 
     // verifica se o cursor/raio está sobre qualquer elemento do menu ou submenu (trava de interseção)
     const hovered = this.readCurrentHoveredElement();
@@ -763,10 +774,24 @@ export class BeltMenuBridge {
     };
 
     // 1. filtro Conteúdo (pdf enviado / fontes do documento)
-    const sources =
-      pack.sources.length > 0
-        ? pack.sources
-        : [{ id: 'src-default', title: sourceTitle, pageCount: 4 }];
+    const storedPdf = await zoneStorage.loadPdfFile?.(this.activeZoneId);
+    let sources = pack.sources;
+    if (storedPdf) {
+      const match = sources.find((s) => s.title === storedPdf.title);
+      if (!match) {
+        sources = [
+          {
+            id: storedPdf.sourceId,
+            title: storedPdf.title,
+            pageCount: pack.sources[0]?.pageCount ?? 4,
+          },
+          ...sources,
+        ];
+      }
+    }
+    if (sources.length === 0) {
+      sources = [{ id: 'src-default', title: sourceTitle, pageCount: 4 }];
+    }
     for (const src of sources) {
       itemsByFilter.content.push({
         contentId: `pdf-source-${src.id}`,
@@ -1018,7 +1043,7 @@ export class BeltMenuBridge {
             contentId: item.contentId,
             kind: item.kind,
             card: item.card,
-            sourceTitle,
+            sourceTitle: item.title,
             pageCount: item.pageCount,
             accentColor: item.accentColor,
             cameraYawDeg: this.lastCameraYawDeg,
@@ -1149,6 +1174,13 @@ export class BeltMenuBridge {
   private handlePomodoroEvents(events: PomodoroStepEvents): void {
     if (events.warningJustTriggered) {
       this.showToast(PT_BR.zone.pomodoro.oneMinWarning, 4000);
+    }
+    if (events.breakJustStarted) {
+      const detail: PomodoroQuizRequestDetail = {
+        cameraYawDeg: this.lastCameraYawDeg,
+        completedBlocks: this.pomodoro.snapshot.completedBlocks,
+      };
+      this.el.sceneEl?.emit(ZONE_POMODORO_QUIZ_REQUEST_EVENT, detail);
     }
     if (events.breakJustStarted || events.breakJustEnded) {
       this.syncBreakScreenVisuals();
@@ -1290,6 +1322,9 @@ export class BeltMenuBridge {
 
   private async performExitZone(): Promise<void> {
     try {
+      this.el.sceneEl?.emit(ZONE_EXIT_FINALIZE_EVENT, {
+        completedBlocks: this.pomodoro.snapshot.completedBlocks,
+      });
       await zoneStorage.saveSessionState?.({
         zoneId: this.activeZoneId,
         completedPomodoroBlocks: this.pomodoro.snapshot.completedBlocks,

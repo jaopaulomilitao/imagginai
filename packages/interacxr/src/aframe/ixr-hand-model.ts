@@ -5,7 +5,7 @@ import {
   type HandDataDetail,
   type HandLandmarks,
   type Landmark,
-  LANDMARK_COUNT,
+  LANDMARK,
 } from '../core/landmarks';
 import { detectStereoEyeSign } from '../passthrough/passthrough-layer';
 import { getInteracxrSystem } from './interacxr-system';
@@ -16,46 +16,27 @@ interface HandModelData {
   source: Entity | null;
   jointRadius: number;
   jointSmoothing: number;
-  boneRadius: number;
 }
 
 export interface HandModelComponent extends Component<HandModelData> {
   controller?: HandModelController;
 }
 
-// pares de índices que formam os ossos de cada dedo
-const HAND_CONNECTIONS: readonly (readonly [number, number])[] = [
-  [0, 1],
-  [1, 2],
-  [2, 3],
-  [3, 4],
-  [0, 5],
-  [5, 6],
-  [6, 7],
-  [7, 8],
-  [0, 9],
-  [9, 10],
-  [10, 11],
-  [11, 12],
-  [0, 13],
-  [13, 14],
-  [14, 15],
-  [15, 16],
-  [0, 17],
-  [17, 18],
-  [18, 19],
-  [19, 20],
+// 6 nós anatômicos essenciais: punho e pontas dos 5 dedos (seção 3.3)
+export const MINIMALIST_HAND_LANDMARK_INDICES: readonly number[] = [
+  LANDMARK.WRIST, // 0
+  LANDMARK.THUMB_TIP, // 4
+  LANDMARK.INDEX_TIP, // 8
+  LANDMARK.MIDDLE_TIP, // 12
+  LANDMARK.RING_TIP, // 16
+  LANDMARK.PINKY_TIP, // 20
 ];
 
 export class HandModelController {
   private readonly handGroup: Group;
   private readonly joints: Mesh[] = [];
-  private readonly bones: Mesh[] = [];
   private readonly targets: Vector3[] = [];
   private handVisible = false;
-  private readonly tmpMid = new THREE.Vector3();
-  private readonly tmpDir = new THREE.Vector3();
-  private readonly up = new THREE.Vector3(0, 1, 0);
   private readonly tmpViewport = new THREE.Vector4();
   private readonly tmpSize = new THREE.Vector2();
 
@@ -70,7 +51,6 @@ export class HandModelController {
     this.handGroup = new THREE.Group();
     this.el.object3D.add(this.handGroup);
     this.createJoints();
-    this.createBones();
     data.source?.addEventListener(HAND_DATA_EVENT, this.onHandData);
   }
 
@@ -86,9 +66,6 @@ export class HandModelController {
       const target = this.targets[i];
       if (target) joint.position.lerp(target, this.data.jointSmoothing);
     });
-    HAND_CONNECTIONS.forEach(([from, to], i) =>
-      this.placeBone(this.bones[i], this.joints[from], this.joints[to]),
-    );
   }
 
   private attachStereoSync(mesh: Mesh): void {
@@ -109,16 +86,23 @@ export class HandModelController {
   }
 
   private createJoints(): void {
-    // ativa transparent, desativa depthTest e define renderOrder alto para desenhar após painéis transparentes
+    // modo de mesclagem por diferença para contraste dinâmico garantido sobre fundos claros ou escuros (seção 3.3)
     const material = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
       opacity: 1.0,
       depthTest: false,
       depthWrite: false,
+      blending: THREE.CustomBlending,
+      blendEquation: THREE.AddEquation,
+      blendSrc: THREE.OneMinusDstColorFactor,
+      blendDst: THREE.ZeroFactor,
     });
-    for (let i = 0; i < LANDMARK_COUNT; i++) {
-      const geometry = new THREE.SphereGeometry(this.data.jointRadius, 12, 12);
+
+    for (const landmarkIdx of MINIMALIST_HAND_LANDMARK_INDICES) {
+      const isWrist = landmarkIdx === LANDMARK.WRIST;
+      const radius = isWrist ? this.data.jointRadius * 1.3 : this.data.jointRadius;
+      const geometry = new THREE.SphereGeometry(radius, 14, 14);
       const joint = new THREE.Mesh(geometry, material);
       joint.renderOrder = 999;
       joint.visible = false;
@@ -127,35 +111,6 @@ export class HandModelController {
       this.joints.push(joint);
       this.targets.push(new THREE.Vector3());
     }
-  }
-
-  private createBones(): void {
-    const material = new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 1.0,
-      depthTest: false,
-      depthWrite: false,
-    });
-    const radius = this.data.boneRadius;
-    for (let i = 0; i < HAND_CONNECTIONS.length; i++) {
-      const bone = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 1, 8), material);
-      bone.renderOrder = 999;
-      bone.visible = false;
-      this.attachStereoSync(bone);
-      this.handGroup.add(bone);
-      this.bones.push(bone);
-    }
-  }
-
-  private placeBone(bone: Mesh | undefined, a: Mesh | undefined, b: Mesh | undefined): void {
-    if (!bone || !a || !b) return;
-    bone.visible = true;
-    this.tmpMid.addVectors(a.position, b.position).multiplyScalar(0.5);
-    bone.position.copy(this.tmpMid);
-    this.tmpDir.subVectors(b.position, a.position);
-    bone.scale.set(1, this.tmpDir.length(), 1);
-    bone.quaternion.setFromUnitVectors(this.up, this.tmpDir.normalize());
   }
 
   // é usado o mesmo plano de projeção do vídeo (calibração unificada)
@@ -169,21 +124,24 @@ export class HandModelController {
     if (!hand) {
       this.handVisible = false;
       this.joints.forEach((joint) => (joint.visible = false));
-      this.bones.forEach((bone) => (bone.visible = false));
       this.targets.forEach((target) => target.set(0, 0, 0));
       return;
     }
     this.handVisible = true;
-    hand.forEach((landmark, i) => this.targets[i]?.copy(this.mapPoint(landmark)));
+    MINIMALIST_HAND_LANDMARK_INDICES.forEach((landmarkIdx, i) => {
+      const landmark = hand[landmarkIdx];
+      if (landmark) {
+        this.targets[i]?.copy(this.mapPoint(landmark));
+      }
+    });
   }
 }
 
 AFRAME.registerComponent<HandModelComponent>('ixr-hand-model', {
   schema: {
     source: { type: 'selector' },
-    jointRadius: { type: 'number', default: 0.012 },
+    jointRadius: { type: 'number', default: 0.01 },
     jointSmoothing: { type: 'number', default: 0.35 },
-    boneRadius: { type: 'number', default: 0.004 },
   },
   init() {
     this.controller = new HandModelController(this.el, this.data);

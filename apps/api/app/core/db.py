@@ -118,6 +118,18 @@ class PackRecord:
     created_at: str
 
 
+@dataclass(frozen=True)
+class SessionAggregateRecord:
+    """agregado anônimo de telemetria persistido na tabela session_aggregates."""
+
+    id: str
+    user_id: str
+    zone_id: str
+    session_id: str
+    payload: dict[str, Any]
+    created_at: str
+
+
 class DatabaseStore(Protocol):
     """contrato de persistência desacoplado do cliente externo para permitir mocks nos testes."""
 
@@ -199,6 +211,22 @@ class DatabaseStore(Protocol):
         user_id: str,
         zone_id: str,
     ) -> StudyPack | None: ...
+
+    def upsert_session_aggregate(
+        self,
+        user_id: str,
+        zone_id: str,
+        session_id: str,
+        payload: dict[str, Any],
+    ) -> SessionAggregateRecord: ...
+
+    def list_session_aggregates(
+        self,
+        user_id: str,
+        zone_id: str | None = None,
+    ) -> list[SessionAggregateRecord]: ...
+
+    def delete_all_user_data(self, user_id: str) -> None: ...
 
 
 def _parse_layout_json(raw_layout: Any) -> list[PanelLayoutSchema]:
@@ -584,6 +612,93 @@ class SupabaseStore:
         raw_bytes = self._client.storage.from_(STORAGE_PACKS_BUCKET).download(storage_path)
         return parse_study_pack(raw_bytes)
 
+    def upsert_session_aggregate(
+        self,
+        user_id: str,
+        zone_id: str,
+        session_id: str,
+        payload: dict[str, Any],
+    ) -> SessionAggregateRecord:
+        # grava o agregado de sessão de forma idempotente pela restrição única (user_id, session_id)
+        row_payload = {
+            "user_id": user_id,
+            "zone_id": zone_id,
+            "session_id": session_id,
+            "payload": payload,
+        }
+        response = (
+            self._client.table("session_aggregates")
+            .upsert(row_payload, on_conflict="user_id,session_id")
+            .execute()
+        )
+        rows = cast(list[dict[str, Any]], response.data or [])
+        row = rows[0]
+        return SessionAggregateRecord(
+            id=str(row["id"]),
+            user_id=str(row["user_id"]),
+            zone_id=str(row["zone_id"]),
+            session_id=str(row["session_id"]),
+            payload=cast(dict[str, Any], row.get("payload", {})),
+            created_at=str(row["created_at"]),
+        )
+
+    def list_session_aggregates(
+        self,
+        user_id: str,
+        zone_id: str | None = None,
+    ) -> list[SessionAggregateRecord]:
+        query = self._client.table("session_aggregates").select("*").eq("user_id", user_id)
+        if zone_id is not None:
+            query = query.eq("zone_id", zone_id)
+        response = query.order("created_at", desc=True).execute()
+        rows = cast(list[dict[str, Any]], response.data or [])
+        return [
+            SessionAggregateRecord(
+                id=str(row["id"]),
+                user_id=str(row["user_id"]),
+                zone_id=str(row["zone_id"]),
+                session_id=str(row["session_id"]),
+                payload=cast(dict[str, Any], row.get("payload", {})),
+                created_at=str(row["created_at"]),
+            )
+            for row in rows
+        ]
+
+    def delete_all_user_data(self, user_id: str) -> None:
+        # remove os arquivos do storage e apaga todas as linhas do usuário em todas as tabelas
+        sources_resp = (
+            self._client.table("sources").select("storage_path").eq("user_id", user_id).execute()
+        )
+        source_paths = [
+            str(r["storage_path"])
+            for r in cast(list[dict[str, Any]], sources_resp.data or [])
+            if r.get("storage_path")
+        ]
+        if source_paths:
+            self._client.storage.from_(STORAGE_SOURCES_BUCKET).remove(source_paths)
+
+        packs_resp = (
+            self._client.table("packs").select("storage_path").eq("user_id", user_id).execute()
+        )
+        pack_paths = [
+            str(r["storage_path"])
+            for r in cast(list[dict[str, Any]], packs_resp.data or [])
+            if r.get("storage_path")
+        ]
+        if pack_paths:
+            self._client.storage.from_(STORAGE_PACKS_BUCKET).remove(pack_paths)
+
+        for table_name in (
+            "session_aggregates",
+            "consents",
+            "jobs",
+            "chunks",
+            "sources",
+            "packs",
+            "zones",
+        ):
+            self._client.table(table_name).delete().eq("user_id", user_id).execute()
+
 
 class InMemoryStore:
     """armazenamento em memória usado em testes automatizados sem chamadas de rede."""
@@ -594,6 +709,7 @@ class InMemoryStore:
         self.chunks: list[ChunkRecord] = []
         self.jobs: dict[str, JobRecord] = {}
         self.packs: dict[str, PackRecord] = {}
+        self.session_aggregates: dict[tuple[str, str], SessionAggregateRecord] = {}
         self.storage_objects: dict[str, bytes] = {}
 
     def _zone_source_ids(self, user_id: str, zone_id: str) -> list[str]:
@@ -863,6 +979,52 @@ class InMemoryStore:
         if raw_bytes is None:
             return None
         return parse_study_pack(raw_bytes)
+
+    def upsert_session_aggregate(
+        self,
+        user_id: str,
+        zone_id: str,
+        session_id: str,
+        payload: dict[str, Any],
+    ) -> SessionAggregateRecord:
+        key = (user_id, session_id)
+        existing = self.session_aggregates.get(key)
+        record = SessionAggregateRecord(
+            id=existing.id if existing is not None else str(uuid4()),
+            user_id=user_id,
+            zone_id=zone_id,
+            session_id=session_id,
+            payload=dict(payload),
+            created_at=existing.created_at if existing is not None else _utc_now_iso(),
+        )
+        self.session_aggregates[key] = record
+        return record
+
+    def list_session_aggregates(
+        self,
+        user_id: str,
+        zone_id: str | None = None,
+    ) -> list[SessionAggregateRecord]:
+        items = [
+            rec
+            for rec in self.session_aggregates.values()
+            if rec.user_id == user_id and (zone_id is None or rec.zone_id == zone_id)
+        ]
+        items.sort(key=lambda r: r.created_at, reverse=True)
+        return items
+
+    def delete_all_user_data(self, user_id: str) -> None:
+        user_zone_ids = [z.id for z in self.zones.values() if z.user_id == user_id]
+        for zid in user_zone_ids:
+            self.delete_zone(user_id, zid)
+        pack_ids = [p.id for p in self.packs.values() if p.user_id == user_id]
+        for pid in pack_ids:
+            path = self.packs[pid].storage_path
+            self.storage_objects.pop(path, None)
+            del self.packs[pid]
+        agg_keys = [k for k, v in self.session_aggregates.items() if v.user_id == user_id]
+        for key in agg_keys:
+            del self.session_aggregates[key]
 
 
 def get_db_store(request: Request) -> DatabaseStore:

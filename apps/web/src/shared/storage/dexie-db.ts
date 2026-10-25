@@ -5,6 +5,7 @@ import demoEngineeringPackRaw from '../../../public/demo-packs/engineering-dc-ci
 import demoHealthPackRaw from '../../../public/demo-packs/health-human-anatomy.json';
 import { logger } from '../logger';
 import type { StudyPack } from '../types/study-pack';
+import type { SessionAggregateEnvelope, TelemetryEvent } from '../types/telemetry';
 import type { PanelLayout, Zone } from '../types/zone';
 import { validateStudyPack } from '../validation/study-pack-validator';
 
@@ -42,6 +43,10 @@ export interface StoredUserConsent {
   updatedAt: string;
 }
 
+export interface StoredTelemetryEvent extends TelemetryEvent {
+  id?: number;
+}
+
 export interface LayoutRepository {
   loadLayout(zoneId: string): Promise<PanelLayout[] | null>;
   saveLayout(zoneId: string, layout: PanelLayout[]): Promise<void>;
@@ -64,6 +69,12 @@ export interface LayoutRepository {
   loadPdfFile?(zoneId: string): Promise<StoredPdfFile | null>;
   loadConsent?(): Promise<StoredUserConsent | null>;
   saveConsent?(consent: Omit<StoredUserConsent, 'id' | 'updatedAt'>): Promise<StoredUserConsent>;
+  appendTelemetryEvent?(event: TelemetryEvent): Promise<void>;
+  listTelemetryEvents?(sessionId: string): Promise<TelemetryEvent[]>;
+  saveSessionAggregate?(aggregate: SessionAggregateEnvelope): Promise<void>;
+  listSessionAggregates?(zoneId?: string): Promise<SessionAggregateEnvelope[]>;
+  listUnsyncedAggregates?(): Promise<SessionAggregateEnvelope[]>;
+  markAggregateSynced?(sessionId: string): Promise<void>;
   clearAllLocalData?(): Promise<void>;
 }
 
@@ -101,6 +112,8 @@ export class ImagginaiDatabase extends Dexie {
   sessionStates!: Table<StoredZoneSessionState, string>;
   pdfFiles!: Table<StoredPdfFile, string>;
   consents!: Table<StoredUserConsent, string>;
+  telemetryEvents!: Table<StoredTelemetryEvent, number>;
+  sessionAggregates!: Table<SessionAggregateEnvelope, string>;
 
   constructor(name = 'imagginai-db') {
     super(name);
@@ -122,6 +135,16 @@ export class ImagginaiDatabase extends Dexie {
       sessionStates: 'zoneId, exitedAt',
       pdfFiles: 'zoneId, sourceId, savedAt',
       consents: 'id, updatedAt',
+    });
+    this.version(4).stores({
+      zones: 'id, packId, updatedAt',
+      zoneLayouts: 'zoneId, updatedAt',
+      studyPacks: 'packId, zoneId, savedAt',
+      sessionStates: 'zoneId, exitedAt',
+      pdfFiles: 'zoneId, sourceId, savedAt',
+      consents: 'id, updatedAt',
+      telemetryEvents: '++id, sessionId, zoneId, type, tMonoMs',
+      sessionAggregates: 'sessionId, zoneId, synced, createdAt',
     });
   }
 }
@@ -152,6 +175,8 @@ export class DexieLayoutRepository implements LayoutRepository {
   private readonly zoneFallback = new Map<string, Zone>();
   private readonly packFallback = new Map<string, StudyPack>();
   private readonly pdfFallback = new Map<string, StoredPdfFile>();
+  private readonly telemetryEventsFallback: TelemetryEvent[] = [];
+  private readonly aggregatesFallback = new Map<string, SessionAggregateEnvelope>();
   private consentFallback: StoredUserConsent | null = null;
   private demoSeeded = false;
 
@@ -415,12 +440,96 @@ export class DexieLayoutRepository implements LayoutRepository {
     return record;
   }
 
+  async appendTelemetryEvent(event: TelemetryEvent): Promise<void> {
+    const copy: TelemetryEvent = {
+      ...event,
+      payload: { ...event.payload },
+    };
+    this.telemetryEventsFallback.push(copy);
+    try {
+      await this.db.telemetryEvents.add(copy);
+    } catch (error) {
+      logger.warn('dexie appendTelemetryEvent fell back to memory', error);
+    }
+  }
+
+  async listTelemetryEvents(sessionId: string): Promise<TelemetryEvent[]> {
+    try {
+      const rows = await this.db.telemetryEvents.where('sessionId').equals(sessionId).toArray();
+      if (rows.length > 0) {
+        return rows.map((row) => ({
+          sessionId: row.sessionId,
+          zoneId: row.zoneId,
+          type: row.type,
+          tMonoMs: row.tMonoMs,
+          payload: { ...row.payload },
+        }));
+      }
+    } catch (error) {
+      logger.warn('dexie listTelemetryEvents fell back to memory', error);
+    }
+    return this.telemetryEventsFallback.filter((item) => item.sessionId === sessionId);
+  }
+
+  async saveSessionAggregate(aggregate: SessionAggregateEnvelope): Promise<void> {
+    const copy: SessionAggregateEnvelope = {
+      ...aggregate,
+      payload: { ...aggregate.payload },
+    };
+    this.aggregatesFallback.set(copy.sessionId, copy);
+    try {
+      await this.db.sessionAggregates.put(copy);
+    } catch (error) {
+      logger.warn('dexie saveSessionAggregate fell back to memory', error);
+    }
+  }
+
+  async listSessionAggregates(zoneId?: string): Promise<SessionAggregateEnvelope[]> {
+    let items: SessionAggregateEnvelope[] = [...this.aggregatesFallback.values()];
+    try {
+      const dbItems = zoneId
+        ? await this.db.sessionAggregates.where('zoneId').equals(zoneId).toArray()
+        : await this.db.sessionAggregates.toArray();
+      if (dbItems.length > 0) {
+        items = dbItems;
+      }
+    } catch (error) {
+      logger.warn('dexie listSessionAggregates fell back to memory', error);
+    }
+    if (zoneId) {
+      items = items.filter((item) => item.zoneId === zoneId);
+    }
+    return items.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  async listUnsyncedAggregates(): Promise<SessionAggregateEnvelope[]> {
+    const all = await this.listSessionAggregates();
+    return all.filter((item) => !item.synced);
+  }
+
+  async markAggregateSynced(sessionId: string): Promise<void> {
+    const existing = this.aggregatesFallback.get(sessionId);
+    if (existing) {
+      this.aggregatesFallback.set(sessionId, { ...existing, synced: true });
+    }
+    try {
+      const dbRecord = await this.db.sessionAggregates.get(sessionId);
+      if (dbRecord) {
+        await this.db.sessionAggregates.put({ ...dbRecord, synced: true });
+      }
+    } catch (error) {
+      logger.warn('dexie markAggregateSynced fell back to memory', error);
+    }
+  }
+
   async clearAllLocalData(): Promise<void> {
     this.memoryFallback.clear();
     this.sessionFallback.clear();
     this.zoneFallback.clear();
     this.packFallback.clear();
     this.pdfFallback.clear();
+    this.telemetryEventsFallback.length = 0;
+    this.aggregatesFallback.clear();
     this.consentFallback = null;
     this.demoSeeded = false;
     try {
@@ -431,6 +540,8 @@ export class DexieLayoutRepository implements LayoutRepository {
         this.db.sessionStates.clear(),
         this.db.pdfFiles.clear(),
         this.db.consents.clear(),
+        this.db.telemetryEvents.clear(),
+        this.db.sessionAggregates.clear(),
       ]);
     } catch (error) {
       logger.warn('dexie clearAllLocalData failed', error);

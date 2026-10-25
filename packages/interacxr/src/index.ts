@@ -17,6 +17,7 @@ export type {
   InteractionMode,
   InteractionState,
 } from './core/interaction-manager';
+export { LANDMARK } from './core/landmarks';
 export type { HandDataDetail, HandLandmarks, Landmark } from './core/landmarks';
 export { CameraService, DEFAULT_CAMERA_OPTIONS } from './core/camera-service';
 export type { CameraServiceOptions } from './core/camera-service';

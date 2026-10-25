@@ -1,7 +1,10 @@
+import { zoneStorage, type LayoutRepository } from '../../shared/storage/dexie-db';
 import type { StudyPack } from '../../shared/types/study-pack';
+import type { SessionAggregateEnvelope } from '../../shared/types/telemetry';
 import type { PanelLayout, Zone } from '../../shared/types/zone';
 import { validateStudyPack } from '../../shared/validation/study-pack-validator';
 import type { EnvironmentPreset } from '../../zone/config/constants';
+import { containsForbiddenTelemetryField } from '../../zone/systems/telemetry-aggregator';
 import { getAccessToken } from './supabase-client';
 
 export interface JobStatusResponse {
@@ -147,4 +150,62 @@ export async function fetchZoneStudyPack(zoneId: string): Promise<StudyPack> {
     throw new Error(`StudyPack inválido retornado pela API: ${validated.errors.join('; ')}`);
   }
   return validated.pack;
+}
+
+export async function submitTelemetryAggregateRemote(
+  envelope: SessionAggregateEnvelope,
+): Promise<void> {
+  if (containsForbiddenTelemetryField(envelope)) {
+    throw new Error('Campos proibidos detectados no agregado de telemetria.');
+  }
+  const headers = await buildAuthHeaders();
+  const response = await fetch(`${getApiBaseUrl()}/telemetry/aggregates`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      sessionId: envelope.sessionId,
+      zoneId: envelope.zoneId,
+      payload: envelope.payload,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(await readErrorDetail(response));
+  }
+}
+
+// sincroniza a fila offline de agregados de telemetria somente quando o consentimento research=true está ativo
+export async function flushPendingTelemetryAggregates(
+  storage: LayoutRepository = zoneStorage,
+): Promise<number> {
+  const consent = await storage.loadConsent?.();
+  if (!consent?.research) {
+    return 0;
+  }
+  const token = await getAccessToken();
+  if (!token) {
+    return 0;
+  }
+  const pending = (await storage.listUnsyncedAggregates?.()) ?? [];
+  let syncedCount = 0;
+  for (const item of pending) {
+    try {
+      await submitTelemetryAggregateRemote(item);
+      await storage.markAggregateSynced?.(item.sessionId);
+      syncedCount += 1;
+    } catch {
+      // mantém na fila local para tentativa futura quando a conexão voltar
+    }
+  }
+  return syncedCount;
+}
+
+export async function deleteAllUserDataRemote(): Promise<void> {
+  const headers = await buildAuthHeaders(false);
+  const response = await fetch(`${getApiBaseUrl()}/me/data`, {
+    method: 'DELETE',
+    headers,
+  });
+  if (!response.ok && response.status !== 204) {
+    throw new Error(await readErrorDetail(response));
+  }
 }

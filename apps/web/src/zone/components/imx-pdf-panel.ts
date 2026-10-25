@@ -1,6 +1,17 @@
 import AFRAME, { type Component, type Entity } from 'aframe';
-import { getDocument, type PDFDocumentProxy } from 'pdfjs-dist';
+import * as pdfjsLib from 'pdfjs-dist';
 import type { CanvasTexture, Mesh, MeshBasicMaterial, PlaneGeometry } from 'three';
+
+if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.min.mjs',
+      import.meta.url,
+    ).toString();
+  } catch {
+    // fallback tolerante para ambientes sem suporte a import.meta.url
+  }
+}
 
 import { PT_BR } from '../../shared/i18n/pt-br';
 import { logger } from '../../shared/logger';
@@ -132,7 +143,8 @@ export class PdfPanelController {
   private readonly prevNav: NavButtonRefs;
   private readonly nextNav: NavButtonRefs;
   private readonly pageLabelEl: Entity;
-  private pdfDoc: PDFDocumentProxy | null = null;
+  private pdfDoc: pdfjsLib.PDFDocumentProxy | null = null;
+  private pdfBytes: Uint8Array | null = null;
   private loadedUrl = '';
   private currentPage: number;
   private totalPages: number;
@@ -238,6 +250,13 @@ export class PdfPanelController {
 
   get page(): number {
     return this.currentPage;
+  }
+
+  setPdfBytes(bytes: Uint8Array | null): void {
+    this.pdfBytes = bytes;
+    this.syntheticProvider = null;
+    this.evictAllTextures();
+    void this.syncDocumentAndWindow();
   }
 
   setSyntheticPageProvider(provider: SyntheticPageProvider): void {
@@ -372,14 +391,28 @@ export class PdfPanelController {
       this.pdfDoc = null;
     }
     this.loadedUrl = this.data.pdfUrl;
-    if (this.data.pdfUrl) {
+
+    if (this.pdfBytes && this.pdfBytes.length > 0) {
       try {
-        const loadingTask = getDocument({ url: this.data.pdfUrl });
+        const loadingTask = pdfjsLib.getDocument({ data: this.pdfBytes });
         this.pdfDoc = await loadingTask.promise;
         this.totalPages = Math.max(1, this.pdfDoc.numPages);
         this.currentPage = clampPdfPage(this.currentPage, this.totalPages);
       } catch (error) {
-        logger.warn('pdf.js load failed, falling back to offline synthetic page canvas', error);
+        logger.warn('pdf.js load from direct bytes failed', error);
+        this.pdfDoc = null;
+      }
+    } else if (this.data.pdfUrl) {
+      try {
+        const loadingTask = pdfjsLib.getDocument({ url: this.data.pdfUrl });
+        this.pdfDoc = await loadingTask.promise;
+        this.totalPages = Math.max(1, this.pdfDoc.numPages);
+        this.currentPage = clampPdfPage(this.currentPage, this.totalPages);
+      } catch (error) {
+        logger.warn(
+          'pdf.js load from url failed, falling back to offline synthetic page canvas',
+          error,
+        );
         this.pdfDoc = null;
       }
     }
