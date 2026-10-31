@@ -9,15 +9,16 @@ import type {
   StudyCard,
 } from '../../shared/types/study-pack';
 
-export const CONCEPT_GRAPH_VOLUME_HALF_WIDTH_M = 0.34;
-export const CONCEPT_GRAPH_VOLUME_HALF_HEIGHT_M = 0.2;
-export const CONCEPT_GRAPH_VOLUME_HALF_DEPTH_M = 0.1;
+export const CONCEPT_GRAPH_VOLUME_HALF_WIDTH_M = 0.5;
+export const CONCEPT_GRAPH_VOLUME_HALF_HEIGHT_M = 0.32;
+export const CONCEPT_GRAPH_VOLUME_HALF_DEPTH_M = 0.14;
 
 export interface ScaledGraphNode {
   readonly conceptId: string;
   readonly label: string;
   readonly definition: string;
   readonly anchors: readonly SourceAnchor[];
+  readonly depth: number;
   readonly x: number;
   readonly y: number;
   readonly z: number;
@@ -31,10 +32,18 @@ export interface ScaledGraphEdge {
   readonly toPos: { readonly x: number; readonly y: number; readonly z: number };
 }
 
+export interface NodeRelationItem {
+  readonly conceptId: string;
+  readonly label: string;
+  readonly relation: string;
+}
+
 export interface ConceptNodeSelection {
   readonly node: ScaledGraphNode;
   readonly connectedEdges: readonly ScaledGraphEdge[];
   readonly card: StudyCard;
+  readonly parents: readonly NodeRelationItem[];
+  readonly children: readonly NodeRelationItem[];
 }
 
 // controlador puro do grafo de conceitos 3d em volume espacial de ~0.8 m (seção 3.6.3)
@@ -58,6 +67,51 @@ export class ConceptGraphController {
 
     const targetIds = asset.nodeIds.length > 0 ? asset.nodeIds : concepts.map((c) => c.id);
 
+    // calcula in-degree de cada nó para identificar nós-raiz e propagar a profundidade estrutural
+    const inDegreeMap = new Map<string, number>();
+    for (const id of targetIds) {
+      inDegreeMap.set(id, 0);
+    }
+    for (const edge of edges) {
+      if (inDegreeMap.has(edge.targetId)) {
+        inDegreeMap.set(edge.targetId, (inDegreeMap.get(edge.targetId) ?? 0) + 1);
+      }
+    }
+
+    const minInDegree = targetIds.length > 0 ? Math.min(...Array.from(inDegreeMap.values())) : 0;
+    const rootIds = targetIds.filter((id) => (inDegreeMap.get(id) ?? 0) === minInDegree);
+
+    const depthMap = new Map<string, number>();
+    for (const r of rootIds) {
+      depthMap.set(r, 0);
+    }
+
+    const bfsQueue = [...rootIds];
+    const visited = new Set<string>(rootIds);
+    while (bfsQueue.length > 0) {
+      const currentId = bfsQueue.shift()!;
+      const currentDepth = depthMap.get(currentId) ?? 0;
+      for (const edge of edges) {
+        if (edge.sourceId === currentId && inDegreeMap.has(edge.targetId)) {
+          const nextId = edge.targetId;
+          const prevDepth = depthMap.get(nextId);
+          if (prevDepth === undefined || prevDepth < currentDepth + 1) {
+            depthMap.set(nextId, currentDepth + 1);
+          }
+          if (!visited.has(nextId)) {
+            visited.add(nextId);
+            bfsQueue.push(nextId);
+          }
+        }
+      }
+    }
+
+    for (const id of targetIds) {
+      if (!depthMap.has(id)) {
+        depthMap.set(id, 0);
+      }
+    }
+
     for (const nodeId of targetIds) {
       const concept = conceptMap.get(nodeId);
       if (!concept) continue;
@@ -65,11 +119,13 @@ export class ConceptGraphController {
       const x = Math.round(nx * CONCEPT_GRAPH_VOLUME_HALF_WIDTH_M * 1000) / 1000;
       const y = Math.round(ny * CONCEPT_GRAPH_VOLUME_HALF_HEIGHT_M * 1000) / 1000;
       const z = Math.round(nz * CONCEPT_GRAPH_VOLUME_HALF_DEPTH_M * 1000) / 1000;
+      const depth = depthMap.get(concept.id) ?? 0;
       const scaled: ScaledGraphNode = {
         conceptId: concept.id,
         label: concept.label,
         definition: concept.definition,
         anchors: concept.anchors,
+        depth,
         x,
         y,
         z,
@@ -94,11 +150,15 @@ export class ConceptGraphController {
 
     this.nodes = scaledNodes;
     this.edges = scaledEdges;
-    this.selectedConceptId = scaledNodes[0]?.conceptId ?? null;
+    this.selectedConceptId = null;
   }
 
   getSelectedConceptId(): string | null {
     return this.selectedConceptId;
+  }
+
+  clearSelection(): void {
+    this.selectedConceptId = null;
   }
 
   selectNode(conceptId: string): ConceptNodeSelection | null {
@@ -109,6 +169,28 @@ export class ConceptGraphController {
     const connectedEdges = this.edges.filter(
       (edge) => edge.fromId === conceptId || edge.toId === conceptId,
     );
+
+    const parents: NodeRelationItem[] = [];
+    const children: NodeRelationItem[] = [];
+
+    for (const edge of connectedEdges) {
+      if (edge.toId === conceptId) {
+        const parentNode = this.nodes.find((n) => n.conceptId === edge.fromId);
+        parents.push({
+          conceptId: edge.fromId,
+          label: parentNode?.label ?? edge.fromId,
+          relation: edge.relation,
+        });
+      } else if (edge.fromId === conceptId) {
+        const childNode = this.nodes.find((n) => n.conceptId === edge.toId);
+        children.push({
+          conceptId: edge.toId,
+          label: childNode?.label ?? edge.toId,
+          relation: edge.relation,
+        });
+      }
+    }
+
     const relationsSummary =
       connectedEdges.length > 0
         ? `\n\nRelações: ${connectedEdges
@@ -132,6 +214,8 @@ export class ConceptGraphController {
       node,
       connectedEdges,
       card,
+      parents,
+      children,
     };
   }
 }
@@ -316,8 +400,26 @@ export class QuizSessionController {
   private currentIndex = 0;
   private readonly answers = new Map<string, QuizAnswerFeedback>();
 
-  constructor(items: readonly QuizItem[]) {
+  constructor(items: readonly QuizItem[], initialQuestionId?: string) {
     this.items = items.length > 0 ? [...items] : [];
+    if (initialQuestionId && this.items.length > 0) {
+      const foundIdx = this.items.findIndex((item) => item.id === initialQuestionId);
+      if (foundIdx >= 0) {
+        this.currentIndex = foundIdx;
+      }
+    } else if (this.items.length > 0) {
+      const firstUnansweredIdx = this.items.findIndex((item) => !item.answered);
+      if (firstUnansweredIdx >= 0) {
+        this.currentIndex = firstUnansweredIdx;
+      }
+    }
+  }
+
+  goToQuestionById(questionId: string): QuizItem | null {
+    const foundIdx = this.items.findIndex((item) => item.id === questionId);
+    if (foundIdx < 0) return null;
+    this.currentIndex = foundIdx;
+    return this.getCurrentQuestion();
   }
 
   getTotalQuestions(): number {

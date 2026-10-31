@@ -7,6 +7,7 @@ import {
 } from './config/constants';
 import { formatDebugText, FpsMeter, parseZoneParams } from './config/zone-params';
 import { calcPassthroughPlaneSize } from './systems/calibration-math';
+import { FlashcardStateMachine, formatCardCitation } from './systems/flashcard-state';
 import { ModeController } from './systems/mode-controller';
 
 describe('passthrough plane-size math (section 3.7)', () => {
@@ -163,3 +164,51 @@ describe('zone runtime params and debug helpers', () => {
     expect(line).toBe('FPS: 58 | Hand: 18.6/20 Hz (24 ms) | Mode: passthrough');
   });
 });
+
+describe('FlashcardStateMachine interactive reveal and hide', () => {
+  it('formats verified citation strings correctly', () => {
+    expect(formatCardCitation('Material de estudo', 3)).toBe('Material de estudo | Pág. 3');
+    expect(
+      formatCardCitation(
+        'Um título extremamente longo que excede trinta e quatro caracteres',
+        12,
+      ),
+    ).toBe('Um título extremamente longo qu... | Pág. 12');
+  });
+
+  it('initializes in hidden (front) state with only title visible and reveal button', () => {
+    const sm = new FlashcardStateMachine({
+      title: 'Lei de Ohm',
+      body: 'A corrente é proporcional à diferença de potencial elétrico.',
+      sourcePage: 4,
+      sourceTitle: 'Física II',
+      accentColor: '#0284C7',
+    });
+
+    expect(sm.isRevealed).toBe(false);
+    expect(sm.getCenterText()).toBe('Lei de Ohm');
+    expect(sm.getButtonLabel()).toBe('Revelar');
+    expect(sm.getBadgeText()).toBe('FLASHCARD');
+    expect(sm.getCitation()).toBe('Física II | Pág. 4');
+
+    // alterna para revelado: centro exibe a descrição e botão muda para Ocultar
+    sm.toggle();
+    expect(sm.isRevealed).toBe(true);
+    expect(sm.getCenterText()).toBe('A corrente é proporcional à diferença de potencial elétrico.');
+    expect(sm.getButtonLabel()).toBe('Ocultar');
+    expect(sm.getBadgeText()).toBe('Lei de Ohm');
+
+    // alterna de volta para oculto: centro volta a exibir apenas o título
+    sm.toggle();
+    expect(sm.isRevealed).toBe(false);
+    expect(sm.getCenterText()).toBe('Lei de Ohm');
+    expect(sm.getButtonLabel()).toBe('Revelar');
+
+    sm.reveal();
+    expect(sm.isRevealed).toBe(true);
+
+    sm.hide();
+    expect(sm.isRevealed).toBe(false);
+  });
+});
+

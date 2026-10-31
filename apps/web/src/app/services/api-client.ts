@@ -1,5 +1,5 @@
 import { zoneStorage, type LayoutRepository } from '../../shared/storage/dexie-db';
-import type { StudyPack } from '../../shared/types/study-pack';
+import type { StudyCard, StudyPack } from '../../shared/types/study-pack';
 import type { SessionAggregateEnvelope } from '../../shared/types/telemetry';
 import type { PanelLayout, Zone } from '../../shared/types/zone';
 import { validateStudyPack } from '../../shared/validation/study-pack-validator';
@@ -140,6 +140,25 @@ export async function fetchZoneStudyPack(zoneId: string): Promise<StudyPack> {
   const headers = await buildAuthHeaders(false);
   const response = await fetch(`${getApiBaseUrl()}/zones/${encodeURIComponent(zoneId)}/pack`, {
     headers,
+  });
+  if (!response.ok) {
+    throw new Error(await readErrorDetail(response));
+  }
+  const raw: unknown = await response.json();
+  const validated = validateStudyPack(raw);
+  if (!validated.ok) {
+    throw new Error(`StudyPack inválido retornado pela API: ${validated.errors.join('; ')}`);
+  }
+  return validated.pack;
+}
+
+// adiciona e persiste um flashcard no study pack remoto vinculado à conta autenticada
+export async function saveZoneCardRemote(zoneId: string, card: StudyCard): Promise<StudyPack> {
+  const headers = await buildAuthHeaders(true);
+  const response = await fetch(`${getApiBaseUrl()}/zones/${encodeURIComponent(zoneId)}/cards`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(card),
   });
   if (!response.ok) {
     throw new Error(await readErrorDetail(response));

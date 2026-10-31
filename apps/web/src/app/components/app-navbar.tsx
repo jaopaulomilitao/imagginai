@@ -1,8 +1,21 @@
-import { CubeFocus, Moon, ShieldCheck, SignIn, SignOut, Sun } from '@phosphor-icons/react';
+import { CubeFocus, Hand, Moon, ShieldCheck, SignIn, SignOut, Sun } from '@phosphor-icons/react';
+import { useState } from 'react';
 import { Link } from 'react-router';
 
 import { PT_BR } from '../../shared/i18n/pt-br';
 import type { ZoneTheme } from '../../zone/config/constants';
+
+const HAND_STYLE_KEY = 'imx-hand-style';
+export type HandStyleOption = 'classic' | 'stylized';
+
+function readStoredHandStyle(): HandStyleOption {
+  try {
+    const val = localStorage.getItem(HAND_STYLE_KEY);
+    return val === 'classic' ? 'classic' : 'stylized';
+  } catch {
+    return 'stylized';
+  }
+}
 
 export interface AppNavbarProps {
   readonly themeId: ZoneTheme;
@@ -19,6 +32,19 @@ export function AppNavbar({
   onOpenConsent,
   onSignOut,
 }: AppNavbarProps) {
+  const [handStyle, setHandStyle] = useState<HandStyleOption>(readStoredHandStyle);
+
+  const handleToggleHandStyle = () => {
+    const next: HandStyleOption = handStyle === 'classic' ? 'stylized' : 'classic';
+    setHandStyle(next);
+    try {
+      localStorage.setItem(HAND_STYLE_KEY, next);
+      window.dispatchEvent(new CustomEvent('imx-hand-style-change', { detail: { style: next } }));
+    } catch {
+      // ignora caso localStorage não esteja disponível
+    }
+  };
+
   return (
     <header className="imx-navbar-frame">
       <div className="flex items-center gap-3">
@@ -41,6 +67,16 @@ export function AppNavbar({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          className="imx-glass-button text-xs py-2 px-3.5"
+          onClick={handleToggleHandStyle}
+          title="Alternar estilo do modelo 3D da mão na Zona VR (Clássica / Estilizada)"
+        >
+          <Hand size={17} weight="regular" />
+          <span>Mão: {handStyle === 'classic' ? 'Clássica' : 'Estilizada'}</span>
+        </button>
+
         <button
           type="button"
           className="imx-glass-button text-xs py-2 px-3.5"

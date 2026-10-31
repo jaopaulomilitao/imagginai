@@ -174,8 +174,12 @@ export class HandTracker {
           handedness: (idx === 0 ? 'right' : 'left') as 'left' | 'right',
           score: 1.0,
         }));
+      // uma única mão visível sempre assume clique/movimento (nunca rotação);
+      // com duas mãos, apenas a mão direita alimenta o detector de clique/movimento
       const primaryHand =
-        hands.find((h) => h.handedness === 'right')?.landmarks ?? hands[0]?.landmarks ?? null;
+        hands.length === 1
+          ? (hands[0]?.landmarks ?? null)
+          : (hands.find((h) => h.handedness === 'right')?.landmarks ?? null);
       this.onResult(primaryHand, hands);
     } else {
       logger.error('hand worker failed', message.message);
@@ -187,7 +191,7 @@ export class HandTracker {
   private onResult(landmarks: HandLandmarks | null, hands: readonly TrackedHand[] = []): void {
     const now = this.dependencies.now();
     this.busy = false;
-    this.rate.reportHand(landmarks !== null, now);
+    this.rate.reportHand(landmarks !== null || hands.length > 0, now);
     this.updateStats(now);
     const frame: HandFrame = {
       landmarks,

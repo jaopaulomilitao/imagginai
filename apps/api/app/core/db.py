@@ -574,7 +574,7 @@ class SupabaseStore:
             "model": pack.meta.model,
             "discarded": pack.meta.discarded,
         }
-        response = self._client.table("packs").insert(payload).execute()
+        response = self._client.table("packs").upsert(payload, on_conflict="id").execute()
         row = cast(list[dict[str, Any]], response.data or [])[0]
         self._client.table("zones").update({"pack_id": pack.pack_id}).eq("user_id", user_id).eq(
             "id", zone_id

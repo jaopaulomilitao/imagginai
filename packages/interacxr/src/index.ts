@@ -6,6 +6,7 @@ import './aframe/ixr-hand-model';
 import './aframe/ixr-cursor';
 import './aframe/ixr-gaze-grabber';
 import './aframe/ixr-interactor';
+import './aframe/ixr-rotatable';
 import './aframe/ixr-teleport';
 import './aframe/ixr-passthrough';
 // o componente orquestrador
@@ -84,8 +85,18 @@ export type {
 } from './core/pose-classifier';
 export { HAND_LOST_EVENT } from './aframe/ixr-gesture-detector';
 export type { PosePayload } from './aframe/ixr-gesture-detector';
+export {
+  HAND_CONNECTIONS,
+  HAND_STYLE_CHANGE_EVENT,
+  HAND_STYLE_STORAGE_KEY,
+  HandModelController,
+  STYLIZED_SPHERE_LANDMARK_SET,
+} from './aframe/ixr-hand-model';
+export type { HandModelComponent, HandVisualStyle } from './aframe/ixr-hand-model';
 export { CursorController } from './aframe/ixr-cursor';
 export type { CursorComponent, CursorHoverDetail } from './aframe/ixr-cursor';
+export { RotatableController } from './aframe/ixr-rotatable';
+export type { RotatableComponent, RotatableData } from './aframe/ixr-rotatable';
 export { domObserverFactory, TargetCache } from './core/target-cache';
 export type { ObserverFactory } from './core/target-cache';
 export {

@@ -47,6 +47,7 @@ describe('Phase 9 — Learning Assets, Quiz, Telemetry & Performance Degradation
       expect(Math.abs(node.x)).toBeLessThanOrEqual(CONCEPT_GRAPH_VOLUME_HALF_WIDTH_M);
       expect(Math.abs(node.y)).toBeLessThanOrEqual(CONCEPT_GRAPH_VOLUME_HALF_HEIGHT_M);
       expect(Math.abs(node.z)).toBeLessThanOrEqual(CONCEPT_GRAPH_VOLUME_HALF_DEPTH_M);
+      expect(node.depth).toBeGreaterThanOrEqual(0);
     }
 
     const targetConceptId = controller.nodes[0]?.conceptId ?? '';
@@ -54,6 +55,8 @@ describe('Phase 9 — Learning Assets, Quiz, Telemetry & Performance Degradation
     expect(selection).not.toBeNull();
     expect(selection?.card.conceptIds).toContain(targetConceptId);
     expect(selection?.card.anchors.length).toBeGreaterThan(0);
+    expect(Array.isArray(selection?.parents)).toBe(true);
+    expect(Array.isArray(selection?.children)).toBe(true);
   });
 
   it('SequenceOrderController shuffles steps, swaps slots, and validates correct order with citations', () => {
@@ -122,6 +125,16 @@ describe('Phase 9 — Learning Assets, Quiz, Telemetry & Performance Degradation
       correct: 1,
       total: 4,
     });
+
+    // verifica inicialização na questão clicada e avanço pelo botão "próxima pergunta"
+    const secondId = pack.quiz[1]?.id;
+    const fullController = new QuizSessionController(pack.quiz, secondId);
+    expect(fullController.getCurrentIndex()).toBe(1);
+    expect(fullController.getCurrentQuestion()?.id).toBe(secondId);
+
+    const nextQ = fullController.advanceToNextUnanswered();
+    expect(nextQ?.id).not.toBe(secondId);
+    expect(fullController.getCurrentIndex()).toBe(2);
   });
 
   it('aggregates session telemetry into buckets (0-5s, 5-30s, >30s) and computes quiz/pinch/mode metrics', () => {

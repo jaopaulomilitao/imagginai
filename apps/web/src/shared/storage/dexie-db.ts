@@ -32,6 +32,7 @@ export interface StoredPdfFile {
   zoneId: string;
   sourceId: string;
   title: string;
+  pageCount?: number;
   data: Uint8Array;
   savedAt: string;
 }
@@ -358,8 +359,20 @@ export class DexieLayoutRepository implements LayoutRepository {
   async saveStudyPack(zoneId: string, pack: StudyPack): Promise<void> {
     const normalized: StudyPack = { ...pack, zoneId };
     this.packFallback.set(zoneId, normalized);
+    if (zoneId === 'demo') {
+      this.packFallback.set('zone-demo', normalized);
+    } else if (zoneId === 'zone-demo') {
+      this.packFallback.set('demo', normalized);
+    }
     const savedAt = new Date().toISOString();
     try {
+      // remove pacotes antigos vinculados à mesma zona para evitar sombreamento pelo pacote demo inicial
+      const existingPacks = await this.db.studyPacks.where('zoneId').equals(zoneId).toArray();
+      for (const old of existingPacks) {
+        if (old.packId !== normalized.packId) {
+          await this.db.studyPacks.delete(old.packId);
+        }
+      }
       await this.db.studyPacks.put({
         packId: normalized.packId,
         zoneId,
@@ -385,18 +398,36 @@ export class DexieLayoutRepository implements LayoutRepository {
   async loadStudyPack(zoneId: string): Promise<StudyPack | null> {
     await this.ensureDemoZonesSeeded();
     try {
-      const record = await this.db.studyPacks.where('zoneId').equals(zoneId).first();
-      if (record) return record.pack;
+      let records = await this.db.studyPacks.where('zoneId').equals(zoneId).toArray();
+      if (records.length === 0 && zoneId === 'zone-demo') {
+        records = await this.db.studyPacks.where('zoneId').equals('demo').toArray();
+      }
+      if (records.length > 0) {
+        records.sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+        const latest = records[0];
+        if (latest) return latest.pack;
+      }
     } catch (error) {
       logger.warn('dexie loadStudyPack fell back to memory', error);
     }
-    return this.packFallback.get(zoneId) ?? resolveBundledDemoPack(zoneId);
+    const fallbackId = zoneId === 'zone-demo' && !this.packFallback.has(zoneId) ? 'demo' : zoneId;
+    return this.packFallback.get(fallbackId) ?? resolveBundledDemoPack(zoneId);
   }
 
   async savePdfFile(record: StoredPdfFile): Promise<void> {
     this.pdfFallback.set(record.zoneId, record);
+    if (record.zoneId === 'demo') {
+      this.pdfFallback.set('zone-demo', { ...record, zoneId: 'zone-demo' });
+    } else if (record.zoneId === 'zone-demo') {
+      this.pdfFallback.set('demo', { ...record, zoneId: 'demo' });
+    }
     try {
       await this.db.pdfFiles.put(record);
+      if (record.zoneId === 'demo') {
+        await this.db.pdfFiles.put({ ...record, zoneId: 'zone-demo' });
+      } else if (record.zoneId === 'zone-demo') {
+        await this.db.pdfFiles.put({ ...record, zoneId: 'demo' });
+      }
     } catch (error) {
       logger.warn('dexie savePdfFile fell back to memory', error);
     }
@@ -406,13 +437,18 @@ export class DexieLayoutRepository implements LayoutRepository {
     try {
       const record = await this.db.pdfFiles.get(zoneId);
       if (record) return record;
-      // busca o pdf mais recente gravado localmente para garantir o binding mesmo com ids alternativos (seção 5)
-      const latest = await this.db.pdfFiles.orderBy('savedAt').last();
-      if (latest) return latest;
+      if (zoneId === 'zone-demo') {
+        const demoRecord = await this.db.pdfFiles.get('demo');
+        if (demoRecord) return demoRecord;
+      }
     } catch (error) {
       logger.warn('dexie loadPdfFile fell back to memory', error);
     }
-    return this.pdfFallback.get(zoneId) ?? Array.from(this.pdfFallback.values()).pop() ?? null;
+    return (
+      this.pdfFallback.get(zoneId) ??
+      (zoneId === 'zone-demo' ? this.pdfFallback.get('demo') : undefined) ??
+      null
+    );
   }
 
   async loadConsent(): Promise<StoredUserConsent | null> {

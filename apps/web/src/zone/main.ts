@@ -11,6 +11,7 @@ import './components/imx-pdf-panel';
 import './components/imx-concept-graph';
 import './components/imx-sequence-asset';
 import './components/imx-quiz-panel';
+import './components/imx-node-analysis-panel';
 import './components/imx-drag-handle';
 import './components/imx-belt-menu';
 import './systems/rounded-shape';

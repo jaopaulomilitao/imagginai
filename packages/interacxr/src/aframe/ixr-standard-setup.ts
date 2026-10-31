@@ -8,10 +8,10 @@ export type StandardSetupComponent = Component<StandardSetupData>;
 
 function defaultComponents(cameraId: string, rig: string): [string, string][] {
   return [
-    ['ixr-hand-tracking', 'maxHands: 1'],
+    ['ixr-hand-tracking', 'maxHands: 2'],
     ['ixr-gesture-detector', `source: ${cameraId}`],
     ['ixr-hand-model', `source: ${cameraId}`],
-    ['ixr-cursor', 'targetClass: .grabbable, .interactable'],
+    ['ixr-cursor', 'targetClass: .grabbable, .interactable, .rotatable'],
     ['ixr-gaze-grabber', 'targetClass: .grabbable; activationPose: victory; grabPose: grab'],
     ['ixr-interactor', 'targetClass: .interactable; interactPose: pinch'],
     [

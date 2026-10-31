@@ -18,7 +18,7 @@ from fastapi import (
 
 from app.core.auth import AuthenticatedUser, get_current_user
 from app.core.db import DatabaseStore, ZoneRecord, get_db_store
-from app.schemas.study_pack import StudyPack
+from app.schemas.study_pack import SourceAnchor, StudyCard, StudyPack
 from app.schemas.zones import (
     SourceUploadResponse,
     ZoneCreateRequest,
@@ -209,3 +209,81 @@ def get_zone_pack(
     if pack is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="study pack not found")
     return pack
+
+
+@router.post("/{zone_id}/cards", response_model=StudyPack, status_code=status.HTTP_201_CREATED)
+def add_zone_card(
+    zone_id: str,
+    card: StudyCard,
+    current_user: Annotated[AuthenticatedUser, Depends(get_current_user)],
+    store: Annotated[DatabaseStore, Depends(get_db_store)],
+) -> StudyPack:
+    """adiciona e persiste um flashcard no study pack da zona autenticada."""
+    zone = store.get_zone(current_user.user_id, zone_id)
+    if zone is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="zone not found")
+
+    pack = store.get_zone_study_pack(current_user.user_id, zone_id)
+    if pack is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="study pack not found")
+
+    concept_by_id = {c.id: c for c in pack.concepts}
+    source_by_id = {s.id: s for s in pack.sources}
+    fallback_concept = pack.concepts[0]
+    fallback_source = pack.sources[0]
+
+    valid_concept_ids = [cid for cid in card.concept_ids if cid in concept_by_id]
+    if not valid_concept_ids:
+        valid_concept_ids = [fallback_concept.id]
+
+    primary_concept = concept_by_id[valid_concept_ids[0]]
+
+    valid_anchors: list[SourceAnchor] = []
+    for anchor in card.anchors:
+        src = source_by_id.get(anchor.source_id)
+        if src is not None:
+            clamped_page = max(1, min(anchor.page, src.page_count))
+            valid_anchors.append(
+                SourceAnchor(
+                    source_id=src.id,
+                    page=clamped_page,
+                    chunk_id=anchor.chunk_id,
+                )
+            )
+    if not valid_anchors:
+        if primary_concept.anchors:
+            valid_anchors = list(primary_concept.anchors)
+        else:
+            valid_anchors = [
+                SourceAnchor(
+                    source_id=fallback_source.id,
+                    page=1,
+                    chunk_id=f"chunk-{primary_concept.id}",
+                )
+            ]
+
+    normalized_card = StudyCard(
+        id=card.id,
+        title=card.title,
+        body=card.body,
+        concept_ids=valid_concept_ids,
+        anchors=valid_anchors,
+    )
+
+    existing_cards = [c for c in pack.cards if c.id != normalized_card.id]
+    updated_pack = StudyPack(
+        schema_version=pack.schema_version,
+        pack_id=pack.pack_id,
+        zone_id=pack.zone_id,
+        created_at=pack.created_at,
+        sources=pack.sources,
+        concepts=pack.concepts,
+        edges=pack.edges,
+        cards=[*existing_cards, normalized_card],
+        quiz=pack.quiz,
+        assets=pack.assets,
+        meta=pack.meta,
+    )
+    store.save_study_pack(current_user.user_id, zone_id, updated_pack)
+    return updated_pack
+

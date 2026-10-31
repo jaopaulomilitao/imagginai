@@ -171,6 +171,9 @@ export const PT_BR = {
       radiusNearer: 'Aproximar',
       radiusFarther: 'Afastar',
       deletePanel: 'Remover da cena',
+      flashcardReveal: 'Revelar',
+      flashcardHide: 'Ocultar',
+      flashcardBadge: 'FLASHCARD',
       welcomePlaceholderTitle: 'Espaço de Estudo Livre',
       welcomePlaceholderBody:
         'Olhe para baixo e toque em Conteúdos no menu central para adicionar seu PDF, flashcards, quiz ou objetos de estudo à cena.',

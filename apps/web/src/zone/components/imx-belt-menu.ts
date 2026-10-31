@@ -1,5 +1,10 @@
 import AFRAME, { type Component, type Entity } from 'aframe';
-import type { CursorComponent } from 'interacxr';
+import {
+  HAND_STYLE_CHANGE_EVENT,
+  HAND_STYLE_STORAGE_KEY,
+  type CursorComponent,
+  type HandVisualStyle,
+} from 'interacxr';
 
 import { PT_BR } from '../../shared/i18n/pt-br';
 import { logger } from '../../shared/logger';
@@ -214,8 +219,85 @@ export class BeltMenuBridge {
       this.executeAction('toggle-pomodoro');
     } else if (key === BELT_SHORTCUT_RECENTER_KEY) {
       this.executeAction('recenter');
+    } else if (key === 'h') {
+      this.toggleHandStyle();
     }
   };
+
+  private readHandStyle(): HandVisualStyle {
+    try {
+      const val = localStorage.getItem(HAND_STYLE_STORAGE_KEY);
+      return val === 'classic' ? 'classic' : 'stylized';
+    } catch {
+      return 'stylized';
+    }
+  }
+
+  private toggleHandStyle(): void {
+    const next: HandVisualStyle = this.readHandStyle() === 'classic' ? 'stylized' : 'classic';
+    try {
+      localStorage.setItem(HAND_STYLE_STORAGE_KEY, next);
+    } catch {
+      // ignora caso localStorage não esteja disponível
+    }
+    window.dispatchEvent(new CustomEvent(HAND_STYLE_CHANGE_EVENT, { detail: { style: next } }));
+    this.showToast(
+      next === 'stylized' ? 'Mão 3D: Estilizada (pontas e base)' : 'Mão 3D: Clássica (21 esferas)',
+      2200,
+    );
+    if (this.contentsPickerOpen) {
+      void this.populateContentsPicker();
+    }
+  }
+
+  // garante que o menu e submenus sejam sempre renderizados acima dos painéis da zona (renderOrder 800+ e depthTest: false)
+  private enforceMenuOnTop(targetEl: Entity = this.rootEl): void {
+    if (!targetEl.object3D) return;
+    targetEl.object3D.traverse((obj) => {
+      const mesh = obj as unknown as {
+        isMesh?: boolean;
+        renderOrder: number;
+        material?:
+          | { depthTest: boolean; depthWrite: boolean; needsUpdate?: boolean }
+          | { depthTest: boolean; depthWrite: boolean; needsUpdate?: boolean }[];
+        el?: HTMLElement;
+        parent?: { el?: HTMLElement; position?: { z?: number } } | null;
+        isTroikaText?: boolean;
+        text?: string;
+      };
+      if (!mesh.isMesh) return;
+
+      const isText =
+        Boolean(mesh.isTroikaText) ||
+        mesh.text !== undefined ||
+        mesh.el?.tagName?.toLowerCase() === 'a-troika-text' ||
+        mesh.parent?.el?.tagName?.toLowerCase() === 'a-troika-text';
+
+      const isIcon =
+        Boolean(mesh.el?.hasAttribute?.('data-phosphor-icon')) ||
+        Boolean(mesh.parent?.el?.hasAttribute?.('data-phosphor-icon'));
+
+      if (isText) {
+        mesh.renderOrder = 830;
+      } else if (isIcon) {
+        mesh.renderOrder = 822;
+      } else {
+        const parentZ = obj.parent?.position?.z ?? 0;
+        const localZ = obj.position?.z ?? 0;
+        mesh.renderOrder = 812 + Math.round((parentZ + localZ) * 100);
+      }
+
+      if (Array.isArray(mesh.material)) {
+        for (const mat of mesh.material) {
+          mat.depthTest = false;
+          mat.depthWrite = false;
+        }
+      } else if (mesh.material) {
+        mesh.material.depthTest = false;
+        mesh.material.depthWrite = false;
+      }
+    });
+  }
 
   constructor(
     private readonly el: Entity,
@@ -415,7 +497,7 @@ export class BeltMenuBridge {
     this.statusBorderEl.setAttribute('position', '0 0 -0.001');
     this.statusBorderEl.setAttribute(
       'material',
-      'shader: flat; color: #F5F3EB; opacity: 0.85; transparent: true',
+      `shader: flat; color: ${statusPalette.beltButtonBorderColor}; opacity: 0.85; transparent: true; depthTest: false; depthWrite: false`,
     );
     this.statusPillEl.appendChild(this.statusBorderEl);
 
@@ -427,7 +509,7 @@ export class BeltMenuBridge {
     this.statusBgEl.setAttribute('position', '0 0 0');
     this.statusBgEl.setAttribute(
       'material',
-      `shader: flat; color: ${statusPalette.statusPillBgColor}; opacity: 0.9; transparent: true`,
+      `shader: flat; color: ${statusPalette.statusPillBgColor}; opacity: 0.9; transparent: true; depthTest: false; depthWrite: false`,
     );
     this.statusPillEl.appendChild(this.statusBgEl);
 
@@ -446,6 +528,7 @@ export class BeltMenuBridge {
     this.beltGroupEl.appendChild(this.zonesCardEl);
 
     this.rootEl.appendChild(this.beltGroupEl);
+    this.enforceMenuOnTop();
   }
 
   private createBeltButton(placement: BeltItemPlacement): BeltButtonRefs {
@@ -469,7 +552,7 @@ export class BeltMenuBridge {
     borderEl.setAttribute('position', '0 0 -0.002');
     borderEl.setAttribute(
       'material',
-      `shader: flat; color: ${borderColor}; opacity: ${isProminent ? 0.98 : palette.beltButtonBorderOpacity}; transparent: true`,
+      `shader: flat; color: ${borderColor}; opacity: ${isProminent ? 0.98 : palette.beltButtonBorderOpacity}; transparent: true; depthTest: false; depthWrite: false`,
     );
     containerEl.appendChild(borderEl);
 
@@ -484,7 +567,7 @@ export class BeltMenuBridge {
     bgEl.setAttribute('position', '0 0 0.002');
     bgEl.setAttribute(
       'material',
-      `shader: flat; color: ${bgColor}; opacity: ${isProminent ? 0.96 : palette.beltButtonBgOpacity}; transparent: true`,
+      `shader: flat; color: ${bgColor}; opacity: ${isProminent ? 0.96 : palette.beltButtonBgOpacity}; transparent: true; depthTest: false; depthWrite: false`,
     );
     bgEl.addEventListener('click', (event: Event) => {
       event.stopPropagation();
@@ -493,9 +576,15 @@ export class BeltMenuBridge {
     containerEl.appendChild(bgEl);
 
     const copy = PT_BR.zone.belt.items[placement.id];
+    const initialIcon: PhosphorVrIconName =
+      placement.id === 'toggle-theme'
+        ? this.currentTheme === 'light-glass'
+          ? 'moon'
+          : 'sun-dim'
+        : (copy.icon as PhosphorVrIconName);
     const iconColor = isProminent ? '#F59E0B' : palette.beltIconColor;
     const iconEl = createPhosphorIconEntity({
-      icon: copy.icon as PhosphorVrIconName,
+      icon: initialIcon,
       color: iconColor,
       size: isProminent ? 0.048 : 0.036,
       position: `0 ${isProminent ? 0.024 : 0.018} 0.006`,
@@ -551,8 +640,9 @@ export class BeltMenuBridge {
     });
     btn.borderEl.setAttribute(
       'material',
-      `shader: flat; color: ${borderColor}; opacity: 1.0; transparent: true`,
+      `shader: flat; color: ${borderColor}; opacity: 1.0; transparent: true; depthTest: false; depthWrite: false`,
     );
+    this.enforceMenuOnTop();
   }
 
   applyTheme(theme: ZoneTheme): void {
@@ -568,27 +658,40 @@ export class BeltMenuBridge {
 
       btn.borderEl.setAttribute(
         'material',
-        `shader: flat; color: ${borderColor}; opacity: ${isProm ? 0.98 : palette.beltButtonBorderOpacity}; transparent: true`,
+        `shader: flat; color: ${borderColor}; opacity: ${isProm ? 0.98 : palette.beltButtonBorderOpacity}; transparent: true; depthTest: false; depthWrite: false`,
       );
       btn.bgEl.setAttribute(
         'material',
-        `shader: flat; color: ${bgColor}; opacity: ${isProm ? 0.96 : palette.beltButtonBgOpacity}; transparent: true`,
+        `shader: flat; color: ${bgColor}; opacity: ${isProm ? 0.96 : palette.beltButtonBgOpacity}; transparent: true; depthTest: false; depthWrite: false`,
       );
-      updatePhosphorIconAppearance(btn.iconEl, iconColor);
+      const iconName: PhosphorVrIconName | undefined =
+        btn.id === 'toggle-theme'
+          ? theme === 'light-glass'
+            ? 'moon'
+            : 'sun-dim'
+          : undefined;
+      updatePhosphorIconAppearance(btn.iconEl, iconColor, 1, iconName);
       btn.labelEl.setAttribute('color', labelColor);
       btn.labelEl.setAttribute('troika-text', 'color', labelColor);
     }
 
     this.statusBorderEl?.setAttribute(
       'material',
-      'shader: flat; color: #F5F3EB; opacity: 0.85; transparent: true',
+      `shader: flat; color: ${palette.beltButtonBorderColor}; opacity: 0.85; transparent: true; depthTest: false; depthWrite: false`,
     );
     this.statusBgEl?.setAttribute(
       'material',
-      `shader: flat; color: ${palette.statusPillBgColor}; opacity: 0.9; transparent: true`,
+      `shader: flat; color: ${palette.statusPillBgColor}; opacity: 0.9; transparent: true; depthTest: false; depthWrite: false`,
     );
     this.statusTextEl.setAttribute('color', palette.statusPillTextColor);
     this.statusTextEl.setAttribute('troika-text', 'color', palette.statusPillTextColor);
+
+    if (this.zonesPickerOpen) {
+      void this.populateZonesPicker();
+    } else if (this.contentsPickerOpen) {
+      void this.populateContentsPicker();
+    }
+    this.enforceMenuOnTop();
   }
 
   private buildBreakScreenDom(): void {
@@ -676,6 +779,13 @@ export class BeltMenuBridge {
       this.zonesCardEl.removeChild(this.zonesCardEl.firstChild);
     }
 
+    const isLight = this.currentTheme === 'light-glass';
+    const cardBgColor = isLight ? '#FFFEFA' : '#121316';
+    const cardBorderColor = isLight ? '#CBD5E1' : '#2E323B';
+    const titleColor = isLight ? '#EA580C' : '#F59E0B';
+    const itemBgColor = isLight ? '#F1F5F9' : '#1F2025';
+    const itemTextColor = isLight ? '#121316' : '#F5F3EB';
+
     const storedZones: Zone[] = (await zoneStorage.listDownloadedZones?.()) ?? [];
     const options: { id: string; name: string }[] = [
       { id: DEFAULT_DEMO_ZONE_ID, name: PT_BR.zone.belt.feedback.demoZoneName },
@@ -686,45 +796,49 @@ export class BeltMenuBridge {
       }
     }
 
-    const cardHeight = 0.1 + options.length * 0.062;
+    const cardWidth = 0.68;
+    const cardHeight = 0.12 + options.length * 0.072;
     const borderEl = document.createElement('a-plane') as Entity;
-    borderEl.setAttribute('width', '0.568');
+    borderEl.setAttribute('width', String(cardWidth + 0.008));
     borderEl.setAttribute('height', String(cardHeight + 0.008));
     borderEl.setAttribute('position', '0 0 -0.002');
     borderEl.setAttribute(
       'material',
-      'shader: flat; color: #F5F3EB; opacity: 0.9; transparent: true',
+      `shader: flat; color: ${cardBorderColor}; opacity: 0.94; transparent: true; depthTest: false; depthWrite: false`,
     );
     this.zonesCardEl.appendChild(borderEl);
 
     const bgEl = document.createElement('a-plane') as Entity;
     bgEl.classList.add('interactable');
     bgEl.setAttribute('data-no-dwell', 'true');
-    bgEl.setAttribute('width', '0.56');
+    bgEl.setAttribute('width', String(cardWidth));
     bgEl.setAttribute('height', String(cardHeight));
-    bgEl.setAttribute('material', 'shader: flat; color: #121316; opacity: 0.96; transparent: true');
+    bgEl.setAttribute(
+      'material',
+      `shader: flat; color: ${cardBgColor}; opacity: 0.97; transparent: true; depthTest: false; depthWrite: false`,
+    );
     this.zonesCardEl.appendChild(bgEl);
 
     const titleEl = createTroikaText({
-      position: `0 ${cardHeight / 2 - 0.032} 0.004`,
+      position: `0 ${cardHeight / 2 - 0.036} 0.004`,
       value: PT_BR.zone.belt.feedback.zonesPickerTitle,
-      color: '#F59E0B',
-      fontSize: 0.018,
-      maxWidth: 0.5,
+      color: titleColor,
+      fontSize: 0.022,
+      maxWidth: cardWidth - 0.06,
     });
     this.zonesCardEl.appendChild(titleEl);
 
     options.forEach((opt, idx) => {
-      const yOffset = cardHeight / 2 - 0.082 - idx * 0.058;
+      const yOffset = cardHeight / 2 - 0.096 - idx * 0.068;
       const btn = document.createElement('a-plane') as Entity;
       btn.classList.add('interactable');
-      btn.setAttribute('width', '0.5');
-      btn.setAttribute('height', '0.048');
+      btn.setAttribute('width', String(cardWidth - 0.06));
+      btn.setAttribute('height', '0.056');
       btn.setAttribute('position', `0 ${yOffset} 0.008`);
       const isCurrent = opt.id === this.activeZoneId;
       btn.setAttribute(
         'material',
-        `shader: flat; color: ${isCurrent ? '#1E3A8A' : '#1F2025'}; opacity: 0.96; transparent: true`,
+        `shader: flat; color: ${isCurrent ? '#1E3A8A' : itemBgColor}; opacity: 0.96; transparent: true; depthTest: false; depthWrite: false`,
       );
       btn.addEventListener('click', (event: Event) => {
         event.stopPropagation();
@@ -741,9 +855,9 @@ export class BeltMenuBridge {
       const txt = createTroikaText({
         position: '0 0 0.004',
         value: opt.name,
-        color: '#F5F3EB',
-        fontSize: 0.017,
-        maxWidth: 0.46,
+        color: isCurrent ? '#FFFEFA' : itemTextColor,
+        fontSize: 0.02,
+        maxWidth: cardWidth - 0.1,
       });
       btn.appendChild(txt);
       this.zonesCardEl.appendChild(btn);
@@ -752,6 +866,7 @@ export class BeltMenuBridge {
     this.zonesCardEl.setAttribute('visible', 'true');
     this.zonesCardEl.object3D.visible = true;
     this.syncBeltVisuals();
+    this.enforceMenuOnTop();
   }
 
   private async populateContentsPicker(): Promise<void> {
@@ -775,17 +890,29 @@ export class BeltMenuBridge {
 
     // 1. filtro Conteúdo (pdf enviado / fontes do documento)
     const storedPdf = await zoneStorage.loadPdfFile?.(this.activeZoneId);
-    let sources = pack.sources;
+    let sources = [...pack.sources];
     if (storedPdf) {
-      const match = sources.find((s) => s.title === storedPdf.title);
-      if (!match) {
+      const realPageCount = storedPdf.pageCount ?? pack.sources[0]?.pageCount ?? 4;
+      const existingIdx = sources.findIndex(
+        (s) => s.id === storedPdf.sourceId || s.title === storedPdf.title,
+      );
+      if (existingIdx >= 0) {
+        const existing = sources[existingIdx];
+        if (existing) {
+          sources[existingIdx] = {
+            ...existing,
+            title: storedPdf.title,
+            pageCount: storedPdf.pageCount ?? existing.pageCount,
+          };
+        }
+      } else {
         sources = [
           {
             id: storedPdf.sourceId,
             title: storedPdf.title,
-            pageCount: pack.sources[0]?.pageCount ?? 4,
+            pageCount: realPageCount,
           },
-          ...sources,
+          ...sources.filter((s) => !s.id.startsWith('src-cardio-demo')),
         ];
       }
     }
@@ -893,17 +1020,28 @@ export class BeltMenuBridge {
     this.contentsPageIndex = safePage;
     const slice = activeItems.slice(safePage * pageSize, (safePage + 1) * pageSize);
 
-    const cardWidth = 0.78;
-    const cardHeight = 0.44;
+    const cardWidth = 0.96;
+    const cardHeight = 0.56;
+    const isLight = this.currentTheme === 'light-glass';
+    const cardBgColor = isLight ? '#FFFEFA' : '#121316';
+    const cardBorderColor = isLight ? '#CBD5E1' : '#2E323B';
+    const headerTextColor = isLight ? '#0F172A' : '#F8FAFC';
+    const unselectedTabBg = isLight ? '#F1F5F9' : '#1F2025';
+    const unselectedTabText = isLight ? '#0F172A' : '#F1F5F9';
+    const cellBgColor = isLight ? '#FFFFFF' : '#18181B';
+    const cellTitleColor = isLight ? '#0F172A' : '#F8FAFC';
+    const disabledBorderColor = isLight ? '#CBD5E1' : '#3F3F46';
+    const navBgColor = isLight ? '#F1F5F9' : '#1F2025';
+    const navTextColor = isLight ? '#0F172A' : '#F8FAFC';
 
-    // moldura externa de 1px estilo tech-brutalism
+    // moldura externa de 1px estilo tech-brutalism respeitando tema claro/escuro
     const borderEl = document.createElement('a-plane') as Entity;
     borderEl.setAttribute('width', String(cardWidth + 0.008));
     borderEl.setAttribute('height', String(cardHeight + 0.008));
     borderEl.setAttribute('position', '0 0 -0.002');
     borderEl.setAttribute(
       'material',
-      'shader: flat; color: #F5F3EB; opacity: 0.92; transparent: true',
+      `shader: flat; color: ${cardBorderColor}; opacity: 0.92; transparent: true; depthTest: false; depthWrite: false`,
     );
     this.zonesCardEl.appendChild(borderEl);
 
@@ -912,18 +1050,62 @@ export class BeltMenuBridge {
     bgEl.setAttribute('data-no-dwell', 'true');
     bgEl.setAttribute('width', String(cardWidth));
     bgEl.setAttribute('height', String(cardHeight));
-    bgEl.setAttribute('material', 'shader: flat; color: #121316; opacity: 0.96; transparent: true');
+    bgEl.setAttribute(
+      'material',
+      `shader: flat; color: ${cardBgColor}; opacity: 0.96; transparent: true; depthTest: false; depthWrite: false`,
+    );
     this.zonesCardEl.appendChild(bgEl);
 
     // cabeçalho do submenu
     const headerTitle = createTroikaText({
-      position: `0 ${cardHeight / 2 - 0.028} 0.004`,
+      position: `-0.05 ${cardHeight / 2 - 0.034} 0.004`,
       value: `${PT_BR.zone.belt.feedback.contentsPickerTitle} (${safePage + 1}/${totalPages})`,
-      color: '#F5F3EB',
-      fontSize: 0.017,
-      maxWidth: cardWidth - 0.06,
+      color: headerTextColor,
+      fontSize: 0.022,
+      maxWidth: cardWidth - 0.2,
     });
     this.zonesCardEl.appendChild(headerTitle);
+
+    // botão ícone no canto superior direito para alternar o estilo da mão (clássica / estilizada)
+    const handBtnContainer = document.createElement('a-entity') as Entity;
+    handBtnContainer.setAttribute(
+      'position',
+      `${cardWidth / 2 - 0.052} ${cardHeight / 2 - 0.034} 0.008`,
+    );
+
+    const handBorder = document.createElement('a-plane') as Entity;
+    handBorder.setAttribute('width', '0.052');
+    handBorder.setAttribute('height', '0.052');
+    handBorder.setAttribute('position', '0 0 -0.001');
+    handBorder.setAttribute(
+      'material',
+      `shader: flat; color: ${isLight ? '#CBD5E1' : '#3F3F46'}; opacity: 0.95; transparent: true; depthTest: false; depthWrite: false`,
+    );
+    handBtnContainer.appendChild(handBorder);
+
+    const handBtn = document.createElement('a-plane') as Entity;
+    handBtn.classList.add('interactable');
+    handBtn.setAttribute('width', '0.048');
+    handBtn.setAttribute('height', '0.048');
+    handBtn.setAttribute('position', '0 0 0.001');
+    handBtn.setAttribute(
+      'material',
+      `shader: flat; color: ${unselectedTabBg}; opacity: 0.96; transparent: true; depthTest: false; depthWrite: false`,
+    );
+    handBtn.addEventListener('click', (event: Event) => {
+      event.stopPropagation();
+      this.toggleHandStyle();
+    });
+    handBtnContainer.appendChild(handBtn);
+
+    const handIcon = createPhosphorIconEntity({
+      icon: 'hand',
+      color: isLight ? '#0F172A' : '#F8FAFC',
+      size: 0.028,
+      position: '0 0 0.003',
+    });
+    handBtnContainer.appendChild(handIcon);
+    this.zonesCardEl.appendChild(handBtnContainer);
 
     // barra de filtros por tipo de mídia no topo do submenu (Conteúdo, Flashcards, Quiz, Objetos de Estudo)
     const filterTabs: { id: VrContentsFilterTab; label: string; color: string }[] = [
@@ -949,8 +1131,9 @@ export class BeltMenuBridge {
       },
     ];
 
-    const filterY = cardHeight / 2 - 0.072;
-    const tabWidth = 0.174;
+    const filterY = cardHeight / 2 - 0.088;
+    const tabWidth = 0.216;
+    const tabHeight = 0.048;
     const tabGap = 0.012;
     const totalTabsW = filterTabs.length * tabWidth + (filterTabs.length - 1) * tabGap;
     const startTabX = -totalTabsW / 2 + tabWidth / 2;
@@ -959,24 +1142,27 @@ export class BeltMenuBridge {
       const tabX = startTabX + idx * (tabWidth + tabGap);
       const isSelected = this.contentsFilterTab === tab.id;
 
+      const tabContainer = document.createElement('a-entity') as Entity;
+      tabContainer.setAttribute('position', `${tabX} ${filterY} 0.006`);
+
       const tabBorder = document.createElement('a-plane') as Entity;
       tabBorder.setAttribute('width', String(tabWidth + 0.004));
-      tabBorder.setAttribute('height', '0.044');
-      tabBorder.setAttribute('position', `${tabX} ${filterY} 0.005`);
+      tabBorder.setAttribute('height', String(tabHeight + 0.004));
+      tabBorder.setAttribute('position', '0 0 -0.001');
       tabBorder.setAttribute(
         'material',
-        `shader: flat; color: ${isSelected ? '#F5F3EB' : tab.color}; opacity: 0.95; transparent: true`,
+        `shader: flat; color: ${isSelected ? (isLight ? '#0F172A' : '#F8FAFC') : tab.color}; opacity: 0.95; transparent: true; depthTest: false; depthWrite: false`,
       );
-      this.zonesCardEl.appendChild(tabBorder);
+      tabContainer.appendChild(tabBorder);
 
       const tabBtn = document.createElement('a-plane') as Entity;
       tabBtn.classList.add('interactable');
       tabBtn.setAttribute('width', String(tabWidth));
-      tabBtn.setAttribute('height', '0.04');
-      tabBtn.setAttribute('position', `${tabX} ${filterY} 0.007`);
+      tabBtn.setAttribute('height', String(tabHeight));
+      tabBtn.setAttribute('position', '0 0 0.001');
       tabBtn.setAttribute(
         'material',
-        `shader: flat; color: ${isSelected ? tab.color : '#1F2025'}; opacity: 0.96; transparent: true`,
+        `shader: flat; color: ${isSelected ? tab.color : unselectedTabBg}; opacity: 0.96; transparent: true; depthTest: false; depthWrite: false`,
       );
       tabBtn.addEventListener('click', (event: Event) => {
         event.stopPropagation();
@@ -984,23 +1170,24 @@ export class BeltMenuBridge {
         this.contentsPageIndex = 0;
         void this.populateContentsPicker();
       });
+      tabContainer.appendChild(tabBtn);
 
       const tabLabel = createTroikaText({
-        position: '0 0 0.003',
+        position: '0 0 0.004',
         value: tab.label,
-        color: '#F5F3EB',
-        fontSize: 0.013,
+        color: isSelected ? '#FFFFFF' : unselectedTabText,
+        fontSize: 0.018,
         maxWidth: tabWidth - 0.01,
       });
-      tabBtn.appendChild(tabLabel);
-      this.zonesCardEl.appendChild(tabBtn);
+      tabContainer.appendChild(tabLabel);
+      this.zonesCardEl.appendChild(tabContainer);
     });
 
     // grade 2x2 de cartões de conteúdo
-    const cellW = 0.345;
-    const cellH = 0.105;
-    const colOffsets = [-0.182, 0.182];
-    const rowOffsets = [0.042, -0.078];
+    const cellW = 0.435;
+    const cellH = 0.135;
+    const colOffsets = [-0.23, 0.23];
+    const rowOffsets = [0.062, -0.096];
 
     slice.forEach((item, idx) => {
       const col = idx % 2;
@@ -1008,7 +1195,7 @@ export class BeltMenuBridge {
       const cellX = colOffsets[col] ?? 0;
       const cellY = rowOffsets[row] ?? 0;
       const isAlreadySpawned = this.activeSceneContentIds.has(item.contentId);
-      const itemOpacity = isAlreadySpawned ? 0.3 : 0.96;
+      const itemOpacity = isAlreadySpawned ? 0.75 : 0.98;
 
       const cellContainer = document.createElement('a-entity') as Entity;
       cellContainer.setAttribute('position', `${cellX} ${cellY} 0.008`);
@@ -1016,12 +1203,12 @@ export class BeltMenuBridge {
       cellContainer.setAttribute('data-disabled', isAlreadySpawned ? 'true' : 'false');
 
       const cellBorder = document.createElement('a-plane') as Entity;
-      cellBorder.setAttribute('width', String(cellW + 0.005));
-      cellBorder.setAttribute('height', String(cellH + 0.005));
+      cellBorder.setAttribute('width', String(cellW + 0.006));
+      cellBorder.setAttribute('height', String(cellH + 0.006));
       cellBorder.setAttribute('position', '0 0 -0.001');
       cellBorder.setAttribute(
         'material',
-        `shader: flat; color: ${isAlreadySpawned ? '#52525B' : item.accentColor}; opacity: ${itemOpacity}; transparent: true`,
+        `shader: flat; color: ${isAlreadySpawned ? disabledBorderColor : item.accentColor}; opacity: ${itemOpacity}; transparent: true; depthTest: false; depthWrite: false`,
       );
       cellContainer.appendChild(cellBorder);
 
@@ -1033,7 +1220,7 @@ export class BeltMenuBridge {
       cellBg.setAttribute('height', String(cellH));
       cellBg.setAttribute(
         'material',
-        `shader: flat; color: #18181B; opacity: ${itemOpacity}; transparent: true`,
+        `shader: flat; color: ${cellBgColor}; opacity: ${itemOpacity}; transparent: true; depthTest: false; depthWrite: false`,
       );
 
       if (!isAlreadySpawned) {
@@ -1058,13 +1245,13 @@ export class BeltMenuBridge {
       // ícone phosphor da categoria à esquerda da célula da grade
       const iconEntity = createPhosphorIconEntity({
         icon: item.icon,
-        color: isAlreadySpawned ? '#71717A' : item.accentColor,
-        size: 0.028,
-        position: `${-cellW / 2 + 0.028} 0.024 0.004`,
+        color: isAlreadySpawned ? (isLight ? '#94A3B8' : '#71717A') : item.accentColor,
+        size: 0.034,
+        position: `${-cellW / 2 + 0.034} 0.030 0.004`,
       });
       updatePhosphorIconAppearance(
         iconEntity,
-        isAlreadySpawned ? '#71717A' : item.accentColor,
+        isAlreadySpawned ? (isLight ? '#94A3B8' : '#71717A') : item.accentColor,
         itemOpacity,
       );
       cellContainer.appendChild(iconEntity);
@@ -1074,21 +1261,21 @@ export class BeltMenuBridge {
         ? `${item.categoryLabel} (${PT_BR.zone.belt.feedback.contentAlreadyInScene})`
         : item.categoryLabel;
       const badgeEl = createTroikaText({
-        position: `0.015 0.026 0.004`,
+        position: `0.018 0.032 0.004`,
         value: badgeText,
-        color: isAlreadySpawned ? '#71717A' : item.accentColor,
-        fontSize: 0.012,
-        maxWidth: cellW - 0.07,
+        color: isAlreadySpawned ? (isLight ? '#64748B' : '#A1A1AA') : item.accentColor,
+        fontSize: 0.016,
+        maxWidth: cellW - 0.08,
       });
       cellContainer.appendChild(badgeEl);
 
       const shortTitle = item.title.length > 44 ? `${item.title.slice(0, 41)}...` : item.title;
       const titleEl = createTroikaText({
-        position: `0 -0.014 0.004`,
+        position: `0 -0.018 0.004`,
         value: shortTitle,
-        color: isAlreadySpawned ? '#71717A' : '#F5F3EB',
-        fontSize: 0.014,
-        maxWidth: cellW - 0.03,
+        color: isAlreadySpawned ? (isLight ? '#64748B' : '#A1A1AA') : cellTitleColor,
+        fontSize: 0.02,
+        maxWidth: cellW - 0.04,
       });
       cellContainer.appendChild(titleEl);
 
@@ -1097,77 +1284,106 @@ export class BeltMenuBridge {
 
     // paginação na base da grade com ícones phosphor caret-left / caret-right
     if (totalPages > 1) {
-      const navY = -cardHeight / 2 + 0.034;
+      const navY = -cardHeight / 2 + 0.042;
+
+      const prevContainer = document.createElement('a-entity') as Entity;
+      prevContainer.setAttribute('position', `-0.19 ${navY} 0.008`);
+
+      const prevBorder = document.createElement('a-plane') as Entity;
+      prevBorder.setAttribute('width', '0.274');
+      prevBorder.setAttribute('height', '0.052');
+      prevBorder.setAttribute('position', '0 0 -0.001');
+      prevBorder.setAttribute(
+        'material',
+        `shader: flat; color: ${cardBorderColor}; opacity: 0.95; transparent: true; depthTest: false; depthWrite: false`,
+      );
+      prevContainer.appendChild(prevBorder);
 
       const prevBtn = document.createElement('a-plane') as Entity;
       prevBtn.classList.add('interactable');
-      prevBtn.setAttribute('width', '0.22');
-      prevBtn.setAttribute('height', '0.04');
-      prevBtn.setAttribute('position', `-0.16 ${navY} 0.008`);
+      prevBtn.setAttribute('width', '0.27');
+      prevBtn.setAttribute('height', '0.048');
+      prevBtn.setAttribute('position', '0 0 0.001');
       prevBtn.setAttribute(
         'material',
-        'shader: flat; color: #1F2025; opacity: 0.96; transparent: true',
+        `shader: flat; color: ${navBgColor}; opacity: 0.96; transparent: true; depthTest: false; depthWrite: false`,
       );
       prevBtn.addEventListener('click', (event: Event) => {
         event.stopPropagation();
         this.contentsPageIndex = (this.contentsPageIndex - 1 + totalPages) % totalPages;
         void this.populateContentsPicker();
       });
-      prevBtn.appendChild(
-        createPhosphorIconEntity({
-          icon: 'caret-left',
-          color: '#F5F3EB',
-          size: 0.02,
-          position: '-0.07 0 0.004',
-        }),
+      prevContainer.appendChild(prevBtn);
+
+      const prevIcon = createPhosphorIconEntity({
+        icon: 'caret-left',
+        color: navTextColor,
+        size: 0.024,
+        position: '-0.085 0 0.004',
+      });
+      prevContainer.appendChild(prevIcon);
+
+      const prevLabel = createTroikaText({
+        position: '0.015 0 0.004',
+        value: PT_BR.zone.belt.feedback.prevPage,
+        color: navTextColor,
+        fontSize: 0.018,
+        maxWidth: 0.2,
+      });
+      prevContainer.appendChild(prevLabel);
+      this.zonesCardEl.appendChild(prevContainer);
+
+      const nextContainer = document.createElement('a-entity') as Entity;
+      nextContainer.setAttribute('position', `0.19 ${navY} 0.008`);
+
+      const nextBorder = document.createElement('a-plane') as Entity;
+      nextBorder.setAttribute('width', '0.274');
+      nextBorder.setAttribute('height', '0.052');
+      nextBorder.setAttribute('position', '0 0 -0.001');
+      nextBorder.setAttribute(
+        'material',
+        `shader: flat; color: ${cardBorderColor}; opacity: 0.95; transparent: true; depthTest: false; depthWrite: false`,
       );
-      prevBtn.appendChild(
-        createTroikaText({
-          position: '0.01 0 0.004',
-          value: PT_BR.zone.belt.feedback.prevPage,
-          color: '#F5F3EB',
-          fontSize: 0.014,
-          maxWidth: 0.16,
-        }),
-      );
-      this.zonesCardEl.appendChild(prevBtn);
+      nextContainer.appendChild(nextBorder);
 
       const nextBtn = document.createElement('a-plane') as Entity;
       nextBtn.classList.add('interactable');
-      nextBtn.setAttribute('width', '0.22');
-      nextBtn.setAttribute('height', '0.04');
-      nextBtn.setAttribute('position', `0.16 ${navY} 0.008`);
+      nextBtn.setAttribute('width', '0.27');
+      nextBtn.setAttribute('height', '0.048');
+      nextBtn.setAttribute('position', '0 0 0.001');
       nextBtn.setAttribute(
         'material',
-        'shader: flat; color: #1F2025; opacity: 0.96; transparent: true',
+        `shader: flat; color: ${navBgColor}; opacity: 0.96; transparent: true; depthTest: false; depthWrite: false`,
       );
       nextBtn.addEventListener('click', (event: Event) => {
         event.stopPropagation();
         this.contentsPageIndex = (this.contentsPageIndex + 1) % totalPages;
         void this.populateContentsPicker();
       });
-      nextBtn.appendChild(
-        createPhosphorIconEntity({
-          icon: 'caret-right',
-          color: '#F5F3EB',
-          size: 0.02,
-          position: '0.07 0 0.004',
-        }),
-      );
-      nextBtn.appendChild(
-        createTroikaText({
-          position: '-0.01 0 0.004',
-          value: PT_BR.zone.belt.feedback.nextPage,
-          color: '#F5F3EB',
-          fontSize: 0.014,
-          maxWidth: 0.16,
-        }),
-      );
-      this.zonesCardEl.appendChild(nextBtn);
+      nextContainer.appendChild(nextBtn);
+
+      const nextIcon = createPhosphorIconEntity({
+        icon: 'caret-right',
+        color: navTextColor,
+        size: 0.024,
+        position: '0.085 0 0.004',
+      });
+      nextContainer.appendChild(nextIcon);
+
+      const nextLabel = createTroikaText({
+        position: '-0.015 0 0.004',
+        value: PT_BR.zone.belt.feedback.nextPage,
+        color: navTextColor,
+        fontSize: 0.018,
+        maxWidth: 0.2,
+      });
+      nextContainer.appendChild(nextLabel);
+      this.zonesCardEl.appendChild(nextContainer);
     }
 
     this.zonesCardEl.setAttribute('visible', 'true');
     this.zonesCardEl.object3D.visible = true;
+    this.enforceMenuOnTop();
     this.syncBeltVisuals();
   }
 
@@ -1216,7 +1432,7 @@ export class BeltMenuBridge {
 
       btn.bgEl.setAttribute(
         'material',
-        `shader: flat; color: ${bgColor}; opacity: ${baseBgOp * fadeFactor}; transparent: true`,
+        `shader: flat; color: ${bgColor}; opacity: ${baseBgOp * fadeFactor}; transparent: true; depthTest: false; depthWrite: false`,
       );
 
       if (btn.id === 'exit-zone') {
@@ -1225,7 +1441,7 @@ export class BeltMenuBridge {
         const borderColor = snap.exitConfirmPending ? '#FB7185' : palette.beltButtonBorderColor;
         btn.borderEl.setAttribute(
           'material',
-          `shader: flat; color: ${borderColor}; opacity: ${0.9 * fadeFactor}; transparent: true`,
+          `shader: flat; color: ${borderColor}; opacity: ${0.9 * fadeFactor}; transparent: true; depthTest: false; depthWrite: false`,
         );
         updatePhosphorIconAppearance(
           btn.iconEl,
@@ -1238,12 +1454,19 @@ export class BeltMenuBridge {
         const borderColor = isProm ? '#EA580C' : palette.beltButtonBorderColor;
         btn.borderEl.setAttribute(
           'material',
-          `shader: flat; color: ${borderColor}; opacity: ${baseBorderOp * fadeFactor}; transparent: true`,
+          `shader: flat; color: ${borderColor}; opacity: ${baseBorderOp * fadeFactor}; transparent: true; depthTest: false; depthWrite: false`,
         );
+        const iconName: PhosphorVrIconName | undefined =
+          btn.id === 'toggle-theme'
+            ? this.currentTheme === 'light-glass'
+              ? 'moon'
+              : 'sun-dim'
+            : undefined;
         updatePhosphorIconAppearance(
           btn.iconEl,
           isProm ? '#F59E0B' : palette.beltIconColor,
           fadeFactor,
+          iconName,
         );
       }
     }
@@ -1272,11 +1495,14 @@ export class BeltMenuBridge {
         radiusM: BELT_RADIUS_M - 0.06,
       });
       this.zonesCardEl.setAttribute('position', `${pickerPos.x} ${pickerPos.y} ${pickerPos.z}`);
+      // ampliação angular do submenu para legibilidade através das lentes do vr box
+      this.zonesCardEl.setAttribute('scale', '1.3 1.3 1.3');
       this.zonesCardEl.setAttribute(
         'rotation',
         `${panelFacingPitchDeg(pickerPitch)} ${panelFacingYawDeg(snap.beltYawDeg)} 0`,
       );
     }
+    this.enforceMenuOnTop();
   }
 
   private syncBreakScreenVisuals(): void {

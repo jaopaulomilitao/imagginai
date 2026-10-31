@@ -237,15 +237,20 @@ export class PanelController {
     this.surfaceEl.object3D.visible = !isFrameless;
     this.borderEl.setAttribute('visible', isFrameless ? 'false' : 'true');
     this.borderEl.object3D.visible = !isFrameless;
-    this.headerLineEl.setAttribute('visible', isFrameless ? 'false' : 'true');
-    this.headerLineEl.object3D.visible = !isFrameless;
-    this.titleEl.setAttribute('visible', isFrameless ? 'false' : 'true');
-    this.titleEl.object3D.visible = !isFrameless;
+
+    const hasTitle = !isFrameless && Boolean(this.data.title && this.data.title.trim().length > 0);
+    this.headerLineEl.setAttribute('visible', hasTitle ? 'true' : 'false');
+    this.headerLineEl.object3D.visible = hasTitle;
+    this.titleEl.setAttribute('visible', hasTitle ? 'true' : 'false');
+    this.titleEl.object3D.visible = hasTitle;
+
     const hasBody = !isFrameless && Boolean(this.data.body && this.data.body.trim().length > 0);
     this.bodyEl.setAttribute('visible', hasBody ? 'true' : 'false');
     this.bodyEl.object3D.visible = hasBody;
-    this.footerEl.setAttribute('visible', isFrameless ? 'false' : 'true');
-    this.footerEl.object3D.visible = !isFrameless;
+
+    const hasFooter = !isFrameless && Boolean(this.data.footer && this.data.footer.trim().length > 0);
+    this.footerEl.setAttribute('visible', hasFooter ? 'true' : 'false');
+    this.footerEl.object3D.visible = hasFooter;
   }
 
   get spherical(): SphericalCoords {
@@ -254,6 +259,18 @@ export class PanelController {
 
   get panelId(): string {
     return this.data.panelId || this.el.id;
+  }
+
+  get width(): number {
+    return this.data.width;
+  }
+
+  get isFrameless(): boolean {
+    return Boolean(this.data.frameless);
+  }
+
+  get height(): number {
+    return this.data.height;
   }
 
   get theme(): ZoneTheme {

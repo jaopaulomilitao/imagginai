@@ -1,6 +1,7 @@
-import type { Entity, Scene } from 'aframe';
+import AFRAME, { type Entity, type Scene } from 'aframe';
 
 import demoPackRaw from '../../../../../fixtures/demo-pack.json';
+import { saveZoneCardRemote } from '../../app/services/api-client';
 import { logger } from '../../shared/logger';
 import {
   resolveBundledDemoPack,
@@ -8,7 +9,7 @@ import {
   type LayoutRepository,
   type StoredPdfFile,
 } from '../../shared/storage/dexie-db';
-import type { StudyCard, StudyPack } from '../../shared/types/study-pack';
+import type { SourceAnchor, StudyCard, StudyPack } from '../../shared/types/study-pack';
 import type { PanelLayout } from '../../shared/types/zone';
 import { validateStudyPack } from '../../shared/validation/study-pack-validator';
 import { PANEL_DELETE_EVENT, PANEL_DROP_EVENT, type PanelDeleteDetail } from './imx-drag-handle';
@@ -17,6 +18,15 @@ import {
   type ConceptGraphComponent,
   type ConceptGraphNodeSelectDetail,
 } from './imx-concept-graph';
+import {
+  ZONE_CREATE_SUBCONCEPT_EVENT,
+  ZONE_GOTO_PDF_PAGE_EVENT,
+  ZONE_SAVE_CARD_TO_DECK_EVENT,
+  type NodeAnalysisPanelComponent,
+  type ZoneCreateSubconceptDetail,
+  type ZoneGotoPdfPageDetail,
+  type ZoneSaveCardToDeckDetail,
+} from './imx-node-analysis-panel';
 import type { PanelComponent } from './imx-panel';
 import type { PdfPanelComponent } from './imx-pdf-panel';
 import {
@@ -40,6 +50,7 @@ import {
 import { selectPomodoroQuizItems } from '../systems/learning-assets-controller';
 import { recenterPanelLayouts } from '../systems/recenter-layout';
 import { SessionTelemetryCollector } from '../systems/session-telemetry-collector';
+import { clampSpherical, directionToSphericalAngles } from '../systems/spherical';
 
 export const ZONE_RECENTER_REQUEST_EVENT = 'imx-recenter-request';
 export const ZONE_SWITCH_REQUEST_EVENT = 'imx-switch-zone-request';
@@ -63,6 +74,7 @@ export interface AddContentRequestDetail {
   readonly kind?: SpawnableContentKind;
   readonly card: StudyCard;
   readonly sourceTitle?: string;
+  readonly page?: number;
   readonly pageCount?: number;
   readonly accentColor?: string;
   readonly cameraYawDeg?: number;
@@ -143,12 +155,46 @@ export class ZoneWorkspaceController {
       conceptId: detail.conceptId,
       durationMs: 6500,
     });
-    void this.spawnContentInScene({
-      contentId: `concept-${detail.conceptId}`,
-      kind: 'flashcard',
-      card: detail.card,
-      sourceTitle: detail.sourceTitle,
-      accentColor: '#1E3A8A',
+    this.spawnOrUpdateNodeAnalysisPanel(detail);
+  };
+
+  private readonly onGotoPdfPage = (event: Event): void => {
+    const detail = (event as CustomEvent<ZoneGotoPdfPageDetail>).detail;
+    if (!detail?.page) return;
+    this.jumpToPdfPage(detail.page);
+  };
+
+  private readonly onSaveCardToDeck = (event: Event): void => {
+    const detail = (event as CustomEvent<ZoneSaveCardToDeckDetail>).detail;
+    if (!detail?.card || !this.cachedPack) return;
+
+    const pack = this.cachedPack;
+    const validCard = this.normalizeCardForPack(detail.card, pack);
+    const exists = pack.cards.some(
+      (c) =>
+        c.id === validCard.id ||
+        (c.title === validCard.title && c.body === validCard.body),
+    );
+    if (!exists) {
+      pack.cards.push(validCard);
+    }
+
+    void this.persistAddedCard(this.currentZoneId, pack, validCard);
+
+    this.telemetry.record('belt.action', {
+      action: 'deck.card.add',
+      cardId: validCard.id,
+      conceptId: validCard.conceptIds[0] ?? '',
+    });
+  };
+
+  private readonly onCreateSubconcept = (event: Event): void => {
+    const detail = (event as CustomEvent<ZoneCreateSubconceptDetail>).detail;
+    if (!detail?.parentConceptId) return;
+    this.telemetry.record('belt.action', {
+      action: 'concept.subconcept.request',
+      parentConceptId: detail.parentConceptId,
+      parentLabel: detail.parentLabel,
     });
   };
 
@@ -210,6 +256,9 @@ export class ZoneWorkspaceController {
     this.scene.addEventListener(ZONE_SWITCH_REQUEST_EVENT, this.onSwitchZoneRequest);
     this.scene.addEventListener(ZONE_ADD_CONTENT_REQUEST_EVENT, this.onAddContentRequest);
     this.scene.addEventListener(CONCEPT_GRAPH_NODE_SELECT_EVENT, this.onConceptGraphSelect);
+    this.scene.addEventListener(ZONE_GOTO_PDF_PAGE_EVENT, this.onGotoPdfPage);
+    this.scene.addEventListener(ZONE_SAVE_CARD_TO_DECK_EVENT, this.onSaveCardToDeck);
+    this.scene.addEventListener(ZONE_CREATE_SUBCONCEPT_EVENT, this.onCreateSubconcept);
     this.scene.addEventListener(QUIZ_ANSWER_EVENT, this.onQuizAnswer);
     this.scene.addEventListener(SEQUENCE_ASSET_CHECK_EVENT, this.onSequenceCheck);
     this.scene.addEventListener(ZONE_POMODORO_QUIZ_REQUEST_EVENT, this.onPomodoroQuizRequest);
@@ -374,33 +423,33 @@ export class ZoneWorkspaceController {
     const sourceTitle = detail.sourceTitle ?? pack?.sources[0]?.title ?? 'Material de estudo';
 
     if (detail.kind === 'pdf') {
-      if (!this.cachedPdfRecord && this.storage.loadPdfFile) {
+      if (this.storage.loadPdfFile) {
         this.cachedPdfRecord = (await this.storage.loadPdfFile(this.currentZoneId)) ?? null;
       }
       let pdfUrl = '';
       let pdfBytes: Uint8Array | null = null;
-      if (this.cachedPdfRecord) {
+      if (this.cachedPdfRecord && this.cachedPdfRecord.data.byteLength > 0) {
         pdfBytes = new Uint8Array(this.cachedPdfRecord.data);
         if (typeof URL.createObjectURL === 'function') {
-          if (!this.activePdfBlobUrl) {
-            this.activePdfBlobUrl = URL.createObjectURL(
-              new Blob([pdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' }),
-            );
-          }
+          this.revokePdfBlobUrl();
+          this.activePdfBlobUrl = URL.createObjectURL(
+            new Blob([pdfBytes.slice(0).buffer as ArrayBuffer], { type: 'application/pdf' }),
+          );
           pdfUrl = this.activePdfBlobUrl;
         }
       }
-      const pageCount = detail.pageCount ?? pack?.sources[0]?.pageCount ?? 4;
+      const pageCount =
+        this.cachedPdfRecord?.pageCount ?? detail.pageCount ?? pack?.sources[0]?.pageCount ?? 4;
       el.setAttribute('imx-pdf-panel', {
         pdfUrl,
         sourceTitle: this.cachedPdfRecord?.title ?? sourceTitle,
-        page: 1,
+        page: detail.page ?? 1,
         pageCount,
       });
 
       const attachPdfData = (): void => {
         const pdfComp = el.components['imx-pdf-panel'] as PdfPanelComponent | undefined;
-        if (pdfBytes) {
+        if (pdfBytes && pdfBytes.byteLength > 0) {
           pdfComp?.controller?.setPdfBytes(pdfBytes);
         } else if (pack) {
           pdfComp?.controller?.setSyntheticPageProvider((pageNumber) =>
@@ -415,13 +464,6 @@ export class ZoneWorkspaceController {
       }
     } else if (detail.kind === 'quiz' && pack && pack.quiz.length > 0) {
       const rawQuizId = contentId.replace(/^quiz-/, '');
-      const matchingQuestion = pack.quiz.find((q) => q.id === rawQuizId);
-      const activeUnanswered = pack.quiz.filter((q) => !q.answered);
-      const questionsToLoad = matchingQuestion
-        ? [matchingQuestion]
-        : activeUnanswered.length > 0
-          ? activeUnanswered
-          : pack.quiz;
 
       el.setAttribute('imx-quiz-panel', {
         quizId: contentId,
@@ -429,7 +471,7 @@ export class ZoneWorkspaceController {
       });
       const attachQuiz = (): void => {
         const comp = el.components['imx-quiz-panel'] as QuizPanelComponent | undefined;
-        comp?.controller?.setQuestions(questionsToLoad);
+        comp?.controller?.setQuestions(pack.quiz, rawQuizId);
       };
       if (el.hasLoaded) {
         attachQuiz();
@@ -520,6 +562,111 @@ export class ZoneWorkspaceController {
     });
   }
 
+  jumpToPdfPage(page: number): void {
+    const pdfPanelEl = this.containerEl.querySelector<Entity>('[imx-pdf-panel]');
+    if (pdfPanelEl) {
+      const pdfComp = pdfPanelEl.components['imx-pdf-panel'] as PdfPanelComponent | undefined;
+      pdfComp?.controller?.goToPage(page);
+      return;
+    }
+
+    const dummyCard: StudyCard = {
+      id: 'pdf-nav-card',
+      title: 'PDF',
+      body: '',
+      conceptIds: [],
+      anchors: [],
+    };
+    void this.spawnContentInScene({
+      kind: 'pdf',
+      contentId: 'pdf-primary',
+      card: dummyCard,
+      page,
+      sourceTitle: this.cachedPack?.sources[0]?.title ?? 'Material de estudo',
+    });
+  }
+
+  private spawnOrUpdateNodeAnalysisPanel(detail: ConceptGraphNodeSelectDetail): void {
+    const existingEl = this.containerEl.querySelector<Entity>('#panel-node-analysis');
+    if (existingEl) {
+      const comp = existingEl.components['imx-node-analysis-panel'] as
+        | NodeAnalysisPanelComponent
+        | undefined;
+      comp?.controller?.setAnalysisData({
+        conceptId: detail.conceptId,
+        label: detail.label,
+        definition: detail.definition,
+        sourcePage: detail.sourcePage,
+        sourceTitle: detail.sourceTitle,
+        parents: detail.parents,
+        children: detail.children,
+      });
+      return;
+    }
+
+    const camEntity = this.scene.querySelector<Entity>('#main-camera');
+    const cameraObj = camEntity?.getObject3D('camera');
+    const angles = cameraObj
+      ? directionToSphericalAngles(cameraObj.getWorldDirection(new AFRAME.THREE.Vector3()))
+      : { yawDeg: 0 };
+    const clamped = clampSpherical({
+      yawDeg: angles.yawDeg + 42,
+      pitchDeg: -2,
+      radiusM: 1.25,
+    });
+    const panelId = 'panel-node-analysis';
+
+    const el = document.createElement('a-entity') as Entity;
+    el.id = panelId;
+    el.setAttribute('data-content-id', 'node-analysis');
+
+    el.setAttribute('imx-panel', {
+      panelId,
+      yawDeg: clamped.yawDeg,
+      pitchDeg: clamped.pitchDeg,
+      radiusM: clamped.radiusM,
+      width: 0.96,
+      height: 0.76,
+      accentColor: '#0284C7',
+    });
+
+    el.setAttribute('imx-drag-handle', {
+      cameraSelector: '#main-camera',
+      contentId: 'node-analysis',
+      width: 0.96,
+      height: 0.76,
+    });
+
+    el.setAttribute('imx-node-analysis-panel', {
+      conceptId: detail.conceptId,
+    });
+
+    const attachData = (): void => {
+      const comp = el.components['imx-node-analysis-panel'] as
+        | NodeAnalysisPanelComponent
+        | undefined;
+      comp?.controller?.setAnalysisData({
+        conceptId: detail.conceptId,
+        label: detail.label,
+        definition: detail.definition,
+        sourcePage: detail.sourcePage,
+        sourceTitle: detail.sourceTitle,
+        parents: detail.parents,
+        children: detail.children,
+      });
+    };
+
+    if (el.hasLoaded) {
+      attachData();
+    } else {
+      el.addEventListener('loaded', attachData, { once: true });
+    }
+
+    this.containerEl.appendChild(el);
+    this.activeContentIds.add('node-analysis');
+    this.emitActiveContentsChange();
+  }
+
   private spawnWelcomePlaceholder(spec: InitialZonePanelSpec): void {
     const el = document.createElement('a-entity') as Entity;
     el.id = spec.panelId;
@@ -590,6 +737,71 @@ export class ZoneWorkspaceController {
     this.revokePdfBlobUrl();
     while (this.containerEl.firstChild) {
       this.containerEl.removeChild(this.containerEl.firstChild);
+    }
+  }
+
+  private normalizeCardForPack(card: StudyCard, pack: StudyPack): StudyCard {
+    const conceptById = new Map(pack.concepts.map((c) => [c.id, c]));
+    const sourceById = new Map(pack.sources.map((s) => [s.id, s]));
+    const fallbackConcept = pack.concepts[0];
+    const fallbackSource = pack.sources[0];
+
+    const validConceptIds = card.conceptIds.filter((cid) => conceptById.has(cid));
+    if (validConceptIds.length === 0 && fallbackConcept) {
+      validConceptIds.push(fallbackConcept.id);
+    }
+
+    const primaryConcept =
+      (validConceptIds[0] ? conceptById.get(validConceptIds[0]) : undefined) ?? fallbackConcept;
+
+    const validAnchors: SourceAnchor[] = [];
+    for (const anchor of card.anchors) {
+      const src = sourceById.get(anchor.sourceId);
+      if (src) {
+        validAnchors.push({
+          sourceId: src.id,
+          page: Math.max(1, Math.min(anchor.page, src.pageCount)),
+          chunkId: anchor.chunkId,
+        });
+      }
+    }
+
+    if (validAnchors.length === 0) {
+      if (primaryConcept && primaryConcept.anchors.length > 0) {
+        validAnchors.push(...primaryConcept.anchors);
+      } else if (fallbackSource) {
+        const rawPage = card.anchors[0]?.page ?? 1;
+        validAnchors.push({
+          sourceId: fallbackSource.id,
+          page: Math.max(1, Math.min(rawPage, fallbackSource.pageCount)),
+          chunkId: `chunk-${primaryConcept?.id ?? 'concept'}`,
+        });
+      }
+    }
+
+    return {
+      id: card.id,
+      title: card.title,
+      body: card.body,
+      conceptIds: validConceptIds,
+      anchors: validAnchors,
+    };
+  }
+
+  private async persistAddedCard(
+    zoneId: string,
+    pack: StudyPack,
+    validCard: StudyCard,
+  ): Promise<void> {
+    await this.storage.saveStudyPack?.(zoneId, pack);
+    try {
+      const remotePack = await saveZoneCardRemote(zoneId, validCard);
+      if (this.currentZoneId === zoneId) {
+        this.cachedPack = remotePack;
+      }
+      await this.storage.saveStudyPack?.(zoneId, remotePack);
+    } catch {
+      // mantém a persistência local quando em modo offline ou zona de demonstração
     }
   }
 

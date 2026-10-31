@@ -8,7 +8,7 @@ if (typeof window !== 'undefined') {
 
 import { PT_BR } from '../../shared/i18n/pt-br';
 import { logger } from '../../shared/logger';
-import { PANEL_DEFAULT_HEIGHT_M, PANEL_DEFAULT_WIDTH_M, type ZoneTheme } from '../config/constants';
+import type { ZoneTheme } from '../config/constants';
 import type { SyntheticPdfPageContent } from '../systems/initial-panels';
 import { computePdfPageWindow } from '../systems/pdf-page-window';
 import { clampPdfPage } from '../systems/pdf-page-window';
@@ -40,8 +40,8 @@ export interface PdfPanelComponent extends Component<PdfPanelData> {
 
 export type SyntheticPageProvider = (pageNumber: number) => SyntheticPdfPageContent;
 
-const CANVAS_WIDTH_PX = 1024;
-const CANVAS_HEIGHT_PX = 768;
+const CANVAS_WIDTH_PX = 1440;
+const CANVAS_HEIGHT_PX = 1920;
 
 function createSubEntity(tag: string, attributes: Record<string, unknown>): Entity {
   const el = document.createElement(tag) as Entity;
@@ -143,6 +143,8 @@ export class PdfPanelController {
   private totalPages: number;
   private syntheticProvider: SyntheticPageProvider | null = null;
   private currentTheme: ZoneTheme;
+  private syncVersion = 0;
+  private isLoadingDoc = false;
 
   private readonly onThemeChange = (event: Event): void => {
     const detail = (event as CustomEvent<{ theme: ZoneTheme }>).detail;
@@ -377,18 +379,68 @@ export class PdfPanelController {
     return { containerEl, borderEl, btnEl, iconEl, textEl };
   }
 
+  private applyResponsiveAspectRatio(aspectRatio: number): void {
+    const safeAspect = Number.isFinite(aspectRatio) && aspectRatio > 0.1 ? aspectRatio : 0.707;
+    let planeW: number;
+    let planeH: number;
+
+    if (safeAspect >= 1.0) {
+      // documento em modo paisagem (ex.: slides 16:9 ou 4:3)
+      planeH = Math.min(0.54, 0.96 / safeAspect);
+      planeW = Math.round(planeH * safeAspect * 1000) / 1000;
+      planeH = Math.round(planeH * 1000) / 1000;
+    } else {
+      // documento em modo retrato (ex.: a4 ou carta)
+      planeH = 0.72;
+      planeW = Math.max(0.38, Math.round(planeH * safeAspect * 1000) / 1000);
+    }
+
+    const panelW = Math.max(0.56, Math.round((planeW + 0.06) * 1000) / 1000);
+    const panelH = Math.round((planeH + 0.22) * 1000) / 1000;
+
+    this.data.width = panelW;
+    this.data.height = panelH;
+
+    this.el.setAttribute('imx-panel', {
+      width: panelW,
+      height: panelH,
+      title: this.data.sourceTitle,
+    });
+    this.el.setAttribute('imx-drag-handle', {
+      width: panelW,
+      height: panelH,
+    });
+
+    const THREE = AFRAME.THREE;
+    this.canvasMesh.geometry.dispose();
+    this.canvasMesh.geometry = new THREE.PlaneGeometry(planeW, planeH);
+
+    const footerY = -panelH / 2 + 0.055;
+    this.prevNav.containerEl.setAttribute('position', `${-panelW / 2 + 0.11} ${footerY} 0.015`);
+    this.nextNav.containerEl.setAttribute('position', `${panelW / 2 - 0.11} ${footerY} 0.015`);
+    this.pageLabelEl.setAttribute('position', `0 ${footerY} 0.015`);
+  }
+
   private async syncDocumentAndWindow(): Promise<void> {
-    this.evictAllTextures();
+    const version = ++this.syncVersion;
+    this.isLoadingDoc = true;
+
     if (this.pdfDoc) {
       await this.pdfDoc.cleanup();
       this.pdfDoc = null;
     }
     this.loadedUrl = this.data.pdfUrl;
 
-    if (this.pdfBytes && this.pdfBytes.length > 0) {
+    if (this.pdfBytes && this.pdfBytes.byteLength > 0) {
       try {
-        const loadingTask = pdfjsLib.getDocument({ data: this.pdfBytes });
-        this.pdfDoc = await loadingTask.promise;
+        // envia uma cópia do buffer para evitar que o web worker do pdf.js transfira e invalide o array original
+        const loadingTask = pdfjsLib.getDocument({ data: this.pdfBytes.slice(0) });
+        const loadedDoc = await loadingTask.promise;
+        if (version !== this.syncVersion) {
+          void loadedDoc.cleanup();
+          return;
+        }
+        this.pdfDoc = loadedDoc;
         this.totalPages = Math.max(1, this.pdfDoc.numPages);
         this.data.pageCount = this.totalPages;
         this.currentPage = clampPdfPage(this.currentPage, this.totalPages);
@@ -399,7 +451,12 @@ export class PdfPanelController {
     } else if (this.data.pdfUrl) {
       try {
         const loadingTask = pdfjsLib.getDocument({ url: this.data.pdfUrl });
-        this.pdfDoc = await loadingTask.promise;
+        const loadedDoc = await loadingTask.promise;
+        if (version !== this.syncVersion) {
+          void loadedDoc.cleanup();
+          return;
+        }
+        this.pdfDoc = loadedDoc;
         this.totalPages = Math.max(1, this.pdfDoc.numPages);
         this.data.pageCount = this.totalPages;
         this.currentPage = clampPdfPage(this.currentPage, this.totalPages);
@@ -411,10 +468,32 @@ export class PdfPanelController {
         this.pdfDoc = null;
       }
     }
+
+    if (version !== this.syncVersion) return;
+
+    // avalia a proporção (aspect ratio) da primeira página do pdf para ajustar o tamanho do painel sem distorção
+    if (this.pdfDoc) {
+      try {
+        const firstPage = await this.pdfDoc.getPage(1);
+        if (version !== this.syncVersion) return;
+        const firstViewport = firstPage.getViewport({ scale: 1 });
+        const aspectRatio = firstViewport.width / Math.max(1, firstViewport.height);
+        this.applyResponsiveAspectRatio(aspectRatio);
+      } catch {
+        this.applyResponsiveAspectRatio(0.707);
+      }
+    } else {
+      this.applyResponsiveAspectRatio(CANVAS_WIDTH_PX / CANVAS_HEIGHT_PX);
+    }
+
+    this.isLoadingDoc = false;
+    // limpa qualquer textura provisória gerada antes da resolução assíncrona do documento real
+    this.evictAllTextures();
     await this.refreshWindow();
   }
 
   private async refreshWindow(): Promise<void> {
+    if (this.isLoadingDoc) return;
     const plan = computePdfPageWindow(this.currentPage, this.totalPages, [
       ...this.pageCache.keys(),
     ]);
@@ -449,15 +528,16 @@ export class PdfPanelController {
     if (this.pdfDoc) {
       const page = await this.pdfDoc.getPage(pageNumber);
       const baseViewport = page.getViewport({ scale: 1 });
-      const scale = Math.min(
-        CANVAS_WIDTH_PX / baseViewport.width,
-        CANVAS_HEIGHT_PX / baseViewport.height,
-      );
+      const maxDimensionPx = 1600;
+      const scale =
+        maxDimensionPx / Math.max(1, Math.max(baseViewport.width, baseViewport.height));
       const viewport = page.getViewport({ scale });
-      canvas.width = Math.round(viewport.width);
-      canvas.height = Math.round(viewport.height);
+      canvas.width = Math.max(1, Math.round(viewport.width));
+      canvas.height = Math.max(1, Math.round(viewport.height));
       const context = canvas.getContext('2d');
       if (context) {
+        context.fillStyle = '#FFFFFF';
+        context.fillRect(0, 0, canvas.width, canvas.height);
         await page.render({ canvasContext: context, canvas, viewport }).promise;
       }
     } else if (this.syntheticProvider) {
@@ -511,8 +591,8 @@ AFRAME.registerComponent<PdfPanelComponent>('imx-pdf-panel', {
     sourceTitle: { type: 'string', default: 'Documento PDF' },
     page: { type: 'int', default: 1 },
     pageCount: { type: 'int', default: 4 },
-    width: { type: 'number', default: PANEL_DEFAULT_WIDTH_M },
-    height: { type: 'number', default: PANEL_DEFAULT_HEIGHT_M },
+    width: { type: 'number', default: 0.76 },
+    height: { type: 'number', default: 0.88 },
   },
   init() {
     this.controller = new PdfPanelController(this.el, this.data);

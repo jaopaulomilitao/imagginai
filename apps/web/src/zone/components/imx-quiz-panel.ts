@@ -103,9 +103,16 @@ export class QuizPanelBridge {
     this.data = nextData;
   }
 
-  setQuestions(items: readonly QuizItem[]): void {
-    this.quizController = new QuizSessionController(items);
+  setQuestions(items: readonly QuizItem[], initialQuestionId?: string): void {
+    this.quizController = new QuizSessionController(items, initialQuestionId);
     this.renderCurrentQuestion();
+  }
+
+  goToQuestionById(questionId: string): void {
+    if (!this.quizController) return;
+    if (this.quizController.goToQuestionById(questionId)) {
+      this.renderCurrentQuestion();
+    }
   }
 
   selectOption(optionIndex: number): QuizAnswerFeedback | null {

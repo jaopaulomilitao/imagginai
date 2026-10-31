@@ -9,6 +9,8 @@ export type PhosphorVrIconName =
   | 'timer'
   | 'goggles'
   | 'sun-dim'
+  | 'moon'
+  | 'hand'
   | 'file-pdf'
   | 'cards'
   | 'brain'
@@ -155,6 +157,39 @@ export function drawPhosphorGlyph(
         ctx.lineTo(64 + Math.cos(angle) * 44, 64 + Math.sin(angle) * 44);
         ctx.stroke();
       }
+      break;
+    }
+    case 'moon': {
+      // lua crescente minimalista estilo phosphor para alternância de tema
+      ctx.beginPath();
+      ctx.arc(64, 64, 36, 0.42 * Math.PI, 1.82 * Math.PI, false);
+      ctx.quadraticCurveTo(46, 68, 73, 99);
+      ctx.stroke();
+      break;
+    }
+    case 'hand': {
+      // mão estilizada com contorno minimalista estilo phosphor
+      ctx.beginPath();
+      ctx.moveTo(46, 106);
+      ctx.lineTo(46, 80);
+      ctx.lineTo(26, 68);
+      ctx.arc(26, 60, 8, 0.5 * Math.PI, 1.5 * Math.PI, false);
+      ctx.lineTo(48, 52);
+      ctx.lineTo(48, 28);
+      ctx.arc(54, 28, 6, Math.PI, 0, false);
+      ctx.lineTo(60, 48);
+      ctx.lineTo(60, 22);
+      ctx.arc(66, 22, 6, Math.PI, 0, false);
+      ctx.lineTo(72, 48);
+      ctx.lineTo(72, 28);
+      ctx.arc(78, 28, 6, Math.PI, 0, false);
+      ctx.lineTo(84, 54);
+      ctx.lineTo(84, 42);
+      ctx.arc(90, 42, 6, Math.PI, 0, false);
+      ctx.lineTo(96, 76);
+      ctx.lineTo(82, 106);
+      ctx.closePath();
+      ctx.stroke();
       break;
     }
     case 'file-pdf': {
@@ -351,12 +386,24 @@ export function createPhosphorIconEntity(options: {
   return el;
 }
 
-// atualiza a cor e a opacidade de um ícone phosphor existente na cena vr
-export function updatePhosphorIconAppearance(el: Entity, nextColor: string, nextOpacity = 1): void {
+// atualiza a cor, opacidade e opcionalmente o glifo de um ícone phosphor existente na cena vr
+export function updatePhosphorIconAppearance(
+  el: Entity,
+  nextColor: string,
+  nextOpacity = 1,
+  nextIcon?: PhosphorVrIconName,
+): void {
   const meta = iconRegistry.get(el);
   if (!meta) return;
 
-  if (meta.color !== nextColor) {
+  const iconChanged = Boolean(nextIcon && nextIcon !== meta.icon);
+  const colorChanged = meta.color !== nextColor;
+
+  if (iconChanged || colorChanged) {
+    if (nextIcon) {
+      meta.icon = nextIcon;
+      el.setAttribute('data-phosphor-icon', nextIcon);
+    }
     meta.color = nextColor;
     let ctx: CanvasRenderingContext2D | null;
     try {

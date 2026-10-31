@@ -15,11 +15,16 @@ import {
   WarningCircle,
   X,
 } from '@phosphor-icons/react';
+import * as pdfjsLib from 'pdfjs-dist';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router';
 
+if (typeof window !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdfjs/pdf.worker.min.mjs';
+}
+
 import { PT_BR } from '../../shared/i18n/pt-br';
-import { zoneStorage } from '../../shared/storage/dexie-db';
+import { resolveBundledDemoPack, zoneStorage } from '../../shared/storage/dexie-db';
 import type { StudyPack } from '../../shared/types/study-pack';
 import type { Zone } from '../../shared/types/zone';
 import type { ZoneTheme } from '../../zone/config/constants';
@@ -55,6 +60,18 @@ function describeJobStage(progress: number, status: string): string {
   if (progress >= 50) return PT_BR.zoneDetail.jobStages.embedding;
   if (progress >= 15) return PT_BR.zoneDetail.jobStages.extracting;
   return PT_BR.zoneDetail.jobStages.queued;
+}
+
+async function detectPdfPageCount(bytes: Uint8Array): Promise<number> {
+  try {
+    const task = pdfjsLib.getDocument({ data: bytes.slice(0) });
+    const doc = await task.promise;
+    const count = Math.max(1, doc.numPages);
+    await doc.cleanup();
+    return count;
+  } catch {
+    return 4;
+  }
 }
 
 export function ZoneDetailPage({
@@ -103,12 +120,27 @@ export function ZoneDetailPage({
         setPack(null);
         setActiveStep(1);
       }
+
+      if (userEmail && UUID_REGEX.test(zoneId) && loadedZone?.packId) {
+        try {
+          const remotePack = await fetchZoneStudyPack(zoneId);
+          if (!active) return;
+          if (!loadedPack || remotePack.cards.length >= loadedPack.cards.length) {
+            await zoneStorage.saveStudyPack(zoneId, remotePack);
+            if (!active) return;
+            setPack(remotePack);
+            setActiveStep(3);
+          }
+        } catch {
+          // mantém o study pack local quando offline ou indisponível
+        }
+      }
     };
     void load();
     return () => {
       active = false;
     };
-  }, [zoneId]);
+  }, [zoneId, userEmail]);
 
   const handleSaveSettings = async (event: FormEvent) => {
     event.preventDefault();
@@ -152,6 +184,70 @@ export function ZoneDetailPage({
     setJobStageText(PT_BR.zoneDetail.jobStages.queued);
 
     try {
+      // 1. salva imediatamente cada arquivo pdf real no indexeddb local com sua contagem real de páginas
+      const localSources: { id: string; title: string; pageCount: number; file: File }[] = [];
+      for (let idx = 0; idx < selectedFiles.length; idx++) {
+        const file = selectedFiles[idx];
+        if (!file) continue;
+        const buffer = await file.arrayBuffer();
+        const pdfBytes = new Uint8Array(buffer);
+        const pageCount = await detectPdfPageCount(pdfBytes);
+        const effectiveTitle =
+          selectedFiles.length === 1 && docTitle.trim()
+            ? docTitle.trim()
+            : file.name.replace(/\.pdf$/i, '');
+        const sourceId = `local-${Date.now()}-${idx}`;
+        const storedPdfRecord = {
+          zoneId: zone.id,
+          sourceId,
+          title: effectiveTitle,
+          pageCount,
+          data: pdfBytes,
+          savedAt: new Date().toISOString(),
+        };
+        await zoneStorage.savePdfFile(storedPdfRecord);
+        localSources.push({ id: sourceId, title: effectiveTitle, pageCount, file });
+      }
+
+      // vincula imediatamente as fontes enviadas ao study pack local para leitura imediata na zona vr
+      const basePack =
+        pack ??
+        (await zoneStorage.loadStudyPack(zone.id)) ??
+        resolveBundledDemoPack(zone.id) ??
+        resolveBundledDemoPack('demo');
+      if (basePack && localSources.length > 0) {
+        const nextSources = [
+          ...localSources.map((s) => ({ id: s.id, title: s.title, pageCount: s.pageCount })),
+          ...basePack.sources.filter(
+            (existing) =>
+              !existing.id.startsWith('src-cardio-demo') &&
+              !localSources.some((s) => s.title === existing.title),
+          ),
+        ];
+        const localUpdatedPack: StudyPack = {
+          ...basePack,
+          packId: basePack.packId.startsWith('pack-demo')
+            ? `pack-local-${zone.id}`
+            : basePack.packId,
+          zoneId: zone.id,
+          sources: nextSources,
+        };
+        await zoneStorage.saveStudyPack(zone.id, localUpdatedPack);
+        setPack(localUpdatedPack);
+      }
+
+      if (!userEmail) {
+        // modo offline/sem login: conclui o vínculo local do pdf real para leitura imediata em vr
+        setSelectedFiles([]);
+        setDocTitle('');
+        const refreshedZone = await zoneStorage.getZone(zone.id);
+        if (refreshedZone) setZone(refreshedZone);
+        setJobProgress(100);
+        setJobStageText(PT_BR.zoneDetail.jobStages.done);
+        setActiveStep(3);
+        return;
+      }
+
       let remoteZoneId = zone.id;
       if (!UUID_REGEX.test(remoteZoneId)) {
         const createdRemote = await createZoneRemote({
@@ -161,32 +257,22 @@ export function ZoneDetailPage({
         remoteZoneId = createdRemote.id;
       }
 
-      for (let idx = 0; idx < selectedFiles.length; idx++) {
-        const file = selectedFiles[idx];
-        if (!file) continue;
-        const prefix = selectedFiles.length > 1 ? `[PDF ${idx + 1}/${selectedFiles.length}] ` : '';
+      for (let idx = 0; idx < localSources.length; idx++) {
+        const entry = localSources[idx];
+        if (!entry) continue;
+        const prefix = localSources.length > 1 ? `[PDF ${idx + 1}/${localSources.length}] ` : '';
 
-        const buffer = await file.arrayBuffer();
-        const effectiveTitle =
-          selectedFiles.length === 1 && docTitle.trim()
-            ? docTitle.trim()
-            : file.name.replace(/\.pdf$/i, '');
-        const storedPdfRecord = {
-          zoneId: zone.id,
-          sourceId: `local-${Date.now()}-${idx}`,
-          title: effectiveTitle,
-          data: new Uint8Array(buffer),
-          savedAt: new Date().toISOString(),
-        };
-        await zoneStorage.savePdfFile(storedPdfRecord);
         if (remoteZoneId !== zone.id) {
-          await zoneStorage.savePdfFile({
-            ...storedPdfRecord,
-            zoneId: remoteZoneId,
-          });
+          const savedLocal = await zoneStorage.loadPdfFile(zone.id);
+          if (savedLocal) {
+            await zoneStorage.savePdfFile({
+              ...savedLocal,
+              zoneId: remoteZoneId,
+            });
+          }
         }
 
-        const uploadRes = await uploadZoneSourcePdf(remoteZoneId, file, effectiveTitle);
+        const uploadRes = await uploadZoneSourcePdf(remoteZoneId, entry.file, entry.title);
 
         let finished = false;
         while (!finished) {
@@ -207,6 +293,12 @@ export function ZoneDetailPage({
       const generatedPack = await fetchZoneStudyPack(remoteZoneId);
       const boundPack: StudyPack = { ...generatedPack, zoneId: zone.id };
       await zoneStorage.saveStudyPack(zone.id, boundPack);
+      if (remoteZoneId !== zone.id) {
+        await zoneStorage.saveStudyPack(remoteZoneId, {
+          ...generatedPack,
+          zoneId: remoteZoneId,
+        });
+      }
       setPack(boundPack);
       setSelectedFiles([]);
       setDocTitle('');
@@ -458,7 +550,7 @@ export function ZoneDetailPage({
               <div className="md:col-span-3">
                 <button
                   type="submit"
-                  disabled={uploading || selectedFiles.length === 0 || !userEmail}
+                  disabled={uploading || selectedFiles.length === 0}
                   className="imx-glass-button imx-button-primary w-full"
                 >
                   <CloudArrowUp size={18} weight="bold" />

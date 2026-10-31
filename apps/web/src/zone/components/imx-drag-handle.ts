@@ -79,6 +79,7 @@ export class DragHandleController {
   private readonly cameraDirection = new AFRAME.THREE.Vector3();
   private lastVisibleState: boolean | null = null;
   private lastBarScale = -1;
+  private lastPanelHeight = -1;
   private currentTheme: ZoneTheme;
   private isDeleting = false;
 
@@ -108,7 +109,7 @@ export class DragHandleController {
     const hovered = this.currentHoveredElement();
     const panelCtrl = this.panelController();
     const isBorder = panelCtrl?.isBorderElement(hovered);
-    const isHandle = hovered === this.handleEl;
+    const isHandle = hovered === this.handleEl || (hovered !== null && this.handleEl.contains(hovered));
     if ((isHandle || isBorder) && this.state.startGrabDrag()) {
       panelCtrl?.setHighlight(true);
       this.setHandleHighlight(true);
@@ -123,30 +124,71 @@ export class DragHandleController {
     }
   };
 
+  private readonly onPinchStart = (): void => {
+    const hovered = this.currentHoveredElement();
+    const panelCtrl = this.panelController();
+    const isBorder = panelCtrl?.isBorderElement(hovered);
+    const isHandle = hovered === this.handleEl || (hovered !== null && this.handleEl.contains(hovered));
+    if ((isHandle || isBorder) && this.state.startPinchDrag()) {
+      panelCtrl?.setHighlight(true);
+      this.setHandleHighlight(true);
+      this.syncHandleVisibility();
+    }
+  };
+
+  private readonly onPinchEnd = (): void => {
+    if (this.state.endPinchDrag()) {
+      this.setHandleHighlight(false);
+      this.finishDrop();
+    }
+  };
+
+  private readonly onHandleMouseDown = (event: Event): void => {
+    event.stopPropagation();
+    const panelCtrl = this.panelController();
+    if (this.state.startPinchDrag()) {
+      panelCtrl?.setHighlight(true);
+      this.setHandleHighlight(true);
+      this.syncHandleVisibility();
+    }
+  };
+
+  private readonly onWindowMouseUp = (): void => {
+    if (this.state.mode === 'pinch' && this.state.endPinchDrag()) {
+      this.setHandleHighlight(false);
+      this.finishDrop();
+    }
+  };
+
   // botão '-' redimensiona para menor o grafo 3d ou afasta o painel (seção 3)
-  private readonly onMinusClick = (): void => {
+  private readonly onMinusClick = (event?: Event): void => {
+    event?.stopPropagation();
     const conceptGraph = this.el.components['imx-concept-graph'] as
       { controller?: { adjustScale(direction: 1 | -1): void } } | undefined;
     if (conceptGraph?.controller) {
       conceptGraph.controller.adjustScale(-1);
+      this.syncHandleBarScale();
       return;
     }
     this.changeRadius(1);
   };
 
   // botão '+' redimensiona para maior o grafo 3d ou aproxima o painel (seção 3)
-  private readonly onPlusClick = (): void => {
+  private readonly onPlusClick = (event?: Event): void => {
+    event?.stopPropagation();
     const conceptGraph = this.el.components['imx-concept-graph'] as
       { controller?: { adjustScale(direction: 1 | -1): void } } | undefined;
     if (conceptGraph?.controller) {
       conceptGraph.controller.adjustScale(1);
+      this.syncHandleBarScale();
       return;
     }
     this.changeRadius(-1);
   };
 
   // botão de lixeira (trash) remove o painel da cena com transição fade-out e libera o item no menu conteúdos (seção 4.4)
-  private readonly onTrashClick = (): void => {
+  private readonly onTrashClick = (event?: Event): void => {
+    event?.stopPropagation();
     if (this.isDeleting) return;
     this.isDeleting = true;
     const panelCtrl = this.panelController();
@@ -179,23 +221,38 @@ export class DragHandleController {
     this.currentTheme = resolveInitialTheme(storedPref);
     const palette = getThemePalette(this.currentTheme);
 
-    const topY = data.height / 2 + PANEL_HANDLE_HEIGHT_M / 2 + 0.014;
+    const isGraph = this.el.hasAttribute('imx-concept-graph');
+    const topY = data.height / 2 + PANEL_HANDLE_HEIGHT_M / 2 + (isGraph ? 0.038 : 0.02);
+    const zPos = isGraph ? 0.08 : 0.024;
     this.barRootEl = createSubEntity('a-entity', {
-      position: `0 ${topY} 0.012`,
+      position: `0 ${topY} ${zPos}`,
       visible: false,
+      'data-ixr-ignore-rotate': 'true',
     });
+
+    // ponte invisível de colisão estritamente abaixo dos botões na travessia entre o topo do painel e a alça
+    const bridgeEl = createSubEntity('a-plane', {
+      class: 'interactable',
+      'data-hit-volume': 'true',
+      width: 0.44,
+      height: 0.034,
+      position: '0 -0.052 -0.005',
+      material: 'shader: flat; color: #ffffff; opacity: 0.001; transparent: true; depthWrite: false',
+    });
+    this.barRootEl.appendChild(bridgeEl);
 
     const hBorderStroke = 0.004;
     this.handleBorderEl = createSubEntity('a-entity', {
       geometry: `primitive: rounded-rect; width: ${PANEL_HANDLE_WIDTH_M + 2 * hBorderStroke}; height: ${PANEL_HANDLE_HEIGHT_M + 2 * hBorderStroke}; radius: ${0.016 + hBorderStroke}`,
-      position: '0 0 -0.001',
+      position: '0 0 0.003',
       material: `color: ${palette.handleBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
     });
 
     this.handleEl = createSubEntity('a-entity', {
       class: 'interactable',
+      'data-action': 'move-handle',
       geometry: `primitive: rounded-rect; width: ${PANEL_HANDLE_WIDTH_M}; height: ${PANEL_HANDLE_HEIGHT_M}; radius: 0.016`,
-      position: '0 0 0',
+      position: '0 0 0.005',
       material: `color: ${palette.handleBgColor}; shader: flat; opacity: ${palette.handleBgOpacity}; transparent: true`,
     });
 
@@ -205,7 +262,7 @@ export class DragHandleController {
       for (const y of rows) {
         const dot = createSubEntity('a-circle', {
           radius: 0.0045,
-          position: `${x} ${y} 0.003`,
+          position: `${x} ${y} 0.008`,
           material: `color: ${palette.handleDotsColor}; shader: flat`,
         });
         this.dotEls.push(dot);
@@ -219,60 +276,62 @@ export class DragHandleController {
 
     this.minusBorderEl = createSubEntity('a-entity', {
       geometry: `primitive: rounded-rect; width: ${PANEL_BUTTON_SIZE_M + 2 * bStroke}; height: ${PANEL_HANDLE_HEIGHT_M + 2 * bStroke}; radius: ${0.014 + bStroke}`,
-      position: `${-sideOffset} 0 -0.001`,
+      position: `${-sideOffset} 0 0.003`,
       material: `color: ${palette.buttonBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
     });
     this.minusBtnEl = createSubEntity('a-entity', {
       class: 'interactable',
+      'data-action': 'minus',
       geometry: `primitive: rounded-rect; width: ${PANEL_BUTTON_SIZE_M}; height: ${PANEL_HANDLE_HEIGHT_M}; radius: 0.014`,
-      position: `${-sideOffset} 0 0`,
+      position: `${-sideOffset} 0 0.005`,
       material: `color: ${palette.buttonBgColor}; shader: flat; opacity: ${palette.buttonBgOpacity}; transparent: true`,
     });
     this.minusIconEl = createPhosphorIconEntity({
       icon: 'minus',
       color: palette.buttonTextColor,
       size: 0.032,
-      position: '0 0 0.004',
+      position: '0 0 0.008',
     });
     this.minusBtnEl.appendChild(this.minusIconEl);
 
     this.plusBorderEl = createSubEntity('a-entity', {
       geometry: `primitive: rounded-rect; width: ${PANEL_BUTTON_SIZE_M + 2 * bStroke}; height: ${PANEL_HANDLE_HEIGHT_M + 2 * bStroke}; radius: ${0.014 + bStroke}`,
-      position: `${sideOffset} 0 -0.001`,
+      position: `${sideOffset} 0 0.003`,
       material: `color: ${palette.buttonBorderColor}; shader: flat; opacity: 0.85; transparent: true`,
     });
     this.plusBtnEl = createSubEntity('a-entity', {
       class: 'interactable',
+      'data-action': 'plus',
       geometry: `primitive: rounded-rect; width: ${PANEL_BUTTON_SIZE_M}; height: ${PANEL_HANDLE_HEIGHT_M}; radius: 0.014`,
-      position: `${sideOffset} 0 0`,
+      position: `${sideOffset} 0 0.005`,
       material: `color: ${palette.buttonBgColor}; shader: flat; opacity: ${palette.buttonBgOpacity}; transparent: true`,
     });
     this.plusIconEl = createPhosphorIconEntity({
       icon: 'plus',
       color: palette.buttonTextColor,
       size: 0.032,
-      position: '0 0 0.004',
+      position: '0 0 0.008',
     });
     this.plusBtnEl.appendChild(this.plusIconEl);
 
     // botão de exclusão (trash phosphor icon) posicionado ao lado do controle +
     this.trashBorderEl = createSubEntity('a-entity', {
       geometry: `primitive: rounded-rect; width: ${PANEL_BUTTON_SIZE_M + 2 * bStroke}; height: ${PANEL_HANDLE_HEIGHT_M + 2 * bStroke}; radius: ${0.014 + bStroke}`,
-      position: `${trashOffset} 0 -0.001`,
+      position: `${trashOffset} 0 0.003`,
       material: `color: #FB7185; shader: flat; opacity: 0.9; transparent: true`,
     });
     this.trashBtnEl = createSubEntity('a-entity', {
       class: 'interactable',
       'data-action': 'delete-panel',
       geometry: `primitive: rounded-rect; width: ${PANEL_BUTTON_SIZE_M}; height: ${PANEL_HANDLE_HEIGHT_M}; radius: 0.014`,
-      position: `${trashOffset} 0 0`,
+      position: `${trashOffset} 0 0.005`,
       material: `color: #18181B; shader: flat; opacity: 0.92; transparent: true`,
     });
     this.trashIconEl = createPhosphorIconEntity({
       icon: 'trash',
       color: '#FB7185',
       size: 0.034,
-      position: '0 0 0.004',
+      position: '0 0 0.008',
     });
     this.trashBtnEl.appendChild(this.trashIconEl);
 
@@ -286,20 +345,42 @@ export class DragHandleController {
     this.barRootEl.appendChild(this.trashBtnEl);
     this.el.appendChild(this.barRootEl);
 
+    const setupButtonHover = (btnEl: Entity) => {
+      btnEl.addEventListener('mouseenter', () => {
+        btnEl.setAttribute('scale', '1.08 1.08 1.08');
+      });
+      btnEl.addEventListener('mouseleave', () => {
+        btnEl.setAttribute('scale', '1 1 1');
+      });
+    };
+    setupButtonHover(this.minusBtnEl);
+    setupButtonHover(this.plusBtnEl);
+    setupButtonHover(this.trashBtnEl);
+    setupButtonHover(this.handleEl);
+
     this.minusBtnEl.addEventListener('click', this.onMinusClick);
+    this.minusIconEl.addEventListener('click', this.onMinusClick);
     this.plusBtnEl.addEventListener('click', this.onPlusClick);
+    this.plusIconEl.addEventListener('click', this.onPlusClick);
     this.trashBtnEl.addEventListener('click', this.onTrashClick);
+    this.trashIconEl.addEventListener('click', this.onTrashClick);
+    this.handleEl.addEventListener('mousedown', this.onHandleMouseDown);
 
     const cameraEl = this.cameraEntity();
     cameraEl?.addEventListener('ixr-cursor-hover-start', this.onHoverStart);
     cameraEl?.addEventListener('ixr-cursor-hover-end', this.onHoverEnd);
     cameraEl?.addEventListener('ixr-grab-start', this.onGrabStart);
     cameraEl?.addEventListener('ixr-grab-end', this.onGrabEnd);
+    cameraEl?.addEventListener('ixr-pinch-start', this.onPinchStart);
+    cameraEl?.addEventListener('ixr-pinch-end', this.onPinchEnd);
     cameraEl?.addEventListener('ixr-hand-lost', this.onGrabEnd);
+    cameraEl?.addEventListener('ixr-hand-lost', this.onPinchEnd);
 
+    window.addEventListener('mouseup', this.onWindowMouseUp);
     window.addEventListener(ZONE_THEME_CHANGE_EVENT, this.onThemeChange);
 
     this.syncHandleBarScale();
+    this.syncHandleVisibility();
   }
 
   tick(deltaMs: number): void {
@@ -312,13 +393,18 @@ export class DragHandleController {
   }
 
   dispose(): void {
+    window.removeEventListener('mouseup', this.onWindowMouseUp);
     window.removeEventListener(ZONE_THEME_CHANGE_EVENT, this.onThemeChange);
     const cameraEl = this.cameraEntity();
     cameraEl?.removeEventListener('ixr-cursor-hover-start', this.onHoverStart);
     cameraEl?.removeEventListener('ixr-cursor-hover-end', this.onHoverEnd);
     cameraEl?.removeEventListener('ixr-grab-start', this.onGrabStart);
     cameraEl?.removeEventListener('ixr-grab-end', this.onGrabEnd);
+    cameraEl?.removeEventListener('ixr-pinch-start', this.onPinchStart);
+    cameraEl?.removeEventListener('ixr-pinch-end', this.onPinchEnd);
     cameraEl?.removeEventListener('ixr-hand-lost', this.onGrabEnd);
+    cameraEl?.removeEventListener('ixr-hand-lost', this.onPinchEnd);
+    this.handleEl.removeEventListener('mousedown', this.onHandleMouseDown);
     this.minusBtnEl.removeEventListener('click', this.onMinusClick);
     this.plusBtnEl.removeEventListener('click', this.onPlusClick);
     this.trashBtnEl.removeEventListener('click', this.onTrashClick);
@@ -398,20 +484,32 @@ export class DragHandleController {
   }
 
   private syncHandleVisibility(): void {
-    const visible = this.state.isHandleVisible;
+    const panelCtrl = this.panelController();
+    const isFramelessGraph =
+      Boolean(panelCtrl?.isFrameless) || this.el.hasAttribute('imx-concept-graph');
+    const visible = isFramelessGraph || this.state.isHandleVisible;
     if (visible === this.lastVisibleState) return;
     this.lastVisibleState = visible;
     this.barRootEl.setAttribute('visible', visible);
+  }
+
+  updateData(data: DragHandleData): void {
+    this.data = data;
+    this.syncHandleBarScale();
   }
 
   private syncHandleBarScale(): void {
     const panelCtrl = this.panelController();
     const radiusM = panelCtrl?.spherical.radiusM ?? 1.5;
     const scale = calcHandleBarScale(radiusM);
-    if (scale === this.lastBarScale) return;
+    const effectiveHeight = panelCtrl?.height ?? this.data.height;
+    if (scale === this.lastBarScale && effectiveHeight === this.lastPanelHeight) return;
     this.lastBarScale = scale;
-    const topY = this.data.height / 2 + (PANEL_HANDLE_HEIGHT_M * scale) / 2 + 0.014;
-    this.barRootEl.setAttribute('position', `0 ${topY} 0.012`);
+    this.lastPanelHeight = effectiveHeight;
+    const isGraph = this.el.hasAttribute('imx-concept-graph');
+    const topY = effectiveHeight / 2 + (PANEL_HANDLE_HEIGHT_M * scale) / 2 + (isGraph ? 0.048 : 0.02);
+    const zPos = isGraph ? 0.09 : 0.024;
+    this.barRootEl.setAttribute('position', `0 ${topY} ${zPos}`);
     this.barRootEl.setAttribute('scale', `${scale} ${scale} 1`);
   }
 
@@ -469,8 +567,8 @@ export class DragHandleController {
       desired,
       others,
       panelCtrl.panelId,
-      this.data.width,
-      this.data.height,
+      panelCtrl.width || this.data.width,
+      panelCtrl.height || this.data.height,
     );
     panelCtrl.setSpherical(resolved);
 
@@ -511,6 +609,9 @@ AFRAME.registerComponent<DragHandleComponent>('imx-drag-handle', {
   },
   init() {
     this.controller = new DragHandleController(this.el, this.data);
+  },
+  update() {
+    this.controller?.updateData(this.data);
   },
   tick(_time, delta) {
     this.controller?.tick(delta);

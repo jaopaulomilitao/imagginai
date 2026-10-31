@@ -89,6 +89,11 @@ declare module 'aframe' {
     pause?(this: TSelf): void;
   }
 
+  export interface PrimitiveDefinition {
+    defaultComponents?: Record<string, Record<string, unknown>>;
+    mappings?: Record<string, string>;
+  }
+
   export interface AFrameGlobal {
     readonly version: string;
     readonly THREE: Three;
@@ -99,6 +104,7 @@ declare module 'aframe' {
       definition: ComponentDefinition<TSelf>,
     ): void;
     registerSystem<TSelf extends System>(name: string, definition: SystemDefinition<TSelf>): void;
+    registerPrimitive?(name: string, definition: PrimitiveDefinition): void;
   }
 
   const AFRAME: AFrameGlobal;

@@ -8,7 +8,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig(({ mode }) => {
   const pwaPlugin = VitePWA({
     registerType: 'autoUpdate',
-    includeAssets: ['zone.html', 'demo-packs/*.json', 'mediapipe/**/*'],
+    includeAssets: ['zone.html', 'demo-packs/*.json', 'mediapipe/**/*', 'pdfjs/**/*'],
     manifest: {
       name: 'IMAGGINAI — Estudo Espacial WebXR',
       short_name: 'IMAGGINAI',
@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
     },
     workbox: {
       maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
-      globPatterns: ['**/*.{js,css,html,json,wasm,task}'],
+      globPatterns: ['**/*.{js,mjs,css,html,json,wasm,task}'],
       navigateFallback: null,
     },
   });
@@ -31,6 +31,9 @@ export default defineConfig(({ mode }) => {
   return {
     envDir: '../..',
     plugins: mode === 'https' ? [...basePlugins, basicSsl()] : basePlugins,
+    optimizeDeps: {
+      exclude: ['interacxr'],
+    },
     server: {
       port: 5173,
     },

@@ -6,10 +6,10 @@
   "scripts": {
     "sync:mediapipe": "node ../../packages/interacxr/scripts/sync-mediapipe.mjs public/mediapipe",
     "sync:pdfjs": "node scripts/sync-pdfjs.mjs",
-    "predev": "pnpm run sync:mediapipe && pnpm run sync:pdfjs",
+    "predev": "pnpm --filter interacxr build && pnpm run sync:mediapipe && pnpm run sync:pdfjs",
     "dev": "vite",
-    "dev:https": "pnpm run sync:mediapipe && pnpm run sync:pdfjs && vite --host --mode https",
-    "prebuild": "pnpm run sync:mediapipe && pnpm run sync:pdfjs",
+    "dev:https": "pnpm --filter interacxr build && pnpm run sync:mediapipe && pnpm run sync:pdfjs && vite --host --mode https",
+    "prebuild": "pnpm --filter interacxr build && pnpm run sync:mediapipe && pnpm run sync:pdfjs",
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview",
     "test": "vitest run",

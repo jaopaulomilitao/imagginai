@@ -103,7 +103,12 @@ class Settings(BaseSettings):
     embedding_model: str | None = None
     groq_api_key: str | None = None
     fallback_llm_model: str | None = None
-    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:5173"]
+    cors_origins: Annotated[list[str], NoDecode] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://localhost:5173",
+        "https://127.0.0.1:5173",
+    ]
 
     @field_validator("cors_origins", mode="before")
     @classmethod

@@ -140,4 +140,44 @@ describe('HandTracker', () => {
 
     expect(worker.terminated).toBe(true);
   });
+
+  it('publishes both left and right hands while keeping the right hand as primary', async () => {
+    const { worker, tracker, advance } = setup();
+    const frames: HandFrame[] = [];
+    tracker.onFrame((frame) => frames.push(frame));
+    worker.reply({ type: 'READY' });
+    tracker.pump();
+    await Promise.resolve();
+
+    const leftHand: Landmark[] = Array.from({ length: 21 }, () => ({ x: 0.25, y: 0.5, z: 0 }));
+    const rightHand: Landmark[] = Array.from({ length: 21 }, () => ({ x: 0.75, y: 0.5, z: 0 }));
+
+    advance(25);
+    worker.reply({
+      type: 'RESULT',
+      landmarks: [leftHand, rightHand],
+      hands: [
+        { landmarks: leftHand, handedness: 'left', score: 0.98 },
+        { landmarks: rightHand, handedness: 'right', score: 0.99 },
+      ],
+    });
+
+    expect(frames[0]?.hands).toHaveLength(2);
+    expect(frames[0]?.hands?.[0]?.handedness).toBe('left');
+    expect(frames[0]?.hands?.[1]?.handedness).toBe('right');
+    expect(frames[0]?.landmarks).toBe(rightHand);
+
+    // quando apenas uma mão está visível, ela assume clique/movimento (fallback de mão única)
+    advance(25);
+    tracker.pump();
+    await Promise.resolve();
+    worker.reply({
+      type: 'RESULT',
+      landmarks: [leftHand],
+      hands: [{ landmarks: leftHand, handedness: 'left', score: 0.98 }],
+    });
+    expect(frames[1]?.hands).toHaveLength(1);
+    expect(frames[1]?.hands?.[0]?.handedness).toBe('left');
+    expect(frames[1]?.landmarks).toBe(leftHand);
+  });
 });
