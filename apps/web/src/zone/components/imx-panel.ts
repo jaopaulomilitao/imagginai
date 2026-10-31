@@ -248,7 +248,8 @@ export class PanelController {
     this.bodyEl.setAttribute('visible', hasBody ? 'true' : 'false');
     this.bodyEl.object3D.visible = hasBody;
 
-    const hasFooter = !isFrameless && Boolean(this.data.footer && this.data.footer.trim().length > 0);
+    const hasFooter =
+      !isFrameless && Boolean(this.data.footer && this.data.footer.trim().length > 0);
     this.footerEl.setAttribute('visible', hasFooter ? 'true' : 'false');
     this.footerEl.object3D.visible = hasFooter;
   }

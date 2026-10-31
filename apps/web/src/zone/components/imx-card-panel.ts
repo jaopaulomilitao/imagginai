@@ -262,7 +262,7 @@ export class CardPanelController {
       ? this.data.title.length > 40
         ? `${this.data.title.slice(0, 38).trimEnd()}..`
         : this.data.title
-      : PT_BR.zone.panels.flashcardBadge ?? 'FLASHCARD';
+      : (PT_BR.zone.panels.flashcardBadge ?? 'FLASHCARD');
 
     this.badgeEl = createTroikaText(badgeLabel, {
       position: '0 0.165 0.002',
@@ -317,8 +317,8 @@ export class CardPanelController {
     });
 
     const buttonLabel = this.isRevealed
-      ? PT_BR.zone.panels.flashcardHide ?? 'Ocultar'
-      : PT_BR.zone.panels.flashcardReveal ?? 'Revelar';
+      ? (PT_BR.zone.panels.flashcardHide ?? 'Ocultar')
+      : (PT_BR.zone.panels.flashcardReveal ?? 'Revelar');
 
     this.buttonTextEl = createTroikaText(buttonLabel, {
       position: '0 0 0.003',

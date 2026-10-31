@@ -1,4 +1,13 @@
-import { CubeFocus, Hand, Moon, ShieldCheck, SignIn, SignOut, Sun } from '@phosphor-icons/react';
+import {
+  ChartBar,
+  CubeFocus,
+  Hand,
+  Moon,
+  ShieldCheck,
+  SignIn,
+  SignOut,
+  Sun,
+} from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
@@ -67,6 +76,11 @@ export function AppNavbar({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        <Link to="/dashboard" className="imx-glass-button text-xs py-2 px-3.5">
+          <ChartBar size={17} weight="bold" />
+          <span>{PT_BR.nav.dashboard}</span>
+        </Link>
+
         <button
           type="button"
           className="imx-glass-button text-xs py-2 px-3.5"

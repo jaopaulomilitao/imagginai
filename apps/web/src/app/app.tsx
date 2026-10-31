@@ -6,6 +6,7 @@ import type { Zone } from '../shared/types/zone';
 import type { ZoneTheme } from '../zone/config/constants';
 import { toggleTheme } from '../zone/systems/theme-controller';
 import { ConsentModal } from './components/consent-modal';
+import { DashboardPage } from './pages/dashboard-page';
 import { HomePage } from './pages/home-page';
 import { LoginPage } from './pages/login-page';
 import { NotFoundPage } from './pages/not-found-page';
@@ -129,6 +130,20 @@ export function App() {
               onOpenConsent={() => setConsentModalOpen(true)}
               onSignOut={handleSignOut}
               onRequestEnterZone={handleRequestEnterZone}
+            />
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <DashboardPage
+              themeId={themeId}
+              onToggleTheme={handleToggleTheme}
+              userEmail={userEmail}
+              onOpenConsent={() => setConsentModalOpen(true)}
+              onSignOut={handleSignOut}
+              onRequestEnterZone={handleRequestEnterZone}
+              onDeleteAllData={handleDeleteAllData}
             />
           }
         />

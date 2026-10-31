@@ -212,7 +212,8 @@ export class RotatableController {
   }
 
   tick(timeDeltaMs: number): void {
-    const dtMs = Number.isFinite(timeDeltaMs) && timeDeltaMs > 0 ? Math.min(timeDeltaMs, 100) : 16.6;
+    const dtMs =
+      Number.isFinite(timeDeltaMs) && timeDeltaMs > 0 ? Math.min(timeDeltaMs, 100) : 16.6;
     const dtSec = dtMs / 1000;
 
     if (this.boundsDirty) {

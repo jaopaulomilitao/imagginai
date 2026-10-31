@@ -529,8 +529,7 @@ export class PdfPanelController {
       const page = await this.pdfDoc.getPage(pageNumber);
       const baseViewport = page.getViewport({ scale: 1 });
       const maxDimensionPx = 1600;
-      const scale =
-        maxDimensionPx / Math.max(1, Math.max(baseViewport.width, baseViewport.height));
+      const scale = maxDimensionPx / Math.max(1, Math.max(baseViewport.width, baseViewport.height));
       const viewport = page.getViewport({ scale });
       canvas.width = Math.max(1, Math.round(viewport.width));
       canvas.height = Math.max(1, Math.round(viewport.height));

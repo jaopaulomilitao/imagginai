@@ -169,10 +169,7 @@ describe('FlashcardStateMachine interactive reveal and hide', () => {
   it('formats verified citation strings correctly', () => {
     expect(formatCardCitation('Material de estudo', 3)).toBe('Material de estudo | Pág. 3');
     expect(
-      formatCardCitation(
-        'Um título extremamente longo que excede trinta e quatro caracteres',
-        12,
-      ),
+      formatCardCitation('Um título extremamente longo que excede trinta e quatro caracteres', 12),
     ).toBe('Um título extremamente longo qu... | Pág. 12');
   });
 
@@ -211,4 +208,3 @@ describe('FlashcardStateMachine interactive reveal and hide', () => {
     expect(sm.isRevealed).toBe(false);
   });
 });
-

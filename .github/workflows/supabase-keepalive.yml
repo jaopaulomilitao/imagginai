@@ -1,0 +1,32 @@
+# ping diário ao projeto supabase gratuito para evitar pausa por inatividade (seção 5, fase 10)
+name: Supabase Keep-Alive Ping
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping Supabase REST endpoint
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Secrets SUPABASE_URL / SUPABASE_ANON_KEY not configured yet; skipping ping."
+            exit 0
+          fi
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            "${SUPABASE_URL%/}/rest/v1/zones?select=id&limit=1")
+          echo "Supabase REST keep-alive HTTP status: ${STATUS}"
+          if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 500 ]; then
+            echo "Unexpected status from Supabase REST endpoint: ${STATUS}"
+            exit 1
+          fi
+

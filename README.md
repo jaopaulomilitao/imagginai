@@ -12,11 +12,11 @@ IMAGGINAI (_IMAGGI Navigable Augmented Intelligence_) is a low-cost hybrid WebXR
 
 The platform is divided into three operational stages with strict boundaries between online AI preparation and offline spatial study:
 
-| Stage       | Environment                                       | Purpose                                                                                                                                      | Network & AI Usage                                                         |
-| :---------- | :------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------- |
-| **Prepare** | 2D Web App (`index.html`, React 18)               | Create study Zones, upload PDFs, trigger background ingestion and Study Pack generation, review extracted concepts.                          | Online (FastAPI, Supabase, Gemini, Groq)                                   |
-| **Zone**    | 3D Spatial Workspace (`zone.html`, A-Frame 1.7.1) | Immersive study session with glassmorphic 3D cards, multi-page PDF reader, 3D concept graphs, Pomodoro timer, and stereo camera passthrough. | 100% Offline (reads from IndexedDB via Dexie; zero LLM or network calls)   |
-| **Review**  | 2D Web App (`index.html`, React 18)               | Inspect personal study metrics (focus time, concept coverage, quiz accuracy) and manage privacy consents.                                    | Local-first (syncs aggregated metrics only if research consent is enabled) |
+| Stage       | Environment                                       | Purpose                                                                                                                                                                | Network & AI Usage                                                         |
+| :---------- | :------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------- |
+| **Prepare** | 2D Web App (`index.html`, React 18)               | Create study Zones, upload PDFs, trigger background ingestion and Study Pack generation, review extracted concepts.                                                    | Online (FastAPI, Supabase, Gemini, Groq)                                   |
+| **Zone**    | 3D Spatial Workspace (`zone.html`, A-Frame 1.7.1) | Immersive study session with interactive reveal/hide 3D flashcards, multi-page PDF reader, 3D concept graphs, Pomodoro timer, and stereo camera passthrough.           | 100% Offline (reads from IndexedDB via Dexie; zero LLM or network calls)   |
+| **Review**  | 2D Web App (`/dashboard`, React 18)               | Dual-lens **Student & Education Researcher Dashboard** (focus time, concept coverage, quiz accuracy, pinch biomechanics, JSON/CSV research export, and LGPD controls). | Local-first (syncs aggregated metrics only if research consent is enabled) |
 
 ```mermaid
 flowchart LR
@@ -182,7 +182,17 @@ To initialize the database schema, open the Supabase SQL Editor, paste the conte
 
 ---
 
-## 6. Coding Standards Summary
+## 6. Cloud Deployment (Free Tier)
+
+The repository includes ready-to-use deployment configurations for zero-cost cloud hosting:
+
+- **Frontend (`vercel.json`):** Connect the GitHub repository to Vercel (Root Directory: `.`). Vercel runs `pnpm --filter @imagginai/web build`, serves `apps/web/dist` over HTTPS (required for WebXR and camera permissions), caches `/mediapipe/*` and `/pdfjs/*` immutably, and routes 2D SPA paths (`/`, `/zones/:id`, `/dashboard`) to `/index.html` while keeping `/zone.html` standalone.
+- **Backend API (`apps/api/Dockerfile` & `render.yaml`):** Connect the repository to Render Blueprints (or deploy `apps/api/Dockerfile` directly). Set `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `GEMINI_API_KEY`, `GROQ_API_KEY`, and `CORS_ORIGINS` in the Render environment dashboard.
+- **Supabase Keep-Alive (`.github/workflows/supabase-keepalive.yml`):** Automated GitHub Action running every 5 days (`0 8 */5 * *`) to prevent Supabase Free Tier project pausing. Add `SUPABASE_URL` and `SUPABASE_ANON_KEY` to your GitHub Repository Secrets.
+
+---
+
+## 7. Coding Standards Summary
 
 This repository enforces strict code conventions across TypeScript and Python (detailed with full examples in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md)):
 
@@ -193,6 +203,6 @@ This repository enforces strict code conventions across TypeScript and Python (d
 
 ---
 
-## 7. License
+## 8. License
 
 This project and the internal `interacxr` package are licensed under the MIT License. See [`packages/interacxr/LICENSE`](packages/interacxr/LICENSE) for details.

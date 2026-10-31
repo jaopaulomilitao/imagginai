@@ -99,3 +99,15 @@ class SessionAggregateResponse(BaseModel):
     session_id: str = Field(alias="sessionId")
     zone_id: str = Field(alias="zoneId")
     created_at: str = Field(alias="createdAt")
+
+
+class SessionAggregateDetailResponse(BaseModel):
+    """envelope completo do agregado de sessão retornado para o painel analítico."""
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    id: str
+    session_id: str = Field(alias="sessionId")
+    zone_id: str = Field(alias="zoneId")
+    payload: SessionAggregatePayloadSchema
+    created_at: str = Field(alias="createdAt")

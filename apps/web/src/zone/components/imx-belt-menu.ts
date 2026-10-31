@@ -665,11 +665,7 @@ export class BeltMenuBridge {
         `shader: flat; color: ${bgColor}; opacity: ${isProm ? 0.96 : palette.beltButtonBgOpacity}; transparent: true; depthTest: false; depthWrite: false`,
       );
       const iconName: PhosphorVrIconName | undefined =
-        btn.id === 'toggle-theme'
-          ? theme === 'light-glass'
-            ? 'moon'
-            : 'sun-dim'
-          : undefined;
+        btn.id === 'toggle-theme' ? (theme === 'light-glass' ? 'moon' : 'sun-dim') : undefined;
       updatePhosphorIconAppearance(btn.iconEl, iconColor, 1, iconName);
       btn.labelEl.setAttribute('color', labelColor);
       btn.labelEl.setAttribute('troika-text', 'color', labelColor);

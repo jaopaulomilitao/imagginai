@@ -1,4 +1,11 @@
-import { ArrowUpRight, ClockCounterClockwise, Goggles, Plus, Trash } from '@phosphor-icons/react';
+import {
+  ArrowUpRight,
+  ChartBar,
+  ClockCounterClockwise,
+  Goggles,
+  Plus,
+  Trash,
+} from '@phosphor-icons/react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 
@@ -290,6 +297,15 @@ export function HomePage({
                   >
                     <span>{PT_BR.home.prepareAndReview}</span>
                     <ArrowUpRight size={15} weight="bold" />
+                  </Link>
+
+                  <Link
+                    to={`/dashboard?zoneId=${encodeURIComponent(zone.id)}`}
+                    className="imx-glass-button text-xs py-2 px-2.5"
+                    title={PT_BR.nav.dashboard}
+                    aria-label={PT_BR.nav.dashboard}
+                  >
+                    <ChartBar size={15} weight="bold" />
                   </Link>
 
                   {!isDemo && (

@@ -1,0 +1,32 @@
+# especificação de deploy declarativo no render para o backend fastapi (seção 5, fase 10)
+services:
+  - type: web
+    name: imagginai-api
+    runtime: docker
+    rootDir: apps/api
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: gemini-2.5-flash
+      - key: FALLBACK_LLM_MODEL
+        value: llama-3.3-70b-versatile
+      - key: EMBEDDING_MODEL
+        value: gemini-embedding-001
+

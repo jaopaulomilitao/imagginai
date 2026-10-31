@@ -307,11 +307,7 @@ export class NodeAnalysisPanelController {
     this.renderFooterActions(data, cardBgColor, palette.buttonTextColor);
   }
 
-  private renderFooterActions(
-    data: NodeAnalysisData,
-    bgColor: string,
-    textColor: string,
-  ): void {
+  private renderFooterActions(data: NodeAnalysisData, bgColor: string, textColor: string): void {
     const btnFlashcardRoot = createSubEntity('a-entity', {
       position: '0 -0.295 0.006',
     });

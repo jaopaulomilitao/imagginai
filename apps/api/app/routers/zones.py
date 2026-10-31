@@ -286,4 +286,3 @@ def add_zone_card(
     )
     store.save_study_pack(current_user.user_id, zone_id, updated_pack)
     return updated_pack
-

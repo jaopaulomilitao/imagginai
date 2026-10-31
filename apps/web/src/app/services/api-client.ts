@@ -218,6 +218,33 @@ export async function flushPendingTelemetryAggregates(
   return syncedCount;
 }
 
+export async function fetchTelemetryAggregatesRemote(
+  zoneId?: string,
+): Promise<SessionAggregateEnvelope[]> {
+  const headers = await buildAuthHeaders(false);
+  const query = zoneId ? `?zone_id=${encodeURIComponent(zoneId)}` : '';
+  const response = await fetch(`${getApiBaseUrl()}/telemetry/aggregates${query}`, {
+    headers,
+  });
+  if (!response.ok) {
+    throw new Error(await readErrorDetail(response));
+  }
+  const rows = (await response.json()) as {
+    id: string;
+    sessionId: string;
+    zoneId: string;
+    payload: SessionAggregateEnvelope['payload'];
+    createdAt: string;
+  }[];
+  return rows.map((row) => ({
+    sessionId: row.sessionId,
+    zoneId: row.zoneId,
+    payload: row.payload,
+    createdAt: row.createdAt,
+    synced: true,
+  }));
+}
+
 export async function deleteAllUserDataRemote(): Promise<void> {
   const headers = await buildAuthHeaders(false);
   const response = await fetch(`${getApiBaseUrl()}/me/data`, {

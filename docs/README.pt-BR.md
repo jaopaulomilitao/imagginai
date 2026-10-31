@@ -12,11 +12,11 @@ O IMAGGINAI (_IMAGGI Navigable Augmented Intelligence_) é um ambiente de estudo
 
 A plataforma é dividida em três estágios operacionais com fronteiras estritas entre a preparação online com IA e o estudo espacial offline:
 
-| Estágio     | Ambiente                                        | Objetivo                                                                                                                                                                 | Rede e Uso de IA                                                                            |
-| :---------- | :---------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------ |
-| **Prepare** | Aplicação Web 2D (`index.html`, React 18)       | Criar Zonas de estudo, enviar arquivos PDF, acompanhar jobs de ingestão e geração do Study Pack, revisar conceitos extraídos.                                            | Online (FastAPI, Supabase, Gemini, Groq)                                                    |
-| **Zone**    | Espaço Espacial 3D (`zone.html`, A-Frame 1.7.1) | Sessão de estudo imersivo com cartões 3D em estilo Glassmorphism, leitor de PDF multipágina, grafos de conceitos 3D, timer Pomodoro e câmera passthrough estereoscópica. | 100% Offline (lê do IndexedDB via Dexie; zero chamadas de rede ou LLM)                      |
-| **Review**  | Aplicação Web 2D (`index.html`, React 18)       | Consultar métricas individuais de estudo (tempo de foco, conceitos explorados, acurácia em quizzes) e gerenciar consentimentos de privacidade.                           | Local-first (envia agregados de sessão apenas se o consentimento de pesquisa estiver ativo) |
+| Estágio     | Ambiente                                        | Objetivo                                                                                                                                                                                                | Rede e Uso de IA                                                                            |
+| :---------- | :---------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------ |
+| **Prepare** | Aplicação Web 2D (`index.html`, React 18)       | Criar Zonas de estudo, enviar arquivos PDF, acompanhar jobs de ingestão e geração do Study Pack, revisar conceitos extraídos.                                                                           | Online (FastAPI, Supabase, Gemini, Groq)                                                    |
+| **Zone**    | Espaço Espacial 3D (`zone.html`, A-Frame 1.7.1) | Sessão de estudo imersivo com flashcards 3D interativos (`Revelar` / `Ocultar`), leitor de PDF multipágina, grafos de conceitos 3D, timer Pomodoro e câmera passthrough estereoscópica.                 | 100% Offline (lê do IndexedDB via Dexie; zero chamadas de rede ou LLM)                      |
+| **Review**  | Aplicação Web 2D (`/dashboard`, React 18)       | **Painel do Estudante e Pesquisador** (tempo de foco, cobertura conceitual, acurácia em quizzes por conceito, biomecânica de pinça, exportação anônima JSON/CSV e controles LGPD de exclusão de dados). | Local-first (envia agregados de sessão apenas se o consentimento de pesquisa estiver ativo) |
 
 ```mermaid
 flowchart LR
@@ -182,7 +182,17 @@ Para criar as tabelas e buckets no Supabase, abra o **SQL Editor** no painel do 
 
 ---
 
-## 6. Resumo dos Padrões de Código
+## 6. Implantação em Nuvem (Free Tier)
+
+O repositório inclui os arquivos de configuração prontos para publicação em camadas gratuitas:
+
+- **Frontend (`vercel.json`):** Conecte o repositório na Vercel (Root Directory: `.`). A Vercel executa `pnpm --filter @imagginai/web build`, publica `apps/web/dist` com HTTPS (obrigatório para WebXR e câmera), aplica cache imutável em `/mediapipe/*` e `/pdfjs/*` e direciona as rotas 2D (`/`, `/zones/:id`, `/dashboard`) para `/index.html`, preservando `/zone.html` independente.
+- **API Backend (`apps/api/Dockerfile` e `render.yaml`):** Conecte o repositório ao Render Blueprints (ou faça deploy direto do `apps/api/Dockerfile`). Configure `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `GEMINI_API_KEY`, `GROQ_API_KEY` e `CORS_ORIGINS` no painel do Render.
+- **Keep-Alive do Supabase (`.github/workflows/supabase-keepalive.yml`):** GitHub Action agendada a cada 5 dias (`0 8 */5 * *`) para evitar a pausa por inatividade do plano gratuito do Supabase. Adicione `SUPABASE_URL` e `SUPABASE_ANON_KEY` nos Secrets do GitHub.
+
+---
+
+## 7. Resumo dos Padrões de Código
 
 O repositório aplica regras estritas de padronização em TypeScript e Python (detalhadas com exemplos práticos em [`docs/CONTRIBUTING.md`](CONTRIBUTING.md)):
 
@@ -193,6 +203,6 @@ O repositório aplica regras estritas de padronização em TypeScript e Python (
 
 ---
 
-## 7. Licença
+## 8. Licença
 
 Este projeto e o pacote interno `interacxr` são distribuídos sob a licença MIT. Consulte [`packages/interacxr/LICENSE`](../packages/interacxr/LICENSE) para mais detalhes.

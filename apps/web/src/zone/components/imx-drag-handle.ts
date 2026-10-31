@@ -109,7 +109,8 @@ export class DragHandleController {
     const hovered = this.currentHoveredElement();
     const panelCtrl = this.panelController();
     const isBorder = panelCtrl?.isBorderElement(hovered);
-    const isHandle = hovered === this.handleEl || (hovered !== null && this.handleEl.contains(hovered));
+    const isHandle =
+      hovered === this.handleEl || (hovered !== null && this.handleEl.contains(hovered));
     if ((isHandle || isBorder) && this.state.startGrabDrag()) {
       panelCtrl?.setHighlight(true);
       this.setHandleHighlight(true);
@@ -128,7 +129,8 @@ export class DragHandleController {
     const hovered = this.currentHoveredElement();
     const panelCtrl = this.panelController();
     const isBorder = panelCtrl?.isBorderElement(hovered);
-    const isHandle = hovered === this.handleEl || (hovered !== null && this.handleEl.contains(hovered));
+    const isHandle =
+      hovered === this.handleEl || (hovered !== null && this.handleEl.contains(hovered));
     if ((isHandle || isBorder) && this.state.startPinchDrag()) {
       panelCtrl?.setHighlight(true);
       this.setHandleHighlight(true);
@@ -237,7 +239,8 @@ export class DragHandleController {
       width: 0.44,
       height: 0.034,
       position: '0 -0.052 -0.005',
-      material: 'shader: flat; color: #ffffff; opacity: 0.001; transparent: true; depthWrite: false',
+      material:
+        'shader: flat; color: #ffffff; opacity: 0.001; transparent: true; depthWrite: false',
     });
     this.barRootEl.appendChild(bridgeEl);
 
@@ -507,7 +510,8 @@ export class DragHandleController {
     this.lastBarScale = scale;
     this.lastPanelHeight = effectiveHeight;
     const isGraph = this.el.hasAttribute('imx-concept-graph');
-    const topY = effectiveHeight / 2 + (PANEL_HANDLE_HEIGHT_M * scale) / 2 + (isGraph ? 0.048 : 0.02);
+    const topY =
+      effectiveHeight / 2 + (PANEL_HANDLE_HEIGHT_M * scale) / 2 + (isGraph ? 0.048 : 0.02);
     const zPos = isGraph ? 0.09 : 0.024;
     this.barRootEl.setAttribute('position', `0 ${topY} ${zPos}`);
     this.barRootEl.setAttribute('scale', `${scale} ${scale} 1`);

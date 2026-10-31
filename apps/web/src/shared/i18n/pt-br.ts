@@ -3,6 +3,7 @@ export const PT_BR = {
   appName: 'IMAGGINAI',
   nav: {
     zones: 'Minhas Zonas',
+    dashboard: 'Desempenho & Pesquisa',
     privacyAndConsent: 'Privacidade',
     login: 'Entrar',
     logout: 'Sair',
@@ -241,6 +242,83 @@ export const PT_BR = {
         'Tire o óculos VR por alguns instantes, descanse a vista e beba água antes do próximo ciclo.',
       breakTimer: (mmss: string) => `Pausa: ${mmss}`,
       skipBreakButton: 'Iniciar novo ciclo',
+    },
+  },
+  dashboard: {
+    badge: 'Painel Analítico & Pesquisa',
+    title: 'Desempenho do Estudante & Telemetria Educacional',
+    subtitle:
+      'Acompanhe seu tempo de foco, domínio conceitual e prioridades de revisão, ou alterne para a visão de pesquisador para inspecionar métricas espaciais e exportar dados anonimizados.',
+    filterAllZones: 'Todas as Zonas de Estudo',
+    lensStudent: 'Visão do Estudante',
+    lensResearcher: 'Visão do Pesquisador',
+    lensBoth: 'Visão Completa (Estudante + Pesquisador)',
+    seedDemoButton: 'Simular Sessões de Estudo (Demo)',
+    clearDemoButton: 'Voltar apenas às sessões reais',
+    demoBannerTitle: 'Visualizando dados simulados para demonstração',
+    demoBannerSubtitle:
+      'Estes registros exemplificam sessões completas nas Zonas de demonstração para inspeção imediata dos gráficos do estudante e do pesquisador.',
+    studentKpis: {
+      focusTimeTitle: 'Tempo de Foco Imersivo',
+      focusTimeExplain:
+        'Soma do tempo ativo dentro da Zona VR. Indica sua constância em blocos de atenção profunda.',
+      quizAccuracyTitle: 'Acurácia Global no Quiz',
+      quizAccuracyExplain:
+        'Percentual de respostas corretas nas verificações ao final dos ciclos Pomodoro e revisões.',
+      conceptCoverageTitle: 'Cobertura de Conceitos',
+      conceptCoverageExplain:
+        'Fração dos conceitos do seu material que já foram abertos, inspecionados no grafo 3D ou avaliados.',
+      sessionsTitle: 'Sessões & Ciclos Concluídos',
+      sessionsExplain:
+        'Total de sessões registradas no dispositivo ou sincronizadas, junto aos blocos Pomodoro completos.',
+    },
+    conceptsSection: {
+      mostExploredTitle: 'Conceitos Mais Explorados',
+      mostExploredExplain:
+        'Conceitos nos quais você permaneceu mais tempo em leitura ativa (> 30s) e realizou mais aberturas espaciais.',
+      leastExploredTitle: 'Conceitos Menos Explorados (Pontos Cegos)',
+      leastExploredExplain:
+        'Conceitos com pouco ou nenhum tempo de foco (< 5s). O sistema prioriza automaticamente estes itens no Quiz ao final do Pomodoro.',
+      priorityReviewTitle: 'Prioridades Recomendadas para a Próxima Sessão',
+      priorityReviewExplain:
+        'Combina conceitos ainda não explorados com aqueles em que a taxa de acerto no Quiz ficou abaixo de 70%.',
+      quizPerConceptTitle: 'Acurácia de Quiz por Conceito',
+      quizPerConceptExplain:
+        'Detalhamento de acertos e erros por conceito ancorado à página original do PDF, permitindo identificar lacunas específicas.',
+    },
+    researcherSection: {
+      badge: 'Telemetria Científica & IHC Espacial',
+      title: 'Indicadores para Pesquisa em Educação & WebXR',
+      subtitle:
+        'Métricas agregadas localmente no encerramento da sessão conforme a Seção 3.9, sem qualquer coleta de imagens de câmera, áudio ou séries temporais de pose.',
+      pinchTitle: 'Precisão Biomecânica de Pinça',
+      pinchExplain:
+        'Proporção de gestos de pinça bem-sucedidos sobre alvos 3D versus cliques em falso (miss) e repetições rápidas (< 1s), mensurando a ergonomia do rastreamento de mãos.',
+      bucketsTitle: 'Distribuição Cognitiva de Tempo por Conceito',
+      bucketsExplain:
+        'Agrupa as interações conceituais em varredura rápida (0–5s), leitura intermediária (5–30s) e estudo semântico profundo (> 30s).',
+      modeTitle: 'Preferência Ambiental: Foco Isolado vs. Passthrough',
+      modeExplain:
+        'Compara o tempo de permanência no ambiente virtual de baixo estímulo (Foco) com o modo de vídeo da câmera real (Passthrough).',
+      fpsTitle: 'Estabilidade Gráfica & Conforto Visual (FPS P50 / P10)',
+      fpsExplain:
+        'Mediana (P50) e percentil 10 (P10) da taxa de quadros. Manter P50 ≥ 50 FPS é o critério de conforto visual para evitar fadiga vestibular.',
+      sessionsTableTitle: 'Registro de Sessões Agregadas',
+      exportJsonButton: 'Exportar JSON Anonimizado',
+      exportCsvButton: 'Exportar CSV (R / Python / SPSS)',
+      privacyAuditOk:
+        'Auditoria LGPD / Seção 3.9 aprovada: 0 campos biométricos brutos (landmarks, vídeo, áudio ou orientação da cabeça) presentes nos registros.',
+    },
+    masteryLabels: {
+      mastered: 'Dominado (≥ 75%)',
+      consolidating: 'Em consolidação (50–74%)',
+      'needs-review': 'Revisar (< 50%)',
+      untested: 'Ainda não avaliado',
+    },
+    bucketLabels: {
+      '0-5s': '0–5s (Varredura)',
+      '5-30s': '5–30s (Leitura Ativa)',
+      '>30s': '> 30s (Estudo Profundo)',
     },
   },
 } as const;

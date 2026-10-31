@@ -171,9 +171,7 @@ export class ZoneWorkspaceController {
     const pack = this.cachedPack;
     const validCard = this.normalizeCardForPack(detail.card, pack);
     const exists = pack.cards.some(
-      (c) =>
-        c.id === validCard.id ||
-        (c.title === validCard.title && c.body === validCard.body),
+      (c) => c.id === validCard.id || (c.title === validCard.title && c.body === validCard.body),
     );
     if (!exists) {
       pack.cards.push(validCard);
@@ -590,8 +588,7 @@ export class ZoneWorkspaceController {
     const existingEl = this.containerEl.querySelector<Entity>('#panel-node-analysis');
     if (existingEl) {
       const comp = existingEl.components['imx-node-analysis-panel'] as
-        | NodeAnalysisPanelComponent
-        | undefined;
+        NodeAnalysisPanelComponent | undefined;
       comp?.controller?.setAnalysisData({
         conceptId: detail.conceptId,
         label: detail.label,
@@ -643,8 +640,7 @@ export class ZoneWorkspaceController {
 
     const attachData = (): void => {
       const comp = el.components['imx-node-analysis-panel'] as
-        | NodeAnalysisPanelComponent
-        | undefined;
+        NodeAnalysisPanelComponent | undefined;
       comp?.controller?.setAnalysisData({
         conceptId: detail.conceptId,
         label: detail.label,

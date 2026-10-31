@@ -89,7 +89,8 @@ export class ConceptGraphController {
     const bfsQueue = [...rootIds];
     const visited = new Set<string>(rootIds);
     while (bfsQueue.length > 0) {
-      const currentId = bfsQueue.shift()!;
+      const currentId = bfsQueue.shift();
+      if (!currentId) break;
       const currentDepth = depthMap.get(currentId) ?? 0;
       for (const edge of edges) {
         if (edge.sourceId === currentId && inDegreeMap.has(edge.targetId)) {
