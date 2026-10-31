@@ -3,6 +3,7 @@ import {
   ArrowRight,
   Brain,
   Cards,
+  ChartBar,
   Check,
   CloudArrowUp,
   Cube,
@@ -366,10 +367,23 @@ export function ZoneDetailPage({
       <section className="imx-glass-panel flex flex-col gap-6">
         {/* cabeçalho da zona */}
         <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-[var(--imx-border-solid)]">
-          <Link to="/" className="imx-glass-button text-xs py-2 px-3.5">
-            <ArrowLeft size={16} weight="bold" />
-            <span>{PT_BR.zoneDetail.backToZones}</span>
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link to="/" className="imx-glass-button text-xs py-2 px-3.5">
+              <ArrowLeft size={16} weight="bold" />
+              <span>{PT_BR.zoneDetail.backToZones}</span>
+            </Link>
+
+            {zone && (
+              <Link
+                to={`/dashboard?zoneId=${encodeURIComponent(zone.id)}`}
+                className="imx-glass-button text-xs py-2 px-3.5"
+                title="Ver Painel e Métricas de Estudo desta Zona"
+              >
+                <ChartBar size={16} weight="bold" />
+                <span className="hidden sm:inline">Painel de Estudo</span>
+              </Link>
+            )}
+          </div>
 
           {zone && hasProcessedPack && (
             <button

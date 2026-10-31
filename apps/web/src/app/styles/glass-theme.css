@@ -177,6 +177,38 @@ h3,
     background-color 180ms ease;
 }
 
+@media (max-width: 640px) {
+  .imx-shell {
+    padding: 0.85rem 0.65rem 3rem;
+  }
+
+  .imx-navbar-frame {
+    border-radius: 18px;
+    padding: 0.55rem 0.75rem;
+    margin-bottom: 1rem;
+    gap: 0.45rem;
+  }
+
+  .imx-glass-panel {
+    padding: 1.15rem 0.95rem;
+    border-radius: 14px;
+    gap: 1.15rem;
+  }
+
+  .imx-glass-card {
+    padding: 0.95rem;
+    border-radius: 12px;
+  }
+
+  .imx-title {
+    font-size: 1.5rem;
+  }
+
+  .imx-subtitle {
+    font-size: 0.85rem;
+  }
+}
+
 .imx-glass-card {
   border-radius: 14px;
   background: var(--imx-bg-card);

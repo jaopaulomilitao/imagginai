@@ -75,35 +75,42 @@ export function AppNavbar({
         </Link>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Link to="/dashboard" className="imx-glass-button text-xs py-2 px-3.5">
+      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <Link
+          to="/dashboard"
+          className="imx-glass-button text-xs py-2 px-2.5 sm:px-3.5"
+          title={PT_BR.nav.dashboard}
+        >
           <ChartBar size={17} weight="bold" />
-          <span>{PT_BR.nav.dashboard}</span>
+          <span className="hidden sm:inline">{PT_BR.nav.dashboard}</span>
         </Link>
 
         <button
           type="button"
-          className="imx-glass-button text-xs py-2 px-3.5"
+          className="imx-glass-button text-xs py-2 px-2.5 sm:px-3.5"
           onClick={handleToggleHandStyle}
-          title="Alternar estilo do modelo 3D da mão na Zona VR (Clássica / Estilizada)"
+          title={`Alternar estilo do modelo 3D da mão na Zona VR (atual: ${handStyle === 'classic' ? 'Clássica' : 'Estilizada'})`}
         >
           <Hand size={17} weight="regular" />
-          <span>Mão: {handStyle === 'classic' ? 'Clássica' : 'Estilizada'}</span>
+          <span className="hidden md:inline">
+            Mão: {handStyle === 'classic' ? 'Clássica' : 'Estilizada'}
+          </span>
         </button>
 
         <button
           type="button"
-          className="imx-glass-button text-xs py-2 px-3.5"
+          className="imx-glass-button text-xs py-2 px-2.5 sm:px-3.5"
           onClick={onOpenConsent}
+          title={PT_BR.nav.privacyAndConsent}
         >
           <ShieldCheck size={17} weight="regular" />
-          <span>{PT_BR.nav.privacyAndConsent}</span>
+          <span className="hidden md:inline">{PT_BR.nav.privacyAndConsent}</span>
         </button>
 
         {/* alternador de tema apenas com ícone phosphor (sem rótulo textual) */}
         <button
           type="button"
-          className="imx-glass-button p-2.5"
+          className="imx-glass-button p-2 sm:p-2.5"
           onClick={onToggleTheme}
           aria-label={PT_BR.nav.toggleThemeAria}
           title={PT_BR.nav.toggleThemeAria}
@@ -116,21 +123,25 @@ export function AppNavbar({
         </button>
 
         {userEmail ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <span className="imx-badge imx-badge-darkblue normal-case">
-              <span className="max-w-[160px] truncate">{userEmail}</span>
+              <span className="max-w-[100px] sm:max-w-[160px] truncate">{userEmail}</span>
             </span>
             <button
               type="button"
-              className="imx-glass-button imx-button-danger text-xs py-2 px-3"
+              className="imx-glass-button imx-button-danger text-xs py-2 px-2.5 sm:px-3"
               onClick={onSignOut}
+              title={PT_BR.nav.logout}
             >
               <SignOut size={16} weight="bold" />
-              <span>{PT_BR.nav.logout}</span>
+              <span className="hidden sm:inline">{PT_BR.nav.logout}</span>
             </button>
           </div>
         ) : (
-          <Link to="/login" className="imx-glass-button imx-button-primary text-xs py-2 px-4">
+          <Link
+            to="/login"
+            className="imx-glass-button imx-button-primary text-xs py-2 px-3 sm:px-4"
+          >
             <SignIn size={16} weight="bold" />
             <span>{PT_BR.nav.login}</span>
           </Link>

@@ -61,7 +61,7 @@ export function ConsentModal({
       role="dialog"
       aria-modal="true"
     >
-      <div className="imx-glass-panel max-w-2xl w-full relative">
+      <div className="imx-glass-panel max-w-2xl w-full max-h-[92vh] overflow-y-auto relative">
         <div className="imx-panel-header">
           <span className="imx-badge imx-badge-darkblue">
             <ShieldCheck size={16} weight="regular" />

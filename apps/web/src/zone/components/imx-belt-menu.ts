@@ -1544,8 +1544,15 @@ export class BeltMenuBridge {
 
   private async performExitZone(): Promise<void> {
     try {
-      this.el.sceneEl?.emit(ZONE_EXIT_FINALIZE_EVENT, {
-        completedBlocks: this.pomodoro.snapshot.completedBlocks,
+      await new Promise<void>((resolve) => {
+        const timer = window.setTimeout(resolve, 800);
+        this.el.sceneEl?.emit(ZONE_EXIT_FINALIZE_EVENT, {
+          completedBlocks: this.pomodoro.snapshot.completedBlocks,
+          resolve: () => {
+            window.clearTimeout(timer);
+            resolve();
+          },
+        });
       });
       await zoneStorage.saveSessionState?.({
         zoneId: this.activeZoneId,
@@ -1555,7 +1562,10 @@ export class BeltMenuBridge {
     } catch (error) {
       logger.warn('failed to save session state before exiting zone', error);
     }
-    window.location.assign('/index.html');
+    const targetUrl = this.activeZoneId
+      ? `/dashboard?zoneId=${encodeURIComponent(this.activeZoneId)}&justFinished=1`
+      : '/dashboard?justFinished=1';
+    window.location.assign(targetUrl);
   }
 
   private readCurrentHoveredElement(): Entity | null {

@@ -117,6 +117,19 @@ export function App() {
           }
         />
         <Route
+          path="/index.html"
+          element={
+            <HomePage
+              themeId={themeId}
+              onToggleTheme={handleToggleTheme}
+              userEmail={userEmail}
+              onOpenConsent={() => setConsentModalOpen(true)}
+              onSignOut={handleSignOut}
+              onRequestEnterZone={handleRequestEnterZone}
+            />
+          }
+        />
+        <Route
           path="/login"
           element={<LoginPage themeId={themeId} onAuthSuccess={(email) => setUserEmail(email)} />}
         />

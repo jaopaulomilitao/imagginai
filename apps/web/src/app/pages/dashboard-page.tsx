@@ -71,13 +71,13 @@ export function DashboardPage({
   onDeleteAllData,
 }: DashboardPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialZoneFilter = searchParams.get('zoneId') ?? 'all';
+  const selectedZoneId = searchParams.get('zoneId') ?? 'all';
+  const justFinished = searchParams.get('justFinished') === '1';
 
   const [zones, setZones] = useState<Zone[]>([]);
   const [packsByZone, setPacksByZone] = useState<Record<string, StudyPack | undefined>>({});
   const [realAggregates, setRealAggregates] = useState<SessionAggregateEnvelope[]>([]);
   const [useDemoSimulation, setUseDemoSimulation] = useState(false);
-  const [selectedZoneId, setSelectedZoneId] = useState<string>(initialZoneFilter);
   const [activeLens, setActiveLens] = useState<DashboardLens>('both');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deletedNotice, setDeletedNotice] = useState(false);
@@ -154,12 +154,14 @@ export function DashboardPage({
   );
 
   const handleZoneFilterChange = (zoneId: string) => {
-    setSelectedZoneId(zoneId);
+    const next = new URLSearchParams(searchParams);
     if (zoneId === 'all') {
-      setSearchParams({});
+      next.delete('zoneId');
     } else {
-      setSearchParams({ zoneId });
+      next.set('zoneId', zoneId);
     }
+    next.delete('justFinished');
+    setSearchParams(next);
   };
 
   const handleExportJson = () => {
@@ -228,12 +230,12 @@ export function DashboardPage({
 
           {/* controles de filtro por zona e alternância de lente (estudante / pesquisador) */}
           <div className="flex flex-col sm:items-end gap-2.5 w-full sm:w-auto">
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <select
                 aria-label="Filtrar por Zona de Estudo"
                 value={selectedZoneId}
                 onChange={(e) => handleZoneFilterChange(e.target.value)}
-                className="imx-input text-xs py-2 px-3 w-full sm:w-64"
+                className="imx-input text-xs py-2 px-3 flex-1 sm:flex-initial sm:w-64"
               >
                 <option value="all">{PT_BR.dashboard.filterAllZones}</option>
                 {zones.map((z) => (
@@ -246,7 +248,7 @@ export function DashboardPage({
               <button
                 type="button"
                 onClick={() => setUseDemoSimulation((prev) => !prev)}
-                className={`imx-glass-button text-xs py-2 px-3.5 ${
+                className={`imx-glass-button text-xs py-2 px-3.5 flex-1 sm:flex-initial ${
                   useDemoSimulation ? 'imx-button-accent' : ''
                 }`}
               >
@@ -259,7 +261,7 @@ export function DashboardPage({
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
               {(
                 [
                   { id: 'both', label: PT_BR.dashboard.lensBoth },
@@ -271,7 +273,7 @@ export function DashboardPage({
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveLens(tab.id)}
-                  className={`imx-glass-button text-xs py-1.5 px-3 ${
+                  className={`imx-glass-button text-xs py-1.5 px-3 flex-1 sm:flex-initial text-center ${
                     activeLens === tab.id ? 'imx-button-primary' : ''
                   }`}
                 >
@@ -281,6 +283,29 @@ export function DashboardPage({
             </div>
           </div>
         </div>
+
+        {/* aviso exibido quando o estudante acaba de sair da sessão vr */}
+        {justFinished && (
+          <div
+            className="imx-glass-card flex flex-wrap items-center justify-between gap-3"
+            style={{ borderLeft: '4px solid #16a34a' }}
+          >
+            <div className="flex items-center gap-3">
+              <CheckCircle size={22} weight="bold" style={{ color: '#16a34a', flexShrink: 0 }} />
+              <div>
+                <div
+                  className="imx-heading text-sm font-bold"
+                  style={{ color: 'var(--imx-text-title)' }}
+                >
+                  Sessão VR finalizada com sucesso!
+                </div>
+                <p className="text-xs m-0 mt-0.5" style={{ color: 'var(--imx-text-muted)' }}>
+                  Seus dados e indicadores de foco foram calculados e consolidados nesta rodada.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* aviso quando estiver inspecionando dados simulados */}
         {useDemoSimulation && (
@@ -830,7 +855,7 @@ export function DashboardPage({
                   </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[var(--imx-border-subtle)]">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-[var(--imx-border-subtle)]">
                   <div>
                     <div
                       className="imx-display-font text-xl font-extrabold"
@@ -1016,7 +1041,7 @@ export function DashboardPage({
                   </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[var(--imx-border-subtle)]">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-[var(--imx-border-subtle)]">
                   <div>
                     <div
                       className="imx-display-font text-xl font-extrabold"
@@ -1067,8 +1092,8 @@ export function DashboardPage({
                 </span>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+              <div className="overflow-x-auto -mx-1 sm:mx-0 px-1 sm:px-0">
+                <table className="w-full min-w-[580px] text-left border-collapse text-xs">
                   <thead>
                     <tr
                       className="border-b border-[var(--imx-border-solid)]"

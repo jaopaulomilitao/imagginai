@@ -233,10 +233,16 @@ export class ZoneWorkspaceController {
   };
 
   private readonly onExitFinalize = (event: Event): void => {
-    const detail = (event as CustomEvent<{ completedBlocks?: number }>).detail;
-    void this.telemetry.finalizeSession(detail?.completedBlocks ?? 0).catch((error: unknown) => {
-      logger.error('failed to finalize session telemetry on zone exit', error);
-    });
+    const detail = (event as CustomEvent<{ completedBlocks?: number; resolve?: () => void }>)
+      .detail;
+    void this.telemetry
+      .finalizeSession(detail?.completedBlocks ?? 0)
+      .catch((error: unknown) => {
+        logger.error('failed to finalize session telemetry on zone exit', error);
+      })
+      .finally(() => {
+        detail?.resolve?.();
+      });
   };
 
   constructor(

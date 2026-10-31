@@ -29,4 +29,3 @@ jobs:
             echo "Unexpected status from Supabase REST endpoint: ${STATUS}"
             exit 1
           fi
-

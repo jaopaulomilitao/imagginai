@@ -29,4 +29,3 @@ services:
         value: llama-3.3-70b-versatile
       - key: EMBEDDING_MODEL
         value: gemini-embedding-001
-
