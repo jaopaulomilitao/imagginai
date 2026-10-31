@@ -4,7 +4,9 @@ export const PT_BR = {
   nav: {
     zones: 'Minhas Zonas',
     dashboard: 'Desempenho & Pesquisa',
-    privacyAndConsent: 'Privacidade',
+    privacyAndConsent: 'Privacidade & LGPD',
+    preferences: 'Preferências',
+    handModel: 'Mão 3D na Zona',
     login: 'Entrar',
     logout: 'Sair',
     guestMode: 'Modo Local',
@@ -31,8 +33,8 @@ export const PT_BR = {
     title: 'Suas Zonas de Estudo',
     subtitle:
       'Organize seus temas de estudo, envie suas apostilas em PDF e revise o conteúdo no seu espaço imersivo 3D.',
-    openDemoZone: 'Entrar na Zona VR',
-    prepareAndReview: 'Configurar material',
+    openDemoZone: 'Entrar',
+    prepareAndReview: 'Configurar',
     createZoneTitle: 'Criar Nova Zona',
     zoneNameLabel: 'Nome da Zona de estudo',
     zoneNamePlaceholder: 'Ex.: Fisiologia Humana — Prova 1',
@@ -51,7 +53,7 @@ export const PT_BR = {
       title: (zoneName: string) => `Última sessão em "${zoneName}"`,
       details: (blocks: number, exitedAtFormatted: string) =>
         `${blocks} ciclo(s) de foco concluído(s) | última sessão em ${exitedAtFormatted}`,
-      resumeButton: 'Voltar para a Zona VR',
+      resumeButton: 'Continuar',
       reviewButton: 'Revisar material',
     },
   },
@@ -128,7 +130,7 @@ export const PT_BR = {
     enterZoneCtaTitle: 'Tudo pronto para entrar na sua Zona VR',
     enterZoneCtaSubtitle:
       'Seu material já está salvo no dispositivo e continuará funcionando mesmo sem conexão com a internet durante a sessão.',
-    enterZoneButton: 'Entrar na Zona VR',
+    enterZoneButton: 'Entrar',
   },
   consent: {
     modalTitle: 'Privacidade e seus dados de estudo',

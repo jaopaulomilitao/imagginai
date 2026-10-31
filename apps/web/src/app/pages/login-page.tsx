@@ -73,6 +73,14 @@ export function LoginPage({ themeId, onAuthSuccess }: LoginPageProps) {
           <span className="imx-badge imx-badge-darkblue">Acesso</span>
         </div>
 
+        <div className="flex items-center gap-3 mb-3">
+          <img
+            src="/ui/simbolo-imagginai.svg"
+            alt="IMAGGINAI"
+            className="h-9 w-auto object-contain"
+          />
+        </div>
+
         <h1 className="imx-title">{PT_BR.auth.title}</h1>
         <p className="imx-subtitle text-sm">{PT_BR.auth.subtitle}</p>
 

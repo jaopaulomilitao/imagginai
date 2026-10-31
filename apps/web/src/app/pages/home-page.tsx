@@ -159,7 +159,7 @@ export function HomePage({
             <div className="flex items-start gap-3.5">
               <span
                 className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-[var(--imx-border-solid)] shrink-0"
-                style={{ background: 'var(--imx-accent-warm)', color: '#121316' }}
+                style={{ background: 'var(--imx-accent-warm)', color: '#FFFFFF' }}
               >
                 <ClockCounterClockwise size={20} weight="bold" />
               </span>
@@ -284,7 +284,7 @@ export function HomePage({
                     <button
                       type="button"
                       onClick={() => onRequestEnterZone(zone)}
-                      className="imx-glass-button imx-button-primary flex-1 text-xs py-2 px-3"
+                      className="imx-glass-button imx-button-accent text-xs py-2 px-3.5 whitespace-nowrap"
                     >
                       <Goggles size={17} weight="bold" />
                       <span>{PT_BR.home.openDemoZone}</span>
@@ -293,7 +293,7 @@ export function HomePage({
 
                   <Link
                     to={`/zones/${encodeURIComponent(zone.id)}`}
-                    className={`imx-glass-button text-xs py-2 px-3 ${hasPack ? '' : 'imx-button-primary flex-1'}`}
+                    className={`imx-glass-button text-xs py-2 px-3 ${hasPack ? 'flex-1' : 'imx-button-accent flex-1'}`}
                   >
                     <span>{PT_BR.home.prepareAndReview}</span>
                     <ArrowUpRight size={15} weight="bold" />
