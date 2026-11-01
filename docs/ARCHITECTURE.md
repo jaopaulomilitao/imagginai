@@ -1,6 +1,6 @@
 # System Architecture — IMAGGINAI
 
-**Navigation:** [Root README (EN)](../README.md) | [README (pt-BR)](README.pt-BR.md) | [Contributing Guide](CONTRIBUTING.md) | [Specification](spec.md) | [Progress Log](PROGRESS.md)
+**Navigation:** [Root README (EN)](../README.md) | [README (pt-BR)](README.pt-BR.md) | [Contributing Guide](CONTRIBUTING.md)
 
 This document describes the internal architecture of the three core packages implemented through Phase 6: `packages/interacxr`, `apps/web`, and `apps/api`.
 

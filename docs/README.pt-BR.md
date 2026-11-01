@@ -2,7 +2,7 @@
 
 **Idioma:** [English](../README.md) | Português (Brasil)
 
-**Documentação complementar:** [Arquitetura do Sistema](ARCHITECTURE.md) | [Guia de Contribuição e Padrões de Código](CONTRIBUTING.md) | [Especificação Técnica](spec.md) | [Registro de Progresso](PROGRESS.md)
+**Documentação complementar:** [Arquitetura do Sistema](ARCHITECTURE.md) | [Guia de Contribuição e Padrões de Código](CONTRIBUTING.md)
 
 O IMAGGINAI (_IMAGGI Navigable Augmented Intelligence_) é um ambiente de estudo híbrido em WebXR (VR/AR) de baixo custo, projetado para rodar no navegador de smartphones acoplados a óculos passivos (VRBox ou Google Cardboard). O sistema combina mira pelo movimento da cabeça (_head-gaze_), rastreamento 3D das mãos pela câmera traseira por meio da biblioteca própria (`interacxr`) e um espaço de trabalho tridimensional 100% offline onde o estudante interage com materiais gerados e verificados por IA.
 
@@ -104,8 +104,6 @@ imagginai/
 ├─ supabase/migrations/
 │  └─ 0001_init.sql               # Esquema PostgreSQL, índice HNSW pgvector, RLS e políticas de Storage
 └─ docs/
-   ├─ spec.md                     # Especificação técnica e funcional autoritativa
-   ├─ PROGRESS.md                 # Diário de progresso, decisões arquiteturais e ponto de retomada
    ├─ ARCHITECTURE.md             # Detalhamento profundo da arquitetura e fluxos de dados
    ├─ CONTRIBUTING.md             # Padrões de implementação e exemplos práticos de código
    └─ README.pt-BR.md             # Esta documentação em português
@@ -113,19 +111,7 @@ imagginai/
 
 ---
 
-## 4. Para que servem o `docs/spec.md` e o `docs/PROGRESS.md`
-
-O desenvolvimento do projeto é guiado por dois documentos centrais na pasta `docs/`:
-
-1. **[`docs/spec.md`](spec.md) (Fonte Única da Verdade):**
-   Define o escopo fechado do MVP, regras inegociáveis de privacidade, constantes ergonômicas espaciais, esquemas de dados (`StudyPack`, `Zone`, `TelemetryEvent`), contratos de rotas da API, tabelas do banco, regras estritas de código (Seção 4) e o plano sequencial de 10 fases (Seção 5). Qualquer colaborador deve consultar o `spec.md` antes de criar novas funcionalidades ou alterar contratos existentes.
-
-2. **[`docs/PROGRESS.md`](PROGRESS.md) (Registro Vivo de Engenharia):**
-   Documenta o estado exato de conclusão de cada fase, registra decisões técnicas tomadas durante a implementação (por exemplo, o motivo pelo qual o classificador de gestos opera sobre landmarks brutos enquanto o modelo 3D da mão utiliza landmarks suavizados pelo filtro One Euro), mantém o histórico de testes em dispositivos físicos e indica a próxima tarefa imediata. Sempre que uma entrega é concluída, o `PROGRESS.md` é atualizado.
-
----
-
-## 5. Configuração do Ambiente Local
+## 4. Configuração do Ambiente Local
 
 ### Pré-requisitos
 
@@ -182,7 +168,7 @@ Para criar as tabelas e buckets no Supabase, abra o **SQL Editor** no painel do 
 
 ---
 
-## 6. Implantação em Nuvem (Free Tier)
+## 5. Implantação em Nuvem (Free Tier)
 
 O repositório inclui os arquivos de configuração prontos para publicação em camadas gratuitas:
 
@@ -192,7 +178,7 @@ O repositório inclui os arquivos de configuração prontos para publicação em
 
 ---
 
-## 7. Resumo dos Padrões de Código
+## 6. Resumo dos Padrões de Código
 
 O repositório aplica regras estritas de padronização em TypeScript e Python (detalhadas com exemplos práticos em [`docs/CONTRIBUTING.md`](CONTRIBUTING.md)):
 
@@ -203,6 +189,6 @@ O repositório aplica regras estritas de padronização em TypeScript e Python (
 
 ---
 
-## 8. Licença
+## 7. Licença
 
 Este projeto e o pacote interno `interacxr` são distribuídos sob a licença MIT. Consulte [`packages/interacxr/LICENSE`](../packages/interacxr/LICENSE) para mais detalhes.

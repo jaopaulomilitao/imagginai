@@ -2,7 +2,7 @@
 
 **Language:** English | [Português (Brasil)](docs/README.pt-BR.md)
 
-**Additional documentation:** [System Architecture](docs/ARCHITECTURE.md) | [Contributing and Implementation Standards](docs/CONTRIBUTING.md) | [Technical Specification](docs/spec.md) | [Progress Log](docs/PROGRESS.md)
+**Additional documentation:** [System Architecture](docs/ARCHITECTURE.md) | [Contributing and Implementation Standards](docs/CONTRIBUTING.md)
 
 IMAGGINAI (_IMAGGI Navigable Augmented Intelligence_) is a low-cost hybrid WebXR (VR/AR) study environment designed to run on a smartphone browser mounted inside a passive headset (VRBox or Google Cardboard). It combines head-gaze aiming, rear-camera 3D hand tracking powered by our internal library (`interacxr`), and an offline spatial workspace where students interact with AI-grounded study materials.
 
@@ -104,8 +104,6 @@ imagginai/
 ├─ supabase/migrations/
 │  └─ 0001_init.sql               # PostgreSQL schema, pgvector HNSW index, RLS, and Storage policies
 └─ docs/
-   ├─ spec.md                     # Authoritative system specification and phase plan
-   ├─ PROGRESS.md                 # Live implementation log, architectural decisions, and resume point
    ├─ ARCHITECTURE.md             # Deep-dive technical architecture and data flows
    ├─ CONTRIBUTING.md             # Code conventions and implementation examples
    └─ README.pt-BR.md             # Portuguese version of this README
@@ -113,19 +111,7 @@ imagginai/
 
 ---
 
-## 4. Role of `docs/spec.md` and `docs/PROGRESS.md`
-
-Development in this repository is governed by two complementary documents inside `docs/`:
-
-1. **[`docs/spec.md`](docs/spec.md) (Single Source of Truth):**
-   Defines the product boundaries, non-negotiable privacy rules, spatial ergonomics constants, data schemas (`StudyPack`, `Zone`, `TelemetryEvent`), REST API contracts, database tables, strict coding rules (Section 4), and the 10 sequential implementation phases (Section 5). Contributors must consult `docs/spec.md` before introducing new features, dependencies, or architectural changes.
-
-2. **[`docs/PROGRESS.md`](docs/PROGRESS.md) (Live Engineering Log):**
-   Tracks the exact completion status of every phase, documents architectural decisions discovered during implementation (for example, why gesture classification runs on raw MediaPipe landmarks while spatial cursor rendering uses One Euro smoothed landmarks), records physical device test results, and specifies the immediate next task to execute. Whenever a task or phase is completed, `docs/PROGRESS.md` must be updated.
-
----
-
-## 5. Local Development Setup
+## 4. Local Development Setup
 
 ### Prerequisites
 
@@ -182,7 +168,7 @@ To initialize the database schema, open the Supabase SQL Editor, paste the conte
 
 ---
 
-## 6. Cloud Deployment (Free Tier)
+## 5. Cloud Deployment (Free Tier)
 
 The repository includes ready-to-use deployment configurations for zero-cost cloud hosting:
 
@@ -192,7 +178,7 @@ The repository includes ready-to-use deployment configurations for zero-cost clo
 
 ---
 
-## 7. Coding Standards Summary
+## 6. Coding Standards Summary
 
 This repository enforces strict code conventions across TypeScript and Python (detailed with full examples in [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md)):
 
@@ -203,6 +189,6 @@ This repository enforces strict code conventions across TypeScript and Python (d
 
 ---
 
-## 8. License
+## 7. License
 
 This project and the internal `interacxr` package are licensed under the MIT License. See [`packages/interacxr/LICENSE`](packages/interacxr/LICENSE) for details.

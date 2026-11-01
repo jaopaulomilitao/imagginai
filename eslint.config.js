@@ -12,7 +12,6 @@ export default tseslint.config(
       '**/node_modules/**',
       'apps/api/**',
       'apps/web/public/**',
-      'packages/interacxr/project_review.md',
     ],
   },
   js.configs.recommended,

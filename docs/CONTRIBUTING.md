@@ -1,18 +1,14 @@
 # Contributing and Implementation Standards — IMAGGINAI
 
-**Navigation:** [Root README (EN)](../README.md) | [README (pt-BR)](README.pt-BR.md) | [System Architecture](ARCHITECTURE.md) | [Specification](spec.md) | [Progress Log](PROGRESS.md)
+**Navigation:** [Root README (EN)](../README.md) | [README (pt-BR)](README.pt-BR.md) | [System Architecture](ARCHITECTURE.md)
 
 This guide defines the mandatory coding conventions, architectural patterns, and concrete implementation examples for contributors working on IMAGGINAI. All rules below are enforced by automated linters (`pnpm lint`) and code review.
 
 ---
 
-## 1. Workflow with `docs/spec.md` and `docs/PROGRESS.md`
+## 1. Workflow
 
-Before writing code, contributors must check two files:
-
-1. **[`docs/spec.md`](spec.md):** Verify the exact schema, constant value, route signature, and phase scope. Do not add third-party dependencies outside Section 2 of `spec.md` without documenting the justification in `docs/PROGRESS.md` and obtaining team approval.
-2. **[`docs/PROGRESS.md`](PROGRESS.md):** Check the `Current status` and `Decisions` sections to understand active constraints and completed tasks. After finishing a feature or fix, update `docs/PROGRESS.md` with what was completed, any technical decisions made, and the test count.
-
+Before writing code, read [`ARCHITECTURE.md`](ARCHITECTURE.md) to understand the data flows and invariants, and keep the schemas mirrored between `apps/web/src/shared/types/` and `apps/api/app/schemas/` consistent. After finishing a feature or fix, run the checks in Section 5.
 ---
 
 ## 2. Language and Comment Formatting Rules (Mandatory)
