@@ -1,6 +1,6 @@
 # Contributing and Implementation Standards — IMAGGINAI
 
-**Navigation:** [Root README (EN)](../README.md) | [README (pt-BR)](README.pt-BR.md) | [System Architecture](ARCHITECTURE.md)
+**Navigation:** [README Principal (pt-BR)](../README.md) | [English README](README.en.md) | [System Architecture](ARCHITECTURE.md)
 
 This guide defines the mandatory coding conventions, architectural patterns, and concrete implementation examples for contributors working on IMAGGINAI. All rules below are enforced by automated linters (`pnpm lint`) and code review.
 
