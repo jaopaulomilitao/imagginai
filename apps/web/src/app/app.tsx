@@ -6,6 +6,7 @@ import type { Zone } from '../shared/types/zone';
 import type { ZoneTheme } from '../zone/config/constants';
 import { toggleTheme } from '../zone/systems/theme-controller';
 import { ConsentModal } from './components/consent-modal';
+import { AdminCreateSsoPage } from './pages/admin-create-sso-page';
 import { DashboardPage } from './pages/dashboard-page';
 import { HomePage } from './pages/home-page';
 import { LoginPage } from './pages/login-page';
@@ -143,6 +144,18 @@ export function App() {
               onOpenConsent={() => setConsentModalOpen(true)}
               onSignOut={handleSignOut}
               onRequestEnterZone={handleRequestEnterZone}
+            />
+          }
+        />
+        <Route
+          path="/admin/create-sso"
+          element={
+            <AdminCreateSsoPage
+              themeId={themeId}
+              onToggleTheme={handleToggleTheme}
+              userEmail={userEmail}
+              onOpenConsent={() => setConsentModalOpen(true)}
+              onSignOut={handleSignOut}
             />
           }
         />

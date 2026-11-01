@@ -71,8 +71,10 @@ function checkConceptReferences(ctx: ValidationContext, pack: StudyPack): void {
   pack.assets.forEach((asset, i) => {
     if (asset.kind === 'concept-graph') {
       checkConceptRefs(ctx, asset.nodeIds, conceptIds, `pack.assets[${i}].nodeIds`);
-    } else {
+    } else if (asset.kind === 'sequence-order') {
       checkUniqueIds(ctx, asset.steps, `pack.assets[${i}].steps`);
+    } else if (asset.kind === 'special-study-object') {
+      checkUniqueIds(ctx, asset.annotations, `pack.assets[${i}].annotations`);
     }
   });
 }

@@ -39,6 +39,7 @@ import {
   type SequenceAssetCheckDetail,
   type SequenceAssetComponent,
 } from './imx-sequence-asset';
+import type { SpecialStudyObjectComponent } from './imx-special-study-object';
 import {
   buildDemoPdfPageContent,
   buildWelcomePlaceholderSpec,
@@ -512,6 +513,26 @@ export class ZoneWorkspaceController {
           attachSequence();
         } else {
           el.addEventListener('loaded', attachSequence, { once: true });
+        }
+      } else if (asset?.kind === 'special-study-object') {
+        el.setAttribute('imx-panel', {
+          frameless: true,
+          body: '',
+          title: '',
+        });
+        el.setAttribute('imx-special-study-object', {
+          assetId: asset.id,
+          sourceTitle,
+        });
+        const attachSso = (): void => {
+          const comp = el.components['imx-special-study-object'] as
+            SpecialStudyObjectComponent | undefined;
+          comp?.controller?.setAssetData(asset);
+        };
+        if (el.hasLoaded) {
+          attachSso();
+        } else {
+          el.addEventListener('loaded', attachSso, { once: true });
         }
       } else {
         const sourcePage = detail.card.anchors[0]?.page ?? 1;

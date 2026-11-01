@@ -122,7 +122,29 @@ class SequenceOrderAsset(StudyPackModel):
     steps: list[SequenceStep] = Field(min_length=2)
 
 
-LearningAsset = Annotated[ConceptGraphAsset | SequenceOrderAsset, Field(discriminator="kind")]
+class SsoAnnotation(StudyPackModel):
+    id: NonEmptyStr
+    title: NonEmptyStr
+    description: NonEmptyStr
+    position: tuple[float, float, float]
+    page_anchor: int | None = Field(default=None, ge=1)
+
+
+class SpecialStudyObjectAsset(StudyPackModel):
+    id: NonEmptyStr
+    kind: Literal["special-study-object"]
+    title: NonEmptyStr
+    why_spatial: NonEmptyStr
+    model_url: NonEmptyStr
+    tags: list[NonEmptyStr]
+    scale: tuple[float, float, float] | None = None
+    annotations: list[SsoAnnotation]
+
+
+LearningAsset = Annotated[
+    ConceptGraphAsset | SequenceOrderAsset | SpecialStudyObjectAsset,
+    Field(discriminator="kind"),
+]
 
 
 class StudyPackMeta(StudyPackModel):
@@ -214,6 +236,11 @@ def collect_integrity_errors(pack: StudyPack) -> list[str]:
         f"assets.{asset.id}.steps": asset.steps
         for asset in pack.assets
         if isinstance(asset, SequenceOrderAsset)
+    }
+    collections |= {
+        f"assets.{asset.id}.annotations": asset.annotations
+        for asset in pack.assets
+        if isinstance(asset, SpecialStudyObjectAsset)
     }
     for name, items in collections.items():
         errors += [f"duplicated id {item_id!r} in {name}" for item_id in _duplicated_ids(items)]

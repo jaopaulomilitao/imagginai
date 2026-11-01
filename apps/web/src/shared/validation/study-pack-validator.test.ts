@@ -47,7 +47,7 @@ describe('validateStudyPack', () => {
 
     expect(result.pack.concepts).toHaveLength(12);
     expect(result.pack.quiz).toHaveLength(8);
-    expect(kinds).toEqual(['concept-graph', 'sequence-order']);
+    expect(kinds).toEqual(['concept-graph', 'sequence-order', 'special-study-object']);
   });
 
   it('rejects non-object input', () => {

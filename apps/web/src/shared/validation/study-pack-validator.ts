@@ -133,6 +133,21 @@ function checkSequenceStep(ctx: ValidationContext, value: unknown, path: string)
   checkAnchors(ctx, record.anchors, `${path}.anchors`);
 }
 
+function checkSsoAnnotation(ctx: ValidationContext, value: unknown, path: string): void {
+  const record = readRecord(ctx, value, path);
+  if (!record) return;
+  const allowedKeys = ['id', 'title', 'description', 'position'];
+  if ('pageAnchor' in record) allowedKeys.push('pageAnchor');
+  checkKeys(ctx, record, allowedKeys, path);
+  checkString(ctx, record.id, `${path}.id`);
+  checkString(ctx, record.title, `${path}.title`);
+  checkString(ctx, record.description, `${path}.description`);
+  checkPosition(ctx, record.position, `${path}.position`);
+  if (record.pageAnchor !== undefined) {
+    checkNumber(ctx, record.pageAnchor, `${path}.pageAnchor`, { integer: true, min: 1 });
+  }
+}
+
 function checkAsset(ctx: ValidationContext, value: unknown, path: string): void {
   const record = readRecord(ctx, value, path);
   if (!record) return;
@@ -148,8 +163,17 @@ function checkAsset(ctx: ValidationContext, value: unknown, path: string): void 
     readArray(ctx, record.steps, `${path}.steps`, { minLength: 2 })?.forEach((step, index) =>
       checkSequenceStep(ctx, step, `${path}.steps[${index}]`),
     );
+  } else if (record.kind === 'special-study-object') {
+    const allowedKeys = ['id', 'kind', 'title', 'whySpatial', 'modelUrl', 'tags', 'annotations'];
+    if ('scale' in record) allowedKeys.push('scale');
+    checkKeys(ctx, record, allowedKeys, path);
+    checkString(ctx, record.modelUrl, `${path}.modelUrl`);
+    checkStringArray(ctx, record.tags, `${path}.tags`, { minLength: 1 });
+    readArray(ctx, record.annotations, `${path}.annotations`, { minLength: 1 })?.forEach(
+      (ann, index) => checkSsoAnnotation(ctx, ann, `${path}.annotations[${index}]`),
+    );
   } else {
-    ctx.fail(`${path}.kind`, 'must be "concept-graph" or "sequence-order"');
+    ctx.fail(`${path}.kind`, 'must be "concept-graph", "sequence-order" or "special-study-object"');
   }
 }
 

@@ -808,6 +808,52 @@
           ]
         }
       ]
+    },
+    {
+      "id": "asset-heart-sso",
+      "kind": "special-study-object",
+      "title": "Coração 3D em Batimento (OEE)",
+      "whySpatial": "Permite analisar volumetricamente as câmaras cardíacas, grandes vasos e o ciclo de batimento em tempo real em 360 graus.",
+      "modelUrl": "/models/beating_heart_3d.glb",
+      "tags": ["coração", "anatomia", "cardiovascular", "átrios", "ventrículos", "aorta"],
+      "scale": [1.0, 1.0, 1.0],
+      "annotations": [
+        {
+          "id": "ann-aorta",
+          "title": "Artéria Aorta",
+          "description": "Maior artéria do corpo humano, distribui sangue oxigenado ejetado pelo ventrículo esquerdo para toda a circulação sistêmica.",
+          "position": [0.02, 0.42, 0.0],
+          "pageAnchor": 14
+        },
+        {
+          "id": "ann-atrio-direito",
+          "title": "Átrio Direito",
+          "description": "Câmara que recebe o sangue venoso desoxigenado de todo o corpo através das veias cavas superior e inferior.",
+          "position": [-0.2, 0.1, 0.1],
+          "pageAnchor": 14
+        },
+        {
+          "id": "ann-ventriculo-esquerdo",
+          "title": "Ventrículo Esquerdo",
+          "description": "Câmara de parede miocárdica espessa, responsável pela contração sistólica de alta pressão para suprir os tecidos periféricos.",
+          "position": [0.15, -0.25, 0.05],
+          "pageAnchor": 15
+        },
+        {
+          "id": "ann-ventriculo-direito",
+          "title": "Ventrículo Direito",
+          "description": "Bombeia sangue venoso para os pulmões através da artéria pulmonar para realização da hematose e oxigenação.",
+          "position": [-0.1, -0.28, 0.15],
+          "pageAnchor": 15
+        },
+        {
+          "id": "ann-tronco-pulmonar",
+          "title": "Tronco Pulmonar",
+          "description": "Origina-se no ventrículo direito e bifurca-se nas artérias pulmonares direita e esquerda em direção aos alvéolos.",
+          "position": [-0.08, 0.36, 0.12],
+          "pageAnchor": 16
+        }
+      ]
     }
   ],
   "meta": {

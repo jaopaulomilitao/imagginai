@@ -161,6 +161,25 @@ export function mergePanelIntoLayout(
   return existing.map((item, idx) => (idx === index ? updated : item));
 }
 
+// marcador de migração do OEE para o espaço de coordenadas normalizado (maior dimensão = 1)
+const SSO_MIGRATION_KEY = 'imx-sso-coords-normalized-v1';
+
+function readSsoMigrationFlag(): boolean {
+  try {
+    return localStorage.getItem(SSO_MIGRATION_KEY) === '1';
+  } catch {
+    return true;
+  }
+}
+
+function markSsoMigrationDone(): void {
+  try {
+    localStorage.setItem(SSO_MIGRATION_KEY, '1');
+  } catch {
+    // ignora caso localStorage não esteja acessível
+  }
+}
+
 export function resolveBundledDemoPack(zoneId: string): StudyPack | null {
   // retorna um pacote demonstrativo apenas quando o id pertence de fato a uma zona demo oficial
   const normalizedId = zoneId === 'zone-demo' ? 'demo' : zoneId;
@@ -220,11 +239,36 @@ export class DexieLayoutRepository implements LayoutRepository {
             pack,
             savedAt: now,
           });
+        } else {
+          // sincroniza o OEE da demonstração: insere se ausente e migra uma única vez para o espaço
+          // de coordenadas normalizado; depois disso, preserva o que foi salvo pelo admin
+          const demoSsoAsset = pack.assets.find((a) => a.id === 'asset-heart-sso');
+          if (demoSsoAsset) {
+            const current = (existingPack.pack.assets ?? []).find(
+              (a) => a.id === 'asset-heart-sso',
+            );
+            const migrated = readSsoMigrationFlag();
+            if (!current || !migrated) {
+              const nextAssets = [
+                ...(existingPack.pack.assets ?? []).filter((a) => a.id !== 'asset-heart-sso'),
+                demoSsoAsset,
+              ];
+              const updatedPack = { ...existingPack.pack, assets: nextAssets };
+              await this.db.studyPacks.put({
+                ...existingPack,
+                pack: updatedPack,
+                savedAt: now,
+              });
+              this.packFallback.set(demo.zoneId, updatedPack);
+            }
+          }
         }
       } catch (error) {
         logger.warn('dexie demo seed fell back to memory', error);
       }
     }
+    // marca a migração como concluída para não sobrescrever marcadores salvos depois
+    markSsoMigrationDone();
   }
 
   async loadLayout(zoneId: string): Promise<PanelLayout[] | null> {

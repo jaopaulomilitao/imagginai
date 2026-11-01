@@ -988,16 +988,20 @@ export class BeltMenuBridge {
 
     // 4. filtro Objetos de Estudo (ativos espaciais 3d)
     for (const asset of pack.assets) {
-      const assetDetails =
-        asset.kind === 'sequence-order'
-          ? asset.steps.map((s, idx) => `${idx + 1}. ${s.text}`).join('\n')
-          : asset.whySpatial;
+      let assetDetails = asset.whySpatial;
+      let accentColor = '#0284C7';
+      if (asset.kind === 'sequence-order') {
+        assetDetails = asset.steps.map((s, idx) => `${idx + 1}. ${s.text}`).join('\n');
+      } else if (asset.kind === 'special-study-object') {
+        accentColor = '#F06131';
+        assetDetails = `Simulação e Modelo 3D interativo com ${asset.annotations.length} marcadores.\n${asset.annotations.map((a) => `• ${a.title}`).join('\n')}`;
+      }
       itemsByFilter.studyObjects.push({
         contentId: `asset-${asset.id}`,
         kind: 'study-object',
         categoryLabel: PT_BR.zone.belt.contentFilters.studyObjects,
         title: asset.title,
-        accentColor: '#0284C7',
+        accentColor,
         icon: 'cube',
         card: {
           id: `asset-${asset.id}`,

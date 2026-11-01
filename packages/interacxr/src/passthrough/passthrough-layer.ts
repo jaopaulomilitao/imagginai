@@ -35,7 +35,7 @@ export const DEFAULT_PASSTHROUGH_OPTIONS: PassthroughLayerOptions = {
 };
 
 // desenhado antes de tudo e sem teste de profundidade: o vídeo funciona como fundo da cena
-const BACKGROUND_RENDER_ORDER = -1;
+const BACKGROUND_RENDER_ORDER = -100;
 
 function clampUnit(value: number): number {
   return Math.min(1, Math.max(0, value));

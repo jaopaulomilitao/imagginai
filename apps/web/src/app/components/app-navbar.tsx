@@ -1,6 +1,7 @@
 import {
   CaretDown,
   ChartBar,
+  Cube,
   Gear,
   Hand,
   List,
@@ -238,6 +239,33 @@ export function AppNavbar({
                     &rarr;
                   </span>
                 </button>
+
+                {/* Opção: Estúdio OEE (3D) */}
+                <Link
+                  to="/admin/create-sso"
+                  onClick={() => setIsPreferencesOpen(false)}
+                  className="w-full p-2.5 rounded-lg bg-[var(--imx-bg-card)] hover:bg-[var(--imx-bg-card-alt)] border border-[var(--imx-border-subtle)] hover:border-[var(--imx-border-strong)] transition-all flex items-center justify-between text-left group mt-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 rounded bg-[var(--imx-bg-elevated)] text-[var(--imx-accent-warm)]">
+                      <Cube size={16} weight="bold" />
+                    </div>
+                    <div>
+                      <div
+                        className="text-xs font-semibold"
+                        style={{ color: 'var(--imx-text-title)' }}
+                      >
+                        Estúdio de Objetos 3D (OEE)
+                      </div>
+                      <div className="text-[10px] text-[var(--imx-text-muted)]">
+                        Criar e posicionar marcadores
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs text-[var(--imx-text-muted)] group-hover:translate-x-0.5 transition-transform">
+                    &rarr;
+                  </span>
+                </Link>
               </div>
             )}
           </div>
@@ -391,6 +419,15 @@ export function AppNavbar({
             <ShieldCheck size={16} weight="bold" />
             <span>{PT_BR.nav.privacyAndConsent}</span>
           </button>
+
+          <Link
+            to="/admin/create-sso"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="imx-glass-button justify-start text-xs py-2 px-3 w-full"
+          >
+            <Cube size={16} weight="bold" />
+            <span>Estúdio de Objetos 3D (OEE)</span>
+          </Link>
 
           {/* Autenticação no Mobile */}
           {userEmail ? (

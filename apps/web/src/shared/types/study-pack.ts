@@ -63,7 +63,26 @@ export interface SequenceOrderAsset {
   steps: SequenceStep[];
 }
 
-export type LearningAsset = ConceptGraphAsset | SequenceOrderAsset;
+export interface SsoAnnotation {
+  id: string;
+  title: string;
+  description: string;
+  position: [number, number, number];
+  pageAnchor?: number;
+}
+
+export interface SpecialStudyObjectAsset {
+  id: string;
+  kind: 'special-study-object';
+  title: string;
+  whySpatial: string;
+  modelUrl: string;
+  tags: string[];
+  scale?: [number, number, number];
+  annotations: SsoAnnotation[];
+}
+
+export type LearningAsset = ConceptGraphAsset | SequenceOrderAsset | SpecialStudyObjectAsset;
 
 export interface PackSource {
   id: string;
